@@ -1,0 +1,33 @@
+sys_packages:
+  - git
+  - base-devel
+  - cmake
+  - extra-cmake-modules
+  - fish
+  - starship
+  - neovim
+  - direnv
+  - ripgrep
+  - bat
+  - eza
+  - fzf
+  - zoxide
+  # Qt Compatibility (Fixes SDDM/Login Theme crashes)
+  - qt6-5compat
+  - qt6-declarative
+  - qt6-svg
+  - qt5-graphicaleffects
+
+apps:
+  - firefox
+  - kitty
+  - discord
+  - vlc
+  - obs-studio
+  - docker
+  - docker-compose
+
+common_services:
+  - bluetooth
+  - docker
+  - fstrim.timer

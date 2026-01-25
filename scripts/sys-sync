@@ -1,0 +1,10 @@
+#!/bin/bash
+set -e
+echo ">> 1. Pulling Updates..."
+chezmoi update --apply=false
+echo ">> 2. Running System Playbook..."
+sudo ~/.local/share/chezmoi/scripts/bootstrap.sh
+echo ">> 3. Applying User Configs..."
+chezmoi apply
+echo ">> 4. Reloading KDE..."
+qdbus6 org.kde.KWin /KWin reconfigure >/dev/null 2>&1 || true

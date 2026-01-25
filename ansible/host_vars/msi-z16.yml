@@ -1,0 +1,26 @@
+hardware_packages:
+  - nvidia-open-dkms
+  - nvidia-utils
+  - nvidia-settings
+  - libva-nvidia-driver
+  - vulkan-tools
+  - sof-firmware
+  - alsa-tools
+  - scx-scheds       # The scheduler kernels
+  - libfprint        # Native fingerprint driver
+  - fprintd
+
+aur_pkgs:
+  - envycontrol
+  - kwin-scripts-polonium-git
+  - winapps-git
+  - mcontrolcenter-git
+  - msi-ec-dkms-git
+  - scx-git          # The userspace loader tool
+  - whitesur-icon-theme-git
+  - moe-theme-git
+
+host_services:
+  - msi-speaker-fix
+  - msi-rgb-fix
+  - libvirtd

@@ -1,0 +1,118 @@
+---
+- hosts: localhost
+  connection: local
+  become: false # We start as root via bootstrap.sh
+
+  tasks:
+    # --- 1. SETUP & PERMISSIONS ---
+    - name: Allow 'pacman' to run without password (for AUR helper)
+      lineinfile:
+        path: /etc/sudoers.d/11-ansible-pacman
+        line: "{{ user }} ALL=(ALL) NOPASSWD: /usr/bin/pacman"
+        create: yes
+        mode: '0440'
+        validate: 'visudo -cf %s'
+
+    - name: Load Common Variables
+      include_vars: host_vars/common.yml
+
+    - name: Load Host-Specific Variables
+      include_vars: 
+        file: "host_vars/{{ ansible_facts['hostname'] }}.yml"
+      ignore_errors: yes
+
+    # --- 2. SYSTEM PACKAGES ---
+    - name: Remove Conflicting NVIDIA Drivers
+      community.general.pacman:
+        name: [linux-cachyos-lts-nvidia-open, linux-cachyos-nvidia-open]
+        state: absent
+
+    - name: Install Common Packages
+      community.general.pacman:
+        name: "{{ sys_packages + apps }}"
+        state: present
+
+    - name: Install Host Hardware Packages
+      community.general.pacman:
+        name: "{{ hardware_packages }}"
+        state: present
+      when: hardware_packages is defined
+
+    # --- 3. AUR PACKAGES (Switch to User) ---
+    - name: Install AUR Packages
+      kewlfft.aur.aur:
+        name: "{{ aur_pkgs }}"
+      become: yes
+      become_user: "{{ user }}" # Drop from Root to User
+      when: aur_pkgs is defined
+
+    # --- 4. HARDWARE FIXES (MSI Z16 Only) ---
+    - block:
+        - name: Create Audio Fix Script
+          copy:
+            dest: /usr/local/bin/msi-audio-fix.sh
+            mode: '0755'
+            content: |
+              #!/bin/bash
+              hda-verb /dev/snd/hwC0D0 0x17 SET_CONNECT_SEL 0x01
+              hda-verb /dev/snd/hwC0D0 0x17 SET_PIN_WIDGET_CONTROL 0x40
+              hda-verb /dev/snd/hwC0D0 0x1a SET_AMP_GAIN_MUTE 0xb000
+              hda-verb /dev/snd/hwC0D0 0x1a SET_PIN_WIDGET_CONTROL 0x40
+
+        - name: "Create RGB Fix Script (ID: 1038:1122)"
+          copy:
+            dest: /usr/local/bin/fix-rgb.sh
+            mode: '0755'
+            content: |
+              #!/bin/bash
+              USB_ID="1038:1122" 
+              DEVICE=$(ls /sys/bus/usb/devices/*/idProduct | xargs grep $USB_ID | awk -F/ '{print $6}')
+              if [ ! -z "$DEVICE" ]; then
+                 echo "$DEVICE" | tee /sys/bus/usb/drivers/usb/unbind > /dev/null
+                 sleep 1
+                 echo "$DEVICE" | tee /sys/bus/usb/drivers/usb/bind > /dev/null
+              fi
+
+        - name: Enable EC Write Support (Fan Control)
+          copy:
+            dest: /etc/modprobe.d/msi-ec.conf
+            content: "options ec_sys write_support=1"
+
+        - name: Enable I2C Modules (OpenRGB)
+          copy:
+            dest: /etc/modules-load.d/openrgb.conf
+            content: |
+              i2c-dev
+              i2c-i801
+      when: ansible_facts['hostname'] == "msi-z16"
+
+    # --- 5. NIX & SERVICES ---
+    - name: Install Nix
+      shell: "curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm"
+      args:
+        creates: /nix/var/nix/profiles/default/bin/nix
+
+    - name: Create MSI Services
+      copy:
+        dest: "/etc/systemd/system/{{ item.name }}.service"
+        content: |
+          [Unit]
+          Description={{ item.desc }}
+          After=network.target sound.target
+          [Service]
+          Type=oneshot
+          ExecStart={{ item.exec }}
+          [Install]
+          WantedBy=multi-user.target
+      loop:
+        - { name: 'msi-speaker-fix', desc: 'MSI Audio Fix', exec: '/usr/local/bin/msi-audio-fix.sh' }
+        - { name: 'msi-rgb-fix', desc: 'MSI RGB Fix', exec: '/usr/local/bin/fix-rgb.sh' }
+      when: ansible_facts['hostname'] == "msi-z16"
+
+    - name: Enable All Services
+      systemd:
+        name: "{{ item }}"
+        enabled: yes
+        state: started
+      loop: "{{ common_services + (host_services | default([])) }}"
+      ignore_errors: yes
