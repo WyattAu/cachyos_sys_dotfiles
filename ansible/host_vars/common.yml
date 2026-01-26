@@ -12,11 +12,15 @@ sys_packages:
   - eza
   - fzf
   - zoxide
+  - btop
+  - 7zip
+  - reflector
   # Qt Compatibility (Fixes SDDM/Login Theme crashes)
   - qt6-5compat
   - qt6-declarative
   - qt6-svg
   - qt5-graphicaleffects
+  - irqbalance
 
 apps:
   - firefox
@@ -26,8 +30,11 @@ apps:
   - obs-studio
   - docker
   - docker-compose
+  - bitwarden
 
 common_services:
   - bluetooth
   - docker
   - fstrim.timer
+  - ananicy-cpp
+  - irqbalance

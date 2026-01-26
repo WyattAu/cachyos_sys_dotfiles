@@ -5,5 +5,5 @@ chezmoi re-add
 cd ~/.local/share/chezmoi
 git add .
 git commit -m "$MSG"
-git push origin main
+git push origin master
 echo ">> Pushed to GitHub."

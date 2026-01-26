@@ -19,6 +19,8 @@ aur_pkgs:
   - scx-git          # The userspace loader tool
   - whitesur-icon-theme-git
   - moe-theme-git
+  - floorp-bin
+  - github-desktop-bin
 
 host_services:
   - msi-speaker-fix
