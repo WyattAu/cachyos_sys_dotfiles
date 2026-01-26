@@ -4,6 +4,41 @@
   become: false # We start as root via bootstrap.sh
 
   tasks:
+    - name: Create Auto-Update Service
+      copy:
+        dest: /etc/systemd/system/auto-sys-sync.service
+        content: |
+          [Unit]
+          Description=Background System Sync
+          After=network-online.target
+          Wants=network-online.target
+
+          [Service]
+          Type=oneshot
+          # Run as your user so it can access your Github/Chezmoi
+          User={{ user }}
+          ExecStart=/usr/bin/bash -c "/home/{{ user }}/.local/bin/sys-sync"
+          
+    - name: Create Auto-Update Timer
+      copy:
+        dest: /etc/systemd/system/auto-sys-sync.timer
+        content: |
+          [Unit]
+          Description=Run sys-sync 15min after boot and daily
+
+          [Timer]
+          OnBootSec=15min
+          OnUnitActiveSec=1d
+          Persistent=true
+
+          [Install]
+          WantedBy=timers.target
+
+    - name: Enable Auto-Update Timer
+      systemd:
+        name: auto-sys-sync.timer
+        enabled: yes
+        state: started
     # --- 1. SETUP & PERMISSIONS ---
     - name: Allow 'pacman' to run without password (for AUR helper)
       lineinfile:
@@ -72,6 +107,14 @@
               hda-verb /dev/snd/hwC0D0 0x17 SET_PIN_WIDGET_CONTROL 0x40
               hda-verb /dev/snd/hwC0D0 0x1a SET_AMP_GAIN_MUTE 0xb000
               hda-verb /dev/snd/hwC0D0 0x1a SET_PIN_WIDGET_CONTROL 0x40
+
+        - name: Add SteelSeries Udev Rule
+          copy:
+            dest: /etc/udev/rules.d/99-steelseries.rules
+            content: |
+              # MSI Z16 SteelSeries Keyboard
+              SUBSYSTEMS=="usb", ATTRS{idVendor}=="1038", ATTRS{idProduct}=="1122", MODE="0666"
+          notify: Reload Udev
 
         - name: "Create RGB Fix Script (ID: 1038:1122)"
           copy:
@@ -142,6 +185,8 @@
       ignore_errors: yes
 
   handlers:
+    - name: Reload Udev
+      command: udevadm control --reload-rules && udevadm trigger
     - name: Reload Kernel Modules
       service:
         name: systemd-modules-load

@@ -26,6 +26,7 @@ sys_packages:
   - clang
   - ninja
   - vulkan-tools
+  - lazygit
 
 apps:
   - firefox
@@ -36,6 +37,7 @@ apps:
   - docker
   - docker-compose
   - bitwarden
+  - owncloud-client
 
 common_services:
   - bluetooth
