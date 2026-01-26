@@ -13,7 +13,7 @@ TilePopups=true
 padding=4
 
 [Tiling][746e464a-d587-4d59-9ec5-e82ce07565ea][e8301b05-2bd7-4e0d-aea0-426d15ac7d59]
-tiles={"layoutDirection":"horizontal","tiles":[{"width":0.5},{"width":0.5}]}
+tiles={"layoutDirection":"horizontal","tiles":[{"width":0.5},{"layoutDirection":"vertical","tiles":[{"height":0.5},{"height":0.5}],"width":0.5}]}
 
 [Wayland]
 VirtualKeyboardEnabled=false

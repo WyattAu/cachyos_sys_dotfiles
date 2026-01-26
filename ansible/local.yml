@@ -20,6 +20,20 @@
       include_vars: 
         file: "host_vars/{{ ansible_facts['hostname'] }}.yml"
       ignore_errors: yes
+      
+    - name: Update Pacman Cache & Upgrade System
+      community.general.pacman:
+        update_cache: yes
+        upgrade: yes
+      become: yes
+
+    - name: Upgrade AUR Packages
+      kewlfft.aur.aur:
+        upgrade: yes
+        use: yay
+        aur_only: yes
+      become: yes
+      become_user: "{{ user }}"
 
     # --- 2. SYSTEM PACKAGES ---
     - name: Remove Conflicting NVIDIA Drivers
@@ -84,6 +98,7 @@
             content: |
               i2c-dev
               i2c-i801
+          notify: Reload Kernal Modules
       when: ansible_facts['hostname'] == "msi-z16"
 
     # --- 5. NIX & SERVICES ---
@@ -116,3 +131,18 @@
         state: started
       loop: "{{ common_services + (host_services | default([])) }}"
       ignore_errors: yes
+    
+    - name: Mask Interfering Services (PackageKit)
+      systemd:
+        name: "{{ item }}"
+        enabled: no
+        state: stopped
+        masked: yes
+      loop: "{{ masked_services | default([]) }}"
+      ignore_errors: yes
+
+  handlers:
+    - name: Reload Kernel Modules
+      service:
+        name: systemd-modules-load
+        state: restarted

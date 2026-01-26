@@ -20,9 +20,13 @@ aur_pkgs:
   - whitesur-icon-theme-git
   - moe-theme-git
   - floorp-bin
+  - visual-studio-code-bin
   - github-desktop-bin
 
 host_services:
   - msi-speaker-fix
   - msi-rgb-fix
   - libvirtd
+
+masked_services:
+  - packagekit.service

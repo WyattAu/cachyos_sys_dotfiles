@@ -21,6 +21,11 @@ sys_packages:
   - qt6-svg
   - qt5-graphicaleffects
   - irqbalance
+  - doxygen
+  - gdb
+  - clang
+  - ninja
+  - vulkan-tools
 
 apps:
   - firefox
