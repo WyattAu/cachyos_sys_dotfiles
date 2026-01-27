@@ -14,6 +14,7 @@ sys_packages:
   - zoxide
   - btop
   - 7zip
+  - zoxide
   - reflector
   # Qt Compatibility (Fixes SDDM/Login Theme crashes)
   - qt6-5compat

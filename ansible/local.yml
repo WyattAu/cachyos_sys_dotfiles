@@ -4,6 +4,7 @@
   become: false # We start as root via bootstrap.sh
 
   tasks:
+    # --- AUTOMATION & MAINTENANCE ---
     - name: Create Auto-Update Service
       copy:
         dest: /etc/systemd/system/auto-sys-sync.service
@@ -12,25 +13,21 @@
           Description=Background System Sync
           After=network-online.target
           Wants=network-online.target
-
           [Service]
           Type=oneshot
-          # Run as your user so it can access your Github/Chezmoi
           User={{ user }}
           ExecStart=/usr/bin/bash -c "/home/{{ user }}/.local/bin/sys-sync"
-          
+
     - name: Create Auto-Update Timer
       copy:
         dest: /etc/systemd/system/auto-sys-sync.timer
         content: |
           [Unit]
           Description=Run sys-sync 15min after boot and daily
-
           [Timer]
           OnBootSec=15min
           OnUnitActiveSec=1d
           Persistent=true
-
           [Install]
           WantedBy=timers.target
 
@@ -39,7 +36,8 @@
         name: auto-sys-sync.timer
         enabled: yes
         state: started
-    # --- 1. SETUP & PERMISSIONS ---
+
+    # --- SETUP & PERMISSIONS ---
     - name: Allow 'pacman' to run without password (for AUR helper)
       lineinfile:
         path: /etc/sudoers.d/11-ansible-pacman
@@ -52,10 +50,11 @@
       include_vars: host_vars/common.yml
 
     - name: Load Host-Specific Variables
-      include_vars: 
+      include_vars:
         file: "host_vars/{{ ansible_facts['hostname'] }}.yml"
       ignore_errors: yes
-      
+
+    # --- SYSTEM UPDATES ---
     - name: Update Pacman Cache & Upgrade System
       community.general.pacman:
         update_cache: yes
@@ -70,10 +69,11 @@
       become: yes
       become_user: "{{ user }}"
 
-    # --- 2. SYSTEM PACKAGES ---
-    - name: Remove Conflicting NVIDIA Drivers
+    # --- SYSTEM PACKAGES ---
+    - name: Remove Conflicting Packages
       community.general.pacman:
-        name: [linux-cachyos-lts-nvidia-open, linux-cachyos-nvidia-open]
+        # Removes conflicting drivers and standard OpenRGB (to use Git/Python version)
+        name: [linux-cachyos-lts-nvidia-open, linux-cachyos-nvidia-open, openrgb]
         state: absent
 
     - name: Install Common Packages
@@ -87,15 +87,15 @@
         state: present
       when: hardware_packages is defined
 
-    # --- 3. AUR PACKAGES (Switch to User) ---
+    # --- AUR PACKAGES ---
     - name: Install AUR Packages
       kewlfft.aur.aur:
         name: "{{ aur_pkgs }}"
       become: yes
-      become_user: "{{ user }}" # Drop from Root to User
+      become_user: "{{ user }}"
       when: aur_pkgs is defined
 
-    # --- 4. HARDWARE FIXES (MSI Z16 Only) ---
+    # --- HARDWARE FIXES (MSI Z16 Only) ---
     - block:
         - name: Create Audio Fix Script
           copy:
@@ -112,39 +112,47 @@
           copy:
             dest: /etc/udev/rules.d/99-steelseries.rules
             content: |
-              # MSI Z16 SteelSeries Keyboard
-              SUBSYSTEMS=="usb", ATTRS{idVendor}=="1038", ATTRS{idProduct}=="1122", MODE="0666"
+              # MSI Z16 SteelSeries Keyboard (Allow Read/Write for Users)
+              SUBSYSTEM=="usb", ATTRS{idVendor}=="1038", ATTRS{idProduct}=="1122", MODE="0666"
+              SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1038", ATTRS{idProduct}=="1122", MODE="0666"
+              SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1038", MODE="0666"
+              SUBSYSTEM=="usb", ATTRS{idVendor}=="1038", MODE="0666"
           notify: Reload Udev
-
-        - name: "Create RGB Fix Script (ID: 1038:1122)"
-          copy:
-            dest: /usr/local/bin/fix-rgb.sh
-            mode: '0755'
-            content: |
-              #!/bin/bash
-              USB_ID="1038:1122" 
-              DEVICE=$(ls /sys/bus/usb/devices/*/idProduct | xargs grep $USB_ID | awk -F/ '{print $6}')
-              if [ ! -z "$DEVICE" ]; then
-                 echo "$DEVICE" | tee /sys/bus/usb/drivers/usb/unbind > /dev/null
-                 sleep 1
-                 echo "$DEVICE" | tee /sys/bus/usb/drivers/usb/bind > /dev/null
-              fi
 
         - name: Enable EC Write Support (Fan Control)
           copy:
             dest: /etc/modprobe.d/msi-ec.conf
             content: "options ec_sys write_support=1"
 
-        - name: Enable I2C Modules (OpenRGB)
+        - name: Enable I2C Modules (OpenRGB/Motherboard)
           copy:
             dest: /etc/modules-load.d/openrgb.conf
             content: |
               i2c-dev
               i2c-i801
-          notify: Reload Kernal Modules
+          notify: Reload Kernel Modules
+
+        # RGB CONFIGURATION
+        - name: Create Keyboard Color Service
+          copy:
+            dest: /etc/systemd/system/msi-keyboard-color.service
+            content: |
+              [Unit]
+              Description=Set MSI Z16 Keyboard Color (Aqua Preset)
+              After=multi-user.target
+
+              [Service]
+              Type=oneshot
+              # THE WORKING COMMAND:
+              ExecStart=/usr/bin/msi-perkeyrgb -m GS65 -p aqua --id 1038:1122
+
+              [Install]
+              WantedBy=multi-user.target
+          notify: Enable Keyboard Color
+
       when: ansible_facts['hostname'] == "msi-z16"
 
-    # --- 5. NIX & SERVICES ---
+    # --- NIX & SERVICES ---
     - name: Install Nix
       shell: "curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm"
       args:
@@ -164,7 +172,6 @@
           WantedBy=multi-user.target
       loop:
         - { name: 'msi-speaker-fix', desc: 'MSI Audio Fix', exec: '/usr/local/bin/msi-audio-fix.sh' }
-        - { name: 'msi-rgb-fix', desc: 'MSI RGB Fix', exec: '/usr/local/bin/fix-rgb.sh' }
       when: ansible_facts['hostname'] == "msi-z16"
 
     - name: Enable All Services
@@ -174,7 +181,7 @@
         state: started
       loop: "{{ common_services + (host_services | default([])) }}"
       ignore_errors: yes
-    
+
     - name: Mask Interfering Services (PackageKit)
       systemd:
         name: "{{ item }}"
@@ -186,8 +193,14 @@
 
   handlers:
     - name: Reload Udev
-      command: udevadm control --reload-rules && udevadm trigger
+      shell: udevadm control --reload-rules && udevadm trigger
     - name: Reload Kernel Modules
       service:
         name: systemd-modules-load
         state: restarted
+    - name: Enable Keyboard Color
+      systemd:
+        name: msi-keyboard-color
+        enabled: yes
+        state: restarted
+        daemon_reload: yes

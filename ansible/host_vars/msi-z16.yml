@@ -22,10 +22,10 @@ aur_pkgs:
   - floorp-bin
   - visual-studio-code-bin
   - github-desktop-bin
+  - openrgb-git
 
 host_services:
   - msi-speaker-fix
-  - msi-rgb-fix
   - libvirtd
 
 masked_services:
