@@ -54,6 +54,13 @@
         file: "host_vars/{{ ansible_facts['hostname'] }}.yml"
       ignore_errors: yes
 
+    - name: Add User to Virtualization Groups
+      user:
+        name: "{{ user }}"
+        groups: libvirt,kvm,input,video
+        append: yes
+      become: yes
+
     # --- SYSTEM UPDATES ---
     - name: Update Pacman Cache & Upgrade System
       community.general.pacman:
@@ -72,7 +79,6 @@
     # --- SYSTEM PACKAGES ---
     - name: Remove Conflicting Packages
       community.general.pacman:
-        # Removes conflicting drivers and standard OpenRGB (to use Git/Python version)
         name: [linux-cachyos-lts-nvidia-open, linux-cachyos-nvidia-open, openrgb]
         state: absent
 
@@ -94,6 +100,24 @@
       become: yes
       become_user: "{{ user }}"
       when: aur_pkgs is defined
+
+    # --- APP FIXES ---
+    - name: Fix OwnCloud Scaling on Wayland
+      copy:
+        dest: /home/{{ user }}/.local/share/applications/owncloud.desktop
+        content: |
+          [Desktop Entry]
+          Name=ownCloud
+          GenericName=File Synchronizer
+          # Forces X11 mode + Software Rendering to fix text ghosting
+          Exec=env QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software /usr/bin/owncloud %F
+          Terminal=false
+          Icon=owncloud
+          Type=Application
+          Categories=Network;FileTransfer;
+          StartupNotify=false
+          X-GNOME-Autostart-enabled=true
+        mode: '0755'
 
     # --- HARDWARE FIXES (MSI Z16 Only) ---
     - block:
@@ -143,7 +167,7 @@
 
               [Service]
               Type=oneshot
-              # THE WORKING COMMAND:
+              # Uses msi-perkeyrgb with GS65 protocol and Aqua preset
               ExecStart=/usr/bin/msi-perkeyrgb -m GS65 -p aqua --id 1038:1122
 
               [Install]

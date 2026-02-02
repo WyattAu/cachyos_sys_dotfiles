@@ -6,9 +6,19 @@ hardware_packages:
   - vulkan-tools
   - sof-firmware
   - alsa-tools
-  - scx-scheds       # The scheduler kernels
-  - libfprint        # Native fingerprint driver
+  - scx-scheds
+  - libfprint
   - fprintd
+  - python-hidapi
+  - python-setuptools
+  # Virtualization
+  - qemu-full
+  - virt-manager
+  - virt-viewer
+  - dnsmasq
+  - vde2
+  - openbsd-netcat
+  - libguestfs
 
 aur_pkgs:
   - envycontrol
@@ -16,13 +26,24 @@ aur_pkgs:
   - winapps-git
   - mcontrolcenter-git
   - msi-ec-dkms-git
-  - scx-git          # The userspace loader tool
+  - scx-git
   - whitesur-icon-theme-git
-  - moe-theme-git
+  - moe-theme-git          # <-- Fixed Typo
   - floorp-bin
   - visual-studio-code-bin
   - github-desktop-bin
   - openrgb-git
+  - vesktop-bin
+  - whatsapp-for-linux
+  - pika-backup
+  - betterbird-bin
+  - freetube-bin
+  - localsend-bin
+  - schildichat-desktop-bin
+  - sublime-merge
+  - ksshaskpass
+  - msi-perkeyrgb
+  - ksshaskpass
 
 host_services:
   - msi-speaker-fix

@@ -14,20 +14,46 @@ sys_packages:
   - zoxide
   - btop
   - 7zip
-  - zoxide
   - reflector
-  # Qt Compatibility (Fixes SDDM/Login Theme crashes)
+  - fastfetch
+  - bleachbit
+  - kdeconnect
+  - unarchiver
+  # Network
+  - wireguard-tools
+  - openvpn
+  - networkmanager
+  - network-manager-applet
+  - networkmanager-openvpn
+  - systemd-resolvconf
+  # Qt Compatibility
   - qt6-5compat
   - qt6-declarative
   - qt6-svg
   - qt5-graphicaleffects
-  - irqbalance
+  # Dev Tools
   - doxygen
   - gdb
   - clang
   - ninja
-  - vulkan-tools
   - lazygit
+  # Fonts & Media
+  - ttf-ibm-plex
+  - easyeffects
+  - lsp-plugins
+  - calf
+  - filelight
+  - rnote
+  # Gaming
+  - gamemode
+  - lib32-gamemode
+  - mangohud
+  - lib32-mangohud
+  - gamescope
+  - vulkan-tools
+  # Safety
+  - keychain
+  - openssh
 
 apps:
   - firefox
@@ -39,6 +65,18 @@ apps:
   - docker-compose
   - bitwarden
   - owncloud-client
+  - signal-desktop
+  - libreoffice-fresh
+  - hunspell
+  - hunspell-en_US
+  - okular
+  - pavucontrol
+  - gwenview
+  - ark
+  - steam
+  - heroic-games-launcher
+  - calibre
+  - mpv
 
 common_services:
   - bluetooth
