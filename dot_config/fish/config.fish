@@ -1,29 +1,30 @@
 source /usr/share/cachyos-fish-config/cachyos-config.fish
-if status is-interactive
-    # ... existing starship init ...
 
-    # 1. Set up graphical password prompt (KDE Wallet)
+if status is-interactive
+    # 1. Starship Prompt
+    starship init fish | source
+
+    # 2. SSH / Keychain setup (KDE Wallet Integration)
     set -x SSH_ASKPASS /usr/bin/ksshaskpass
     set -x SSH_ASKPASS_REQUIRE force  # Forces the GUI prompt
 
-    # 2. Initialize Keychain
-    # --quiet: Don't spam terminal on open
-    # --agents ssh: We only care about SSH, not GPG
-    # List your keys here (id_forgejo, id_ed25519)
     if type -q keychain
-        keychain --eval --quiet --agents ssh id_forgejo id_ed25519 | source
+        # Load your specific keys here
+        keychain --eval --quiet id_forgejo id_ed25519 | source
     end
-enD
-if type -q direnv
-    direnv hook fish | source
-end
-# overwrite greeting
-# potentially disabling fastfetch
-#function fish_greeting
-#    # smth smth
-#end
-# "Nuke" a package: Removes package + unused dependencies + config files
-alias nuke="sudo pacman -Rns"
 
-# Clean up "Orphans" (Dependencies left behind by other uninstalls)
-alias cleanup="sudo pacman -Qtdq | sudo pacman -Rns -"
+    # 3. Direnv (Dev Tools)
+    if type -q direnv
+        direnv hook fish | source
+    end
+
+    # 4. Aliases
+    alias ls="eza --icons"
+    alias cat="bat"
+    alias update="sys-sync"
+    alias save="sys-save"
+    
+    # Maintenance Aliases
+    alias nuke="sudo pacman -Rns"
+    alias cleanup="sudo pacman -Qtdq | sudo pacman -Rns -"
+end

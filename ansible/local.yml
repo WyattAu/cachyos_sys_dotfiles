@@ -93,13 +93,24 @@
         state: present
       when: hardware_packages is defined
 
+    # --- PGP KEYS ---
+    - name: Import Tor Browser PGP Key (via HTTPS)
+      # Fetch via HTTPS to avoid Keyserver/Firewall issues
+      shell: "curl -fsSL https://keys.openpgp.org/vks/v1/by-fingerprint/EF6E286DDA85EA2A4BA7DE684E2C6E8793298290 | gpg --import"
+      become: yes
+      become_user: "{{ user }}"
+      changed_when: false
+      ignore_errors: yes
+
     # --- AUR PACKAGES ---
     - name: Install AUR Packages
       kewlfft.aur.aur:
-        name: "{{ aur_pkgs }}"
+        # MERGE LOGIC: Combine common list + host specific list
+        name: "{{ common_aur_pkgs | default([]) + aur_pkgs | default([]) }}"
       become: yes
       become_user: "{{ user }}"
-      when: aur_pkgs is defined
+      # Only run if at least one list exists
+      when: (common_aur_pkgs is defined) or (aur_pkgs is defined)
 
     # --- APP FIXES ---
     - name: Fix OwnCloud Scaling on Wayland

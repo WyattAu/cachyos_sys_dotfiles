@@ -54,6 +54,33 @@ sys_packages:
   # Safety
   - keychain
   - openssh
+  - lutris                 # <--- The "Central Game Manager"
+  - steam
+  - heroic-games-launcher  # Epic/GOG backend
+  - gamemode
+  - mangohud
+  - wine          # Required for non-Steam games
+  - winetricks
+
+common_aur_pkgs:
+  # Browsers
+  - zen-browser-bin
+  - tor-browser-bin
+  - floorp-bin
+  
+  # Communication
+  - vesktop-bin
+  - whatsapp-for-linux
+  - schildichat-desktop-bin
+  - betterbird-bin
+  
+  # Tools
+  - visual-studio-code-bin
+  - github-desktop-bin
+  - sublime-merge
+  - localsend-bin
+  - protonup-qt
+
 
 apps:
   - firefox
