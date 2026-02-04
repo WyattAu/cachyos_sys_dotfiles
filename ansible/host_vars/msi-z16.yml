@@ -1,4 +1,5 @@
-hardware_packages:
+# --- MSI SPECIFIC DRIVERS ---
+host_packages:
   - nvidia-open-dkms
   - nvidia-utils
   - nvidia-settings
@@ -11,30 +12,17 @@ hardware_packages:
   - fprintd
   - python-hidapi
   - python-setuptools
-  # Virtualization
-  - qemu-full
-  - virt-manager
-  - virt-viewer
-  - dnsmasq
-  - vde2
-  - openbsd-netcat
-  - libguestfs
 
-aur_pkgs:
+host_aur_pkgs:
   - envycontrol
-  - kwin-scripts-polonium-git
-  - winapps-git
   - mcontrolcenter-git
   - msi-ec-dkms-git
   - scx-git
   - whitesur-icon-theme-git
-  - moe-theme-git          # <-- Fixed Typo
+  - moe-theme-git
   - openrgb-git
-  - pika-backup
-  - freetube-bin
   - ksshaskpass
   - msi-perkeyrgb
-  - ksshaskpass
 
 host_services:
   - msi-speaker-fix

@@ -1,0 +1,13 @@
+# WSL Specifics
+# Note: Common packages are already loaded.
+
+# No hardware packages needed
+host_packages:
+  - wslu
+  - wl-clipboard
+
+# No extra AUR packages needed (unless you want something specific)
+host_aur_pkgs: []
+
+# No services needed (Systemd in WSL is minimal)
+host_services: []

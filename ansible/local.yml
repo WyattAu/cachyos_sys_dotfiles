@@ -1,10 +1,10 @@
 ---
 - hosts: localhost
   connection: local
-  become: false # We start as root via bootstrap.sh
+  become: false
 
   tasks:
-    # --- AUTOMATION & MAINTENANCE ---
+    # --- 1. AUTOMATION & MAINTENANCE ---
     - name: Create Auto-Update Service
       copy:
         dest: /etc/systemd/system/auto-sys-sync.service
@@ -17,6 +17,9 @@
           Type=oneshot
           User={{ user }}
           ExecStart=/usr/bin/bash -c "/home/{{ user }}/.local/bin/sys-sync"
+      become: yes
+      # Skip on WSL (Systemd works but timers are often redundant or tricky)
+      when: ansible_facts['hostname'] != "wsl-dev"
 
     - name: Create Auto-Update Timer
       copy:
@@ -30,39 +33,42 @@
           Persistent=true
           [Install]
           WantedBy=timers.target
+      become: yes
+      when: ansible_facts['hostname'] != "wsl-dev"
 
     - name: Enable Auto-Update Timer
       systemd:
         name: auto-sys-sync.timer
         enabled: yes
         state: started
+      become: yes
+      when: ansible_facts['hostname'] != "wsl-dev"
 
-    # --- SETUP & PERMISSIONS ---
-    - name: Allow 'pacman' to run without password (for AUR helper)
-      lineinfile:
-        path: /etc/sudoers.d/11-ansible-pacman
-        line: "{{ user }} ALL=(ALL) NOPASSWD: /usr/bin/pacman"
-        create: yes
-        mode: '0440'
-        validate: 'visudo -cf %s'
-
-    - name: Load Common Variables
+    # --- 2. VARIABLE LOADING ---
+    - name: Load Common Variables (All Systems)
       include_vars: host_vars/common.yml
+
+    - name: Load Native Linux Variables (Skip on WSL)
+      include_vars: host_vars/arch_native.yml
+      when: ansible_facts['hostname'] != "wsl-dev"
 
     - name: Load Host-Specific Variables
       include_vars:
         file: "host_vars/{{ ansible_facts['hostname'] }}.yml"
       ignore_errors: yes
 
-    - name: Add User to Virtualization Groups
-      user:
-        name: "{{ user }}"
-        groups: libvirt,kvm,input,video
-        append: yes
+    # --- 3. CONFIGURATION ---
+    - name: Allow 'pacman' to run without password
+      lineinfile:
+        path: /etc/sudoers.d/11-ansible-pacman
+        line: "{{ user }} ALL=(ALL) NOPASSWD: /usr/bin/pacman"
+        create: yes
+        mode: '0440'
+        validate: 'visudo -cf %s'
       become: yes
 
-    # --- SYSTEM UPDATES ---
-    - name: Update Pacman Cache & Upgrade System
+    # --- 4. SYSTEM UPDATES ---
+    - name: Update System
       community.general.pacman:
         update_cache: yes
         upgrade: yes
@@ -76,61 +82,75 @@
       become: yes
       become_user: "{{ user }}"
 
-    # --- SYSTEM PACKAGES ---
-    - name: Remove Conflicting Packages
+    # --- 5. PACKAGE INSTALLATION ---
+    - name: Install System Packages
       community.general.pacman:
-        name: [linux-cachyos-lts-nvidia-open, linux-cachyos-nvidia-open, openrgb]
-        state: absent
-
-    - name: Install Common Packages
-      community.general.pacman:
-        name: "{{ sys_packages + apps }}"
+        # MERGE: Common + Native + Host
+        name: "{{ common_packages + (native_packages | default([])) + (host_packages | default([])) }}"
         state: present
+      become: yes
 
-    - name: Install Host Hardware Packages
-      community.general.pacman:
-        name: "{{ hardware_packages }}"
-        state: present
-      when: hardware_packages is defined
-
-    # --- PGP KEYS ---
-    - name: Import Tor Browser PGP Key (via HTTPS)
-      # Fetch via HTTPS to avoid Keyserver/Firewall issues
+    - name: PGP Key for Tor (Only on Native)
       shell: "curl -fsSL https://keys.openpgp.org/vks/v1/by-fingerprint/EF6E286DDA85EA2A4BA7DE684E2C6E8793298290 | gpg --import"
       become: yes
       become_user: "{{ user }}"
       changed_when: false
       ignore_errors: yes
+      when: ansible_facts['hostname'] != "wsl-dev"
 
-    # --- AUR PACKAGES ---
     - name: Install AUR Packages
       kewlfft.aur.aur:
-        # MERGE LOGIC: Combine common list + host specific list
-        name: "{{ common_aur_pkgs | default([]) + aur_pkgs | default([]) }}"
+        # MERGE: Common AUR + Native AUR + Host AUR
+        name: "{{ common_aur_pkgs + (native_aur_pkgs | default([])) + (host_aur_pkgs | default([])) }}"
       become: yes
       become_user: "{{ user }}"
-      # Only run if at least one list exists
-      when: (common_aur_pkgs is defined) or (aur_pkgs is defined)
 
-    # --- APP FIXES ---
-    - name: Fix OwnCloud Scaling on Wayland
-      copy:
-        dest: /home/{{ user }}/.local/share/applications/owncloud.desktop
-        content: |
-          [Desktop Entry]
-          Name=ownCloud
-          GenericName=File Synchronizer
-          # Forces X11 mode + Software Rendering to fix text ghosting
-          Exec=env QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software /usr/bin/owncloud %F
-          Terminal=false
-          Icon=owncloud
-          Type=Application
-          Categories=Network;FileTransfer;
-          StartupNotify=false
-          X-GNOME-Autostart-enabled=true
-        mode: '0755'
+    # --- 6. NATIVE LINUX CONFIGS (Skip on WSL) ---
+    - block:
+        - name: Add User to Groups
+          user:
+            name: "{{ user }}"
+            groups: libvirt,kvm,input,video,docker
+            append: yes
+          become: yes
 
-    # --- HARDWARE FIXES (MSI Z16 Only) ---
+        - name: Enable Native Services
+          systemd:
+            name: "{{ item }}"
+            enabled: yes
+            state: started
+          loop: "{{ native_services }}"
+          ignore_errors: yes
+
+        - name: Fix OwnCloud Scaling
+          copy:
+            dest: /home/{{ user }}/.local/share/applications/owncloud.desktop
+            content: |
+              [Desktop Entry]
+              Name=ownCloud
+              GenericName=File Synchronizer
+              Exec=env QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software /usr/bin/owncloud %F
+              Terminal=false
+              Icon=owncloud
+              Type=Application
+              Categories=Network;FileTransfer;
+              StartupNotify=false
+              X-GNOME-Autostart-enabled=true
+            mode: '0755'
+      
+      # CONDITIONAL BLOCK
+      when: ansible_facts['hostname'] != "wsl-dev"
+
+    # --- 7. HOST SPECIFIC SERVICES ---
+    - name: Enable Host Services
+      systemd:
+        name: "{{ item }}"
+        enabled: yes
+        state: started
+      loop: "{{ host_services | default([]) }}"
+      ignore_errors: yes
+
+    # --- 8. MSI SPECIFIC HARDWARE FIXES ---
     - block:
         - name: Create Audio Fix Script
           copy:
@@ -142,32 +162,28 @@
               hda-verb /dev/snd/hwC0D0 0x17 SET_PIN_WIDGET_CONTROL 0x40
               hda-verb /dev/snd/hwC0D0 0x1a SET_AMP_GAIN_MUTE 0xb000
               hda-verb /dev/snd/hwC0D0 0x1a SET_PIN_WIDGET_CONTROL 0x40
-
+        
         - name: Add SteelSeries Udev Rule
           copy:
             dest: /etc/udev/rules.d/99-steelseries.rules
             content: |
-              # MSI Z16 SteelSeries Keyboard (Allow Read/Write for Users)
               SUBSYSTEM=="usb", ATTRS{idVendor}=="1038", ATTRS{idProduct}=="1122", MODE="0666"
               SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1038", ATTRS{idProduct}=="1122", MODE="0666"
               SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1038", MODE="0666"
               SUBSYSTEM=="usb", ATTRS{idVendor}=="1038", MODE="0666"
           notify: Reload Udev
 
-        - name: Enable EC Write Support (Fan Control)
+        - name: Enable EC Write Support
           copy:
             dest: /etc/modprobe.d/msi-ec.conf
             content: "options ec_sys write_support=1"
 
-        - name: Enable I2C Modules (OpenRGB/Motherboard)
+        - name: Enable I2C Modules
           copy:
             dest: /etc/modules-load.d/openrgb.conf
-            content: |
-              i2c-dev
-              i2c-i801
+            content: "i2c-dev\ni2c-i801"
           notify: Reload Kernel Modules
 
-        # RGB CONFIGURATION
         - name: Create Keyboard Color Service
           copy:
             dest: /etc/systemd/system/msi-keyboard-color.service
@@ -175,67 +191,36 @@
               [Unit]
               Description=Set MSI Z16 Keyboard Color (Aqua Preset)
               After=multi-user.target
-
               [Service]
               Type=oneshot
-              # Uses msi-perkeyrgb with GS65 protocol and Aqua preset
               ExecStart=/usr/bin/msi-perkeyrgb -m GS65 -p aqua --id 1038:1122
-
               [Install]
               WantedBy=multi-user.target
           notify: Enable Keyboard Color
 
+        - name: Mask PackageKit
+          systemd:
+            name: packagekit.service
+            enabled: no
+            state: stopped
+            masked: yes
+
       when: ansible_facts['hostname'] == "msi-z16"
-
-    # --- NIX & SERVICES ---
-    - name: Install Nix
-      shell: "curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm"
-      args:
-        creates: /nix/var/nix/profiles/default/bin/nix
-
-    - name: Create MSI Services
-      copy:
-        dest: "/etc/systemd/system/{{ item.name }}.service"
-        content: |
-          [Unit]
-          Description={{ item.desc }}
-          After=network.target sound.target
-          [Service]
-          Type=oneshot
-          ExecStart={{ item.exec }}
-          [Install]
-          WantedBy=multi-user.target
-      loop:
-        - { name: 'msi-speaker-fix', desc: 'MSI Audio Fix', exec: '/usr/local/bin/msi-audio-fix.sh' }
-      when: ansible_facts['hostname'] == "msi-z16"
-
-    - name: Enable All Services
-      systemd:
-        name: "{{ item }}"
-        enabled: yes
-        state: started
-      loop: "{{ common_services + (host_services | default([])) }}"
-      ignore_errors: yes
-
-    - name: Mask Interfering Services (PackageKit)
-      systemd:
-        name: "{{ item }}"
-        enabled: no
-        state: stopped
-        masked: yes
-      loop: "{{ masked_services | default([]) }}"
-      ignore_errors: yes
+      become: yes
 
   handlers:
     - name: Reload Udev
       shell: udevadm control --reload-rules && udevadm trigger
+      become: yes
     - name: Reload Kernel Modules
       service:
         name: systemd-modules-load
         state: restarted
+      become: yes
     - name: Enable Keyboard Color
       systemd:
         name: msi-keyboard-color
         enabled: yes
         state: restarted
         daemon_reload: yes
+      become: yes

@@ -1,113 +1,40 @@
-sys_packages:
-  - git
+# --- PACKAGES FOR ALL SYSTEMS (WSL + NATIVE) ---
+common_packages:
+  # Core
   - base-devel
-  - cmake
-  - extra-cmake-modules
+  - git
   - fish
   - starship
   - neovim
   - direnv
-  - ripgrep
   - bat
   - eza
   - fzf
   - zoxide
+  - ripgrep
   - btop
-  - 7zip
-  - reflector
   - fastfetch
-  - bleachbit
-  - kdeconnect
+  - 7zip
   - unarchiver
-  # Network
-  - wireguard-tools
-  - openvpn
-  - networkmanager
-  - network-manager-applet
-  - networkmanager-openvpn
-  - systemd-resolvconf
-  # Qt Compatibility
-  - qt6-5compat
-  - qt6-declarative
-  - qt6-svg
-  - qt5-graphicaleffects
-  # Dev Tools
-  - doxygen
-  - gdb
-  - clang
-  - ninja
+  - wget
+  - curl
+  - man-db
   - lazygit
-  # Fonts & Media
-  - ttf-ibm-plex
-  - easyeffects
-  - lsp-plugins
-  - calf
-  - filelight
-  - rnote
-  # Gaming
-  - gamemode
-  - lib32-gamemode
-  - mangohud
-  - lib32-mangohud
-  - gamescope
-  - vulkan-tools
-  # Safety
-  - keychain
-  - openssh
-  - lutris                 # <--- The "Central Game Manager"
-  - steam
-  - heroic-games-launcher  # Epic/GOG backend
-  - gamemode
-  - mangohud
-  - wine          # Required for non-Steam games
-  - winetricks
+  
+  # Dev Toolchain
+  - cmake
+  - extra-cmake-modules
+  - ninja
+  - clang
+  - gdb
+  - doxygen
+  
+  # Python basics
+  - python-pip
+  - python-setuptools
 
+# --- AUR PACKAGES (CLI ONLY) ---
 common_aur_pkgs:
-  # Browsers
-  - zen-browser-bin
-  - tor-browser-bin
-  - floorp-bin
-  
-  # Communication
-  - vesktop-bin
-  - whatsapp-for-linux
-  - schildichat-desktop-bin
-  - betterbird-bin
-  
-  # Tools
-  - visual-studio-code-bin
-  - github-desktop-bin
-  - sublime-merge
-  - localsend-bin
-  - protonup-qt
-
-
-apps:
-  - firefox
-  - kitty
-  - discord
-  - vlc
-  - obs-studio
-  - docker
-  - docker-compose
-  - bitwarden
-  - owncloud-client
-  - signal-desktop
-  - libreoffice-fresh
-  - hunspell
-  - hunspell-en_US
-  - okular
-  - pavucontrol
-  - gwenview
-  - ark
-  - steam
-  - heroic-games-launcher
-  - calibre
-  - mpv
-
-common_services:
-  - bluetooth
-  - docker
-  - fstrim.timer
-  - ananicy-cpp
-  - irqbalance
+  - github-desktop-bin   # Works in WSLg
+  - sublime-merge        # Works in WSLg
+  - localsend-bin        # Works in WSLg

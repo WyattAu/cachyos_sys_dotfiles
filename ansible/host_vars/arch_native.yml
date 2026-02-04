@@ -1,0 +1,104 @@
+# --- PACKAGES FOR NATIVE LINUX ONLY (Skipped on WSL) ---
+native_packages:
+  # Desktop Environment
+  - plasma-meta
+  - dolphin
+  - kitty
+  - ark
+  - gwenview
+  - okular
+  - spectacle
+  
+  # Browsers & Media
+  - firefox
+  - vlc
+  - obs-studio
+  - mpv
+  - calibre
+  
+  # Productivity
+  - libreoffice-fresh
+  - hunspell
+  - hunspell-en_US
+  - rnote
+  
+  # System Services (DO NOT RUN IN WSL)
+  - networkmanager
+  - network-manager-applet
+  - networkmanager-openvpn
+  - systemd-resolvconf
+  - firewalld
+  - wireguard-tools
+  - openvpn
+  - bluez
+  - bluez-utils
+  - cups                 # Printing
+  
+  # Sound
+  - pipewire
+  - pavucontrol
+  - easyeffects
+  - lsp-plugins
+  - calf
+  
+  # Gaming
+  - steam
+  - lutris
+  - heroic-games-launcher
+  - gamemode
+  - lib32-gamemode
+  - mangohud
+  - lib32-mangohud
+  - gamescope
+  - wine
+  - winetricks
+  
+  # Tools
+  - bleachbit
+  - kdeconnect
+  - filelight
+  - gparted
+  
+  # Virtualization (KVM doesn't work well inside WSL2)
+  - qemu-full
+  - virt-manager
+  - virt-viewer
+  - dnsmasq
+  - vde2
+  - openbsd-netcat
+  - libguestfs
+
+# --- AUR PACKAGES (GUI/Heavy) ---
+native_aur_pkgs:
+  # Browsers
+  - floorp-bin
+  - zen-browser-bin
+  - tor-browser-bin
+  
+  # Chat
+  - vesktop-bin
+  - signal-desktop       # Moving Signal to AUR/Native is safer
+  - schildichat-desktop-bin
+  - whatsapp-for-linux
+  - betterbird-bin
+  
+  # Media
+  - freetube-bin
+  
+  # Gaming
+  - protonup-qt
+  
+  # Safety
+  - pika-backup
+  - visual-studio-code-bin # In WSL, you usually use Windows VS Code + Remote Ext.
+
+# --- NATIVE SERVICES ---
+native_services:
+  - NetworkManager
+  - firewalld
+  - docker
+  - fstrim.timer
+  - ananicy-cpp
+  - irqbalance
+  - bluetooth
+  - cups
