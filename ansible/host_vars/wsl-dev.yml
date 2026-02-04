@@ -1,0 +1,19 @@
+hardware_packages: []
+
+host_packages:
+  - wslu                 # WSL Utilities (wslview, wslact)
+  - wl-clipboard         # Clipboard sync with Windows
+  - man-db
+  - base-devel
+  - docker               # Native Docker engine (Faster than Docker Desktop)
+  - docker-compose
+
+host_aur_pkgs:
+  - visual-studio-code-bin 
+  - yay
+
+host_services:
+  - docker
+  # No bluetooth, no firewalld, no irqbalance needed here
+
+masked_services: []
