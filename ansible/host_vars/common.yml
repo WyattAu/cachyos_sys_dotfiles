@@ -3,6 +3,8 @@ common_packages:
   # Core
   - base-devel
   - git
+  - ansible
+  - chezmoi
   - fish
   - starship
   - neovim

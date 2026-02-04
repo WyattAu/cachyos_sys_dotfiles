@@ -1,7 +1,6 @@
 hardware_packages: []
 
-host_packages:
-  - wslu                 # WSL Utilities (wslview, wslact)
+host_packages:           
   - wl-clipboard         # Clipboard sync with Windows
   - man-db
   - base-devel
@@ -9,6 +8,7 @@ host_packages:
   - docker-compose
 
 host_aur_pkgs:
+  - wslu
   - visual-studio-code-bin 
   - yay
 
