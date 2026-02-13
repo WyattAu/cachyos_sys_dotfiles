@@ -9,7 +9,6 @@ host_packages:
 
 host_aur_pkgs:
   - wslu
-  - visual-studio-code-bin 
   - yay
 
 host_services:

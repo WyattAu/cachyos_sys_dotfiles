@@ -6,6 +6,8 @@ common_packages:
   - ansible
   - chezmoi
   - fish
+  - kitty
+  - alacritty
   - starship
   - neovim
   - direnv
@@ -22,7 +24,8 @@ common_packages:
   - curl
   - man-db
   - lazygit
-  
+  - dunst
+
   # Dev Toolchain
   - cmake
   - extra-cmake-modules
@@ -30,10 +33,23 @@ common_packages:
   - clang
   - gdb
   - doxygen
+  - bun
+  - pnpm
+  - nodejs
+  - elan
+  - gmp
+  - libffi
   
   # Python basics
   - python-pip
   - python-setuptools
+
+  # Graphics
+  - mesa
+  - mesa-utils
+  - vulkan-icd-loader
+  - vulkan-swrast
+  - libva
 
 # --- AUR PACKAGES (CLI ONLY) ---
 common_aur_pkgs:
