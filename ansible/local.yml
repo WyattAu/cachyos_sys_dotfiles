@@ -105,6 +105,16 @@
       become: yes
       become_user: "{{ user }}"
 
+    - name: Initialize Elan (Lean 4)
+      shell: "elan toolchain install stable"
+      args:
+        # This ensures the task only runs if Lean isn't already there
+        creates: "/home/{{ user }}/.elan/bin/lean"
+      become: yes
+      become_user: "{{ user }}"
+      # Ignore errors if elan is already partially initialized
+      ignore_errors: yes
+
     # --- 6. NATIVE LINUX CONFIGS (Skip on WSL) ---
     - block:
         - name: Add User to Groups

@@ -36,7 +36,6 @@ common_packages:
   - bun
   - pnpm
   - nodejs
-  - elan
   - gmp
   - libffi
   
@@ -56,3 +55,4 @@ common_aur_pkgs:
   - github-desktop-bin   # Works in WSLg
   - sublime-merge        # Works in WSLg
   - localsend-bin        # Works in WSLg
+  - elan-bin
