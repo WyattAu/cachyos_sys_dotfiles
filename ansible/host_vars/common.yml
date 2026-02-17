@@ -25,6 +25,7 @@ common_packages:
   - man-db
   - lazygit
   - dunst
+  - inetutils
 
   # Dev Toolchain
   - cmake
