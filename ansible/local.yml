@@ -104,6 +104,13 @@
         name: "{{ common_aur_pkgs + (native_aur_pkgs | default([])) + (host_aur_pkgs | default([])) }}"
       become: yes
       become_user: "{{ user }}"
+    
+    - name: "Initialize Global Rust Toolchain"
+      shell: |
+        rustup default stable
+      args:
+        creates: "/home/{{ ansible_env.USER }}/.cargo/bin/cargo"
+      become: no  # Run as USER, not Root (Important!)
 
     - name: Initialize Elan (Lean 4)
       shell: "elan toolchain install stable"

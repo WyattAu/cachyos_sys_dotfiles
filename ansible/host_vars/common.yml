@@ -39,6 +39,7 @@ common_packages:
   - nodejs
   - gmp
   - libffi
+  - rustup
   
   # Python basics
   - python-pip
