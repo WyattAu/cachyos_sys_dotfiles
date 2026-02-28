@@ -109,7 +109,7 @@
       shell: |
         rustup default stable
       args:
-        creates: "/home/{{ ansible_env.USER }}/.cargo/bin/cargo"
+        creates: "{{ ansible_facts.env.HOME }}/.cargo/bin/cargo"
       become: no  # Run as USER, not Root (Important!)
 
     - name: Initialize Elan (Lean 4)
