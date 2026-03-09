@@ -70,6 +70,9 @@ native_packages:
 
 # --- AUR PACKAGES (GUI/Heavy) ---
 native_aur_pkgs:
+  # KDE Integration
+  - ksshaskpass
+  
   # Browsers
   - floorp-bin
   - zen-browser-bin

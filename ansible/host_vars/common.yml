@@ -26,6 +26,10 @@ common_packages:
   - lazygit
   - dunst
   - inetutils
+  - keychain
+  
+  # Fonts
+  - ttf-jetbrains-mono-nerd
 
   # Dev Toolchain
   - cmake

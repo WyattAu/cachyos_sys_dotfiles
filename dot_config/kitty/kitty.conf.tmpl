@@ -4,6 +4,12 @@ italic_font      auto
 bold_italic_font auto
 font_size 11.5
 background_opacity 0.9
+{{- if .chezmoi.kernel.osrelease | contains "microsoft" }}
+# WSL - Use X11/Wayland hybrid
+linux_display_server x11
+{{- else }}
+# Native Linux - Use Wayland
 linux_display_server wayland
 sync_to_monitor yes
 wayland_titlebar_color background
+{{- end }}

@@ -12,16 +12,23 @@ if status is-interactive
     starship init fish | source
 
     # SSH / Keychain setup
-    set -x SSH_ASKPASS /usr/bin/ksshaskpass
-    set -x SSH_ASKPASS_REQUIRE force
-    
-    # Force WSLg libraries
-    set -gx LD_LIBRARY_PATH /usr/lib/wsl/lib $LD_LIBRARY_PATH
-    # Fix for some Mesa/LLVM errors
-    set -gx MESA_LOADER_DRIVER_OVERRIDE zink
+    # Only use ksshaskpass if it exists (KDE systems)
+    if test -f /usr/bin/ksshaskpass
+        set -x SSH_ASKPASS /usr/bin/ksshaskpass
+        set -x SSH_ASKPASS_REQUIRE force
+    end
 
+    # Keychain for SSH key management
     if type -q keychain
         keychain --eval --quiet id_forgejo id_ed25519 | source
+    end
+
+    # WSL-specific settings
+    if grep -qi microsoft /proc/version 2>/dev/null
+        # Force WSLg libraries
+        set -gx LD_LIBRARY_PATH /usr/lib/wsl/lib $LD_LIBRARY_PATH
+        # Fix for some Mesa/LLVM errors
+        set -gx MESA_LOADER_DRIVER_OVERRIDE zink
     end
 
     # Direnv
@@ -48,12 +55,3 @@ if status is-interactive
     alias nuke="sudo pacman -Rns"
     alias cleanup="sudo pacman -Qtdq | sudo pacman -Rns -"
 end
-
-
-
-# pnpm
-set -gx PNPM_HOME "/home/wyatt/.local/share/pnpm"
-if not string match -q -- $PNPM_HOME $PATH
-  set -gx PATH "$PNPM_HOME" $PATH
-end
-# pnpm end
