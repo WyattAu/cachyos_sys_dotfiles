@@ -18,9 +18,15 @@ if status is-interactive
         set -x SSH_ASKPASS_REQUIRE force
     end
 
-    # Keychain for SSH key management
+    # Keychain for SSH key management (only load existing keys)
     if type -q keychain
-        keychain --eval --quiet id_forgejo id_ed25519 | source
+        set -l ssh_keys
+        for key in id_ed25519 id_rsa id_forgejo id_ecdsa
+            test -f ~/.ssh/$key && set -a ssh_keys $key
+        end
+        if test (count $ssh_keys) -gt 0
+            keychain --eval --quiet $ssh_keys | source
+        end
     end
 
     # WSL-specific settings
