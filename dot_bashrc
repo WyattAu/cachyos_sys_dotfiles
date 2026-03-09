@@ -8,4 +8,4 @@
 alias ls='ls --color=auto'
 alias grep='grep --color=auto'
 PS1='[\u@\h \W]\$ '
-export PATH="/home/name/.local/share/pnpm:$PATH"
+export PATH="$HOME/.local/share/pnpm:$PATH"

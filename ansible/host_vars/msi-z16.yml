@@ -21,7 +21,6 @@ host_aur_pkgs:
   - whitesur-icon-theme-git
   - moe-theme-git
   - openrgb-git
-  - ksshaskpass
   - msi-perkeyrgb
 
 host_services:
