@@ -59,13 +59,14 @@ if status is-interactive
     # GHQ + FZF WORKTREE WORKFLOW
     # ==========================================
     
-    # 1. The Key Binding Function (Necessary for Fish to keep the binding)
-    function fish_user_key_bindings
-        bind \cg '__ghq_fzf_repo'
-    end
-
-    # 2. The Repo Jumper (Ctrl+G)
+    # 1. The Repo Jumper Function
     function __ghq_fzf_repo
+        # Check if ghq is installed
+        if not type -q ghq
+            echo "ghq not found"
+            return
+        end
+
         set -l repo (ghq list | fzf --prompt="🐙 Repo > " --preview "eza -al --color=always --icons --group-directories-first (ghq root)/{}")
         if test -n "$repo"
             cd (ghq root)/$repo
@@ -75,7 +76,7 @@ if status is-interactive
     
     alias repo="__ghq_fzf_repo"
 
-    # 3. The Git Worktree Automator
+    # 2. The Git Worktree Automator
     function wt -d "Fuzzy find a branch and create/jump to a git worktree"
         if not git rev-parse --is-inside-work-tree >/dev/null 2>&1
             echo "Not a git repository"
@@ -92,4 +93,26 @@ if status is-interactive
             cd "$worktree_dir"
         end
     end
+end # End of if status is-interactive block
+
+# ==========================================
+# KEY BINDING OVERRIDE (THE NUCLEAR OPTION)
+# ==========================================
+
+function fish_user_key_bindings
+    # Remove any existing binding for Ctrl+G
+    bind -e \cg
+    
+    # Bind for Emacs mode (Default)
+    bind \cg '__ghq_fzf_repo'
+    
+    # Bind for Vi mode (Insert and Default modes)
+    # This is likely why yours was failing if you use Neovim/Vi bindings
+    if bind -M insert >/dev/null 2>&1
+        bind -M insert \cg '__ghq_fzf_repo'
+        bind -M default \cg '__ghq_fzf_repo'
+    end
 end
+
+# FORCE Fish to evaluate the bindings immediately
+fish_user_key_bindings
