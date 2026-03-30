@@ -44,6 +44,8 @@ common_packages:
   - gmp
   - libffi
   - rustup
+  - ollama
+  - element-desktop
   
   # Python basics
   - python-pip
@@ -56,9 +58,25 @@ common_packages:
   - vulkan-swrast
   - libva
 
+  # Video player
+  - haruna
+  - mpv
+
 # --- AUR PACKAGES (CLI ONLY) ---
 common_aur_pkgs:
   - github-desktop-bin   # Works in WSLg
   - sublime-merge        # Works in WSLg
   - localsend-bin        # Works in WSLg
   - elan-bin
+  - freetube-bin
+  - visual-studio-code-bin
+
+dev_structure:
+  - dev/docs
+  - dev/bin
+  - dev/scripts
+  - dev/src/github.com
+  - dev/src/forgejo.wyattau.com
+
+# GHQ CONFIG
+ghq_root: "~/dev/src"

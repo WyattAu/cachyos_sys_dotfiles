@@ -1,10 +1,27 @@
 ---
 - hosts: localhost
   connection: local
-  become: false
+  become: true # Global sudo session
+
+  vars:
+    user: "{{ lookup('env', 'USER') }}"
 
   tasks:
-    # --- 1. AUTOMATION & MAINTENANCE ---
+    # --- 1. LOAD MODULAR VARIABLES ---
+    - name: Load All Variables
+      include_vars: "{{ item }}"
+      loop:
+        - host_vars/common.yml
+        - host_vars/arch_native.yml
+      ignore_errors: yes
+
+    - name: Load Host-Specific Overrides
+      include_vars:
+        file: "host_vars/{{ ansible_facts['hostname'] }}.yml"
+      failed_when: false
+      ignore_errors: yes
+
+    # --- 2. AUTOMATION & MAINTENANCE ---
     - name: Create Auto-Update Service
       copy:
         dest: /etc/systemd/system/auto-sys-sync.service
@@ -17,8 +34,6 @@
           Type=oneshot
           User={{ user }}
           ExecStart=/usr/bin/bash -c "/home/{{ user }}/.local/bin/sys-sync"
-      become: yes
-      # Skip on WSL (Systemd works but timers are often redundant or tricky)
       when: ansible_facts['hostname'] != "wsl-dev"
 
     - name: Create Auto-Update Timer
@@ -33,7 +48,6 @@
           Persistent=true
           [Install]
           WantedBy=timers.target
-      become: yes
       when: ansible_facts['hostname'] != "wsl-dev"
 
     - name: Enable Auto-Update Timer
@@ -41,23 +55,9 @@
         name: auto-sys-sync.timer
         enabled: yes
         state: started
-      become: yes
       when: ansible_facts['hostname'] != "wsl-dev"
 
-    # --- 2. VARIABLE LOADING ---
-    - name: Load Common Variables (All Systems)
-      include_vars: host_vars/common.yml
-
-    - name: Load Native Linux Variables (Skip on WSL)
-      include_vars: host_vars/arch_native.yml
-      when: ansible_facts['hostname'] != "wsl-dev"
-
-    - name: Load Host-Specific Variables
-      include_vars:
-        file: "host_vars/{{ ansible_facts['hostname'] }}.yml"
-      ignore_errors: yes
-
-    # --- 3. CONFIGURATION ---
+    # --- 3. PRIVILEGE & UPDATES ---
     - name: Allow 'pacman' to run without password
       lineinfile:
         path: /etc/sudoers.d/11-ansible-pacman
@@ -65,77 +65,84 @@
         create: yes
         mode: '0440'
         validate: 'visudo -cf %s'
-      become: yes
 
-    # --- 4. SYSTEM UPDATES ---
-    - name: Update System
+    - name: Update System Repos
       community.general.pacman:
         update_cache: yes
         upgrade: yes
-      become: yes
 
     - name: Upgrade AUR Packages
       kewlfft.aur.aur:
         upgrade: yes
-        use: yay
+        use: paru
         aur_only: yes
-      become: yes
+      become: true
       become_user: "{{ user }}"
 
-    # --- 5. PACKAGE INSTALLATION ---
+    # --- 4. CORE INSTALLATION ---
     - name: Install System Packages
       community.general.pacman:
-        # MERGE: Common + Native + Host
         name: "{{ common_packages + (native_packages | default([])) + (host_packages | default([])) }}"
         state: present
-      become: yes
-
-    - name: PGP Key for Tor (Only on Native)
-      shell: "curl -fsSL https://keys.openpgp.org/vks/v1/by-fingerprint/EF6E286DDA85EA2A4BA7DE684E2C6E8793298290 | gpg --import"
-      become: yes
-      become_user: "{{ user }}"
-      changed_when: false
-      ignore_errors: yes
-      when: ansible_facts['hostname'] != "wsl-dev"
 
     - name: Install AUR Packages
       kewlfft.aur.aur:
-        # MERGE: Common AUR + Native AUR + Host AUR
         name: "{{ common_aur_pkgs + (native_aur_pkgs | default([])) + (host_aur_pkgs | default([])) }}"
-      become: yes
+        use: paru
+      become: true
       become_user: "{{ user }}"
-    
-    - name: "Initialize Global Rust Toolchain"
-      shell: |
-        rustup default stable
+
+    # --- 5. TOOLCHAINS & AI ---
+    - name: Initialize Global Rust Toolchain
+      shell: "rustup default stable"
       args:
-        creates: "{{ ansible_facts.env.HOME }}/.cargo/bin/cargo"
-      become: no  # Run as USER, not Root (Important!)
+        creates: "/home/{{ user }}/.cargo/bin/cargo"
+      become: false
 
     - name: Initialize Elan (Lean 4)
-      shell: "elan toolchain install stable"
+      shell: "curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y"
       args:
-        # This ensures the task only runs if Lean isn't already there
         creates: "/home/{{ user }}/.elan/bin/lean"
-      become: yes
-      become_user: "{{ user }}"
-      # Ignore errors if elan is already partially initialized
+      become: false
       ignore_errors: yes
 
-    # --- 6. NATIVE LINUX CONFIGS (Skip on WSL) ---
+    # --- 6. DETERMINISTIC DEV WORKFLOW (GHQ/FZF) ---
+    - name: Ensure Dev Directory Structure Exists
+      file:
+        path: "/home/{{ user }}/{{ item }}"
+        state: directory
+        mode: '0755'
+        owner: "{{ user }}"
+        group: "{{ user }}"
+      loop: "{{ dev_structure }}"
+      become: true
+
+    - name: Configure GHQ Root Directory in Git
+      git_config:
+        name: ghq.root
+        scope: global
+        value: "{{ ghq_root }}"
+      become: false
+
+    # --- 7. NATIVE CONFIGS (Groups/Services) ---
     - block:
+        - name: Ensure Docker group exists
+          group:
+            name: docker
+            state: present
+
         - name: Add User to Groups
           user:
             name: "{{ user }}"
-            groups: libvirt,kvm,input,video,docker
+            groups: docker,libvirt,gamemode,input,video
             append: yes
-          become: yes
 
         - name: Enable Native Services
           systemd:
             name: "{{ item }}"
             enabled: yes
             state: started
+            daemon_reload: yes
           loop: "{{ native_services }}"
           ignore_errors: yes
 
@@ -145,29 +152,16 @@
             content: |
               [Desktop Entry]
               Name=ownCloud
-              GenericName=File Synchronizer
               Exec=env QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software /usr/bin/owncloud %F
-              Terminal=false
               Icon=owncloud
               Type=Application
-              Categories=Network;FileTransfer;
-              StartupNotify=false
-              X-GNOME-Autostart-enabled=true
             mode: '0755'
-      
-      # CONDITIONAL BLOCK
+            owner: "{{ user }}"
+            group: "{{ user }}"
+          become: false
       when: ansible_facts['hostname'] != "wsl-dev"
 
-    # --- 7. HOST SPECIFIC SERVICES ---
-    - name: Enable Host Services
-      systemd:
-        name: "{{ item }}"
-        enabled: yes
-        state: started
-      loop: "{{ host_services | default([]) }}"
-      ignore_errors: yes
-
-    # --- 8. MSI SPECIFIC HARDWARE FIXES ---
+    # --- 8. MSI Z16 HARDWARE FIXES ---
     - block:
         - name: Create Audio Fix Script
           copy:
@@ -179,65 +173,53 @@
               hda-verb /dev/snd/hwC0D0 0x17 SET_PIN_WIDGET_CONTROL 0x40
               hda-verb /dev/snd/hwC0D0 0x1a SET_AMP_GAIN_MUTE 0xb000
               hda-verb /dev/snd/hwC0D0 0x1a SET_PIN_WIDGET_CONTROL 0x40
-        
+
+        - name: MSI Audio Service
+          copy:
+            dest: /etc/systemd/system/msi-audio.service
+            content: |
+              [Unit]
+              Description=Fix MSI Woofers
+              After=sound.target
+              [Service]
+              Type=oneshot
+              ExecStart=/usr/local/bin/msi-audio-fix.sh
+              [Install]
+              WantedBy=multi-user.target
+
         - name: Add SteelSeries Udev Rule
           copy:
             dest: /etc/udev/rules.d/99-steelseries.rules
             content: |
               SUBSYSTEM=="usb", ATTRS{idVendor}=="1038", ATTRS{idProduct}=="1122", MODE="0666"
-              SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1038", ATTRS{idProduct}=="1122", MODE="0666"
               SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1038", MODE="0666"
-              SUBSYSTEM=="usb", ATTRS{idVendor}=="1038", MODE="0666"
           notify: Reload Udev
 
-        - name: Enable EC Write Support
+        - name: Enable EC Write Support (Fan Control)
           copy:
             dest: /etc/modprobe.d/msi-ec.conf
             content: "options ec_sys write_support=1"
 
-        - name: Enable I2C Modules
+        - name: Configure CachyOS Scheduler (LAVD)
           copy:
-            dest: /etc/modules-load.d/openrgb.conf
-            content: "i2c-dev\ni2c-i801"
-          notify: Reload Kernel Modules
+            dest: /etc/default/scx
+            content: "SCX_SCHEDULER=scx_lavd"
+          notify: Restart SCX
 
-        - name: Create Keyboard Color Service
-          copy:
-            dest: /etc/systemd/system/msi-keyboard-color.service
-            content: |
-              [Unit]
-              Description=Set MSI Z16 Keyboard Color (Aqua Preset)
-              After=multi-user.target
-              [Service]
-              Type=oneshot
-              ExecStart=/usr/bin/msi-perkeyrgb -m GS65 -p aqua --id 1038:1122
-              [Install]
-              WantedBy=multi-user.target
-          notify: Enable Keyboard Color
-
-        - name: Mask PackageKit
+        - name: Enable MSI Services
           systemd:
-            name: packagekit.service
-            enabled: no
-            state: stopped
-            masked: yes
+            name: "{{ item }}"
+            enabled: yes
+            state: started
+          loop: [msi-audio.service, mcontrolcenter-helper.service]
 
       when: ansible_facts['hostname'] == "msi-z16"
-      become: yes
 
   handlers:
     - name: Reload Udev
       shell: udevadm control --reload-rules && udevadm trigger
-      become: yes
-    - name: Reload Kernel Modules
-      service:
-        name: systemd-modules-load
-        state: restarted
-      become: yes
-    - name: Enable Keyboard Color
+    - name: Restart SCX
       systemd:
-        name: msi-keyboard-color
-        enabled: yes
+        name: scx
         state: restarted
         daemon_reload: yes
-      become: yes

@@ -1,10 +1,17 @@
 #!/bin/bash
 set -e
-echo ">> 1. Pulling Updates..."
-chezmoi update --apply=false
-echo ">> 2. Running System Playbook..."
+
+echo ">> 1. Fetching latest Infrastructure as Code..."
+cd ~/.local/share/chezmoi
+git pull origin master --rebase
+
+echo ">> 2. Provisioning System (Ansible)..."
+# We call the bootstrap which handles sudo/paru/ansible
 sudo ~/.local/share/chezmoi/scripts/bootstrap.sh
-echo ">> 3. Applying User Configs..."
+
+echo ">> 3. Applying User Configs (Chezmoi)..."
+# Force ensures the repo wins over any manual local edits
 chezmoi apply --force
-echo ">> 4. Reloading KDE..."
+
+echo ">> 4. Reloading Environment..."
 qdbus6 org.kde.KWin /KWin reconfigure >/dev/null 2>&1 || true

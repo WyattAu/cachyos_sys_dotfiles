@@ -1,9 +1,21 @@
 #!/bin/bash
-MSG="${1:-Auto-save $(date +'%Y-%m-%d %H:%M')}"
-echo ">> Snapshotting User Configs..."
-chezmoi re-add
+set -e
+# Navigate to the ACTUAL source of truth
 cd ~/.local/share/chezmoi
+
+# 1. Capture any drift from the live system into the repo
+echo ">> Pulling changes from ~/.config to repo..."
+chezmoi re-add
+
+# 2. Check for Git status
+if [[ -z $(git status -s) ]]; then
+    echo ">> No changes to save."
+    exit 0
+fi
+
+# 3. Commit and PUSH
+MSG="${1:-Auto-save $(date +'%Y-%m-%d %H:%M')}"
 git add .
 git commit -m "$MSG"
-git push origin master
-echo ">> Pushed to GitHub."
+echo ">> Pushing to GitHub..."
+git push origin master # Ensure your branch name is correct
