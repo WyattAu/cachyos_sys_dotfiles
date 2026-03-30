@@ -55,6 +55,7 @@ common_packages:
   - vulkan-icd-loader
   - vulkan-swrast
   - libva
+  - librewolf
 
 # --- AUR PACKAGES (CLI ONLY) ---
 common_aur_pkgs:

@@ -58,6 +58,7 @@ native_packages:
   - kdeconnect
   - filelight
   - gparted
+  - element
   
   # Virtualization (KVM doesn't work well inside WSL2)
   - qemu-full
@@ -81,7 +82,6 @@ native_aur_pkgs:
   # Chat
   - vesktop-bin
   - signal-desktop       # Moving Signal to AUR/Native is safer
-  - schildichat-desktop-bin
   - whatsapp-for-linux
   - betterbird-bin
   
