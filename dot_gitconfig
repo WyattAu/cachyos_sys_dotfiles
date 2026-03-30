@@ -7,3 +7,5 @@
 [user]
 	email = wyatt_au@protonmail.com
 	name = WyattAu
+[ghq]
+	root = ~/dev/src
