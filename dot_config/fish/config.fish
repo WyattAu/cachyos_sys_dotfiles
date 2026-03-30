@@ -61,3 +61,6 @@ if status is-interactive
     alias nuke="sudo pacman -Rns"
     alias cleanup="sudo pacman -Qtdq | sudo pacman -Rns -"
 end
+
+# opencode
+fish_add_path /home/wyatt/.opencode/bin
