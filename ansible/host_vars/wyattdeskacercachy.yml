@@ -52,7 +52,7 @@ sysctl_tuning:
     vm.hugetlb_shm_group: 1000                 # Allow 'users' group to use huge pages
   kernel:
     kernel.perf_event_paranoid: 0              # Allow userspace perf profiling
-    kernel.split_lock_detect: 0                # Already set by CachyOS, explicit for clarity
+    # split_lock_detect: not a sysctl on all kernels — skip
     kernel.sched_autogroup_enabled: 0          # Disable autogroup — prevents latency spikes
     kernel.watchdog: 0                         # Disable soft lockup detector
   net:
@@ -65,7 +65,7 @@ sysctl_tuning:
     net.core.wmem_default: 1048576             # 1MB default Tx buffer
     net.core.optmem_max: 65536                 # Increase socket option buffer
     net.ipv4.tcp_low_latency: 1                # Prefer latency over throughput
-    net.ipv4.tcp_nodelay: 1                    # Disable Nagle's algorithm
+    # tcp_nodelay: not a sysctl — it's a per-socket option (set by apps)
 
 # --- SCX Scheduler ---
 scx_scheduler: "scx_lavd"      # Desktop/gaming balanced — good latency under mixed load

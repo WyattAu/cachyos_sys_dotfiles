@@ -67,7 +67,6 @@ sysctl_tuning:
     vm.hugetlb_shm_group: 1000
   kernel:
     kernel.perf_event_paranoid: 0
-    kernel.split_lock_detect: 0
     kernel.sched_autogroup_enabled: 0
     kernel.watchdog: 0
   net:
@@ -80,7 +79,6 @@ sysctl_tuning:
     net.core.wmem_default: 1048576
     net.core.optmem_max: 65536
     net.ipv4.tcp_low_latency: 1
-    net.ipv4.tcp_nodelay: 1
 
 # --- SCX Scheduler ---
 scx_scheduler: "scx_lavd"
