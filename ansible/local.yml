@@ -177,6 +177,47 @@
     # ================================================================
     # 7. TOOLCHAINS (installed as the actual user, NOT root)
     # ================================================================
+    - name: Initialize Nix (multi-user install)
+      # Uses the official Determinate Systems installer — idempotent.
+      # Installs Nix daemon, creates /nix/store, adds nix-daemon service.
+      # Runs as root; after install, user is configured via nix.conf.
+      shell: >
+        curl -L https://nixos.org/nix/install 2>/dev/null |
+        sh -s -- --daemon --yes
+      args:
+        creates: "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh"
+      when: not is_wsl
+
+    - name: Configure Nix trusted-users
+      copy:
+        dest: /etc/nix/nix.conf
+        content: |
+          # Ansible-managed Nix configuration
+          experimental-features = nix-command flakes
+          trusted-users = root {{ user }}
+        mode: "0644"
+        owner: root
+        group: root
+      when: not is_wsl
+      notify: Restart nix-daemon
+
+    - name: Add user to nix-users group
+      user:
+        name: "{{ user }}"
+        groups: nix-users
+        append: yes
+      when: not is_wsl
+      ignore_errors: yes
+
+    - name: Enable nix-daemon service
+      systemd:
+        name: nix-daemon
+        enabled: yes
+        state: started
+        daemon_reload: yes
+      when: not is_wsl
+      ignore_errors: yes
+
     - name: Initialize Global Rust Toolchain
       command: rustup default stable
       args:
@@ -469,3 +510,8 @@
     - name: Reload udev
       ansible.builtin.shell: udevadm control --reload-rules && udevadm trigger
       changed_when: false
+
+    - name: Restart nix-daemon
+      ansible.builtin.systemd:
+        name: nix-daemon
+        state: restarted
