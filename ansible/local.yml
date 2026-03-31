@@ -356,6 +356,12 @@
     # 13. PERFORMANCE TUNING: SCX SCHEDULER (native only)
     # ================================================================
     - block:
+        - name: Ensure SCX override directory exists
+          file:
+            path: /etc/systemd/system/scx.service.d
+            state: directory
+            mode: "0755"
+
         - name: Create SCX scheduler override
           copy:
             dest: /etc/systemd/system/scx.service.d/override.conf
