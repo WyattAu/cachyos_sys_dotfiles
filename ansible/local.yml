@@ -201,14 +201,6 @@
       when: not is_wsl
       notify: Restart nix-daemon
 
-    - name: Add user to nix-users group
-      user:
-        name: "{{ user }}"
-        groups: nix-users
-        append: yes
-      when: not is_wsl
-      ignore_errors: yes
-
     - name: Enable nix-daemon service
       systemd:
         name: nix-daemon
