@@ -65,7 +65,7 @@ common_packages:
 
   # Docker
   - docker
-  - docker-compose-plugin       # v2 compose as docker subcommand
+  - docker-compose             # Docker Compose v2 (provides `docker compose` subcommand)
 
   # Graphics (baseline — works everywhere including WSLg)
   - mesa
