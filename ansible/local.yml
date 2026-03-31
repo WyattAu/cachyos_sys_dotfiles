@@ -382,8 +382,9 @@
           systemd:
             name: scx_loader
             enabled: yes
-            state: started
             daemon_reload: yes
+            # state: started NOT used — scx_loader is Type=dbus (on-demand),
+            # systemctl start would hang waiting for the bus name.
       when: not is_wsl
 
     # ================================================================
