@@ -1,0 +1,20 @@
+# Heroic Games Launcher configuration
+# https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher
+
+# Heroic stores per-store configs in subdirectories.
+# Game install paths are set here and applied on first launch.
+# Existing installs are detected automatically.
+
+{
+  "defaultInstallPath": "{{ .chezmoi.homeDir }}/Games/heroic",
+  "defaultWinePrefix": "{{ .chezmoi.homeDir }}/Games/heroic/prefix",
+  "wineVersion": "",
+  "wineCrossoverBottle": "",
+  "savesPath": "{{ .chezmoi.homeDir }}/games/saves",
+  "heroicSettings": {
+    "startInTray": false,
+    "minimizeToTray": false,
+    "autoUpdateGames": true,
+    "checkUpdatesOnStartup": true
+  }
+}

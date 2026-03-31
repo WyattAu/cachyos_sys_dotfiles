@@ -63,6 +63,10 @@ common_packages:
   - msr-tools
   - cpupower
 
+  # Docker
+  - docker
+  - docker-compose-plugin       # v2 compose as docker subcommand
+
   # Graphics (baseline — works everywhere including WSLg)
   - mesa
   - mesa-utils
@@ -86,6 +90,41 @@ dev_structure:
   - dev/sandbox             # Experiments / spikes
   - dev/scripts             # Personal scripts
   - dev/benchmarks          # Performance benchmarks
+  - dev/docker              # Docker compose files (Portainer, OCIS, etc.)
+
+personal_structure:
+  # --- Documents ---
+  - documents/work          # Work / HFT related
+  - documents/notes         # Notes, markdown, obsidian
+  - documents/pdfs          # Papers, manuals, whitepapers
+  - documents/receipts      # Purchase records, invoices
+  - documents/contracts      # Legal, employment, NDAs
+
+  # --- Media ---
+  - media/movies            # Films
+  - media/tv                # TV series
+  - media/anime             # Anime series
+  - media/music             # Music library
+  - media/audiobooks        # Audiobooks
+  - media/podcasts          # Podcast downloads
+
+  # --- Library (managed by Calibre + Zotero) ---
+  - library/books           # Calibre library root
+  - library/papers          # Zotero storage
+  - library/audiobooks      # Calibre audiobooks
+
+  # --- Games (launchers manage their own subdirs) ---
+  - games/emulation         # ROMs, BIOS files
+  - games/emulation/saves   # Emulator save states
+  - games/saves             # PC game save backups
+  - games/mods              # Mod archives
+  - games/screenshots       # In-game screenshots
+
+  # --- System ---
+  - downloads               # Browser / app downloads
+  - screenshots             # Desktop screenshots
+  - recordings              # Screen / audio recordings
+  - inbox                   # Temporary landing zone
 
 # --- GHQ ROOT ---
 ghq_root: "~/dev/src"

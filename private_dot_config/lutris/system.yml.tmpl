@@ -1,0 +1,23 @@
+# Lutris gaming platform configuration
+# https://github.com/lutris/lutris
+
+[system]
+# Base game directory
+game_path = {{ .chezmoi.homeDir }}/Games
+
+# Default Wine runner path
+wine_path = /usr/bin/wine
+
+# Wine prefixes directory
+wine_prefixes = {{ .chezmoi.homeDir }}/Games/wine-prefixes
+
+# Runtime (GE-Proton, etc.)
+runtime_path = {{ .chezmoi.homeDir }}/Games/runtime
+
+[directory]
+# Lutris-specific game installs
+install_dir = {{ .chezmoi.homeDir }}/Games/lutris
+
+# Clean temp paths after installs
+cache_dir = {{ .chezmoi.homeDir }}/.cache/lutris
+tmp_dir = /tmp

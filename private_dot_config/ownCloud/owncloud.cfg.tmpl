@@ -1,0 +1,30 @@
+# ownCloud Desktop Client — OCIS Sync Configuration
+# ===================================================
+# Server: ocis.wyattau.com
+#
+# This is the initial config template. After first login,
+# the client will generate auth tokens here automatically.
+#
+# SETUP:
+#   1. Run: owncloudclient
+#   2. Add account: ocis.wyattau.com
+#   3. Configure sync folders (one per space):
+#      - Library/Books  → Books space
+#      - Library/Papers → Papers space
+#      - Documents     → Documents space
+#      - Media         → Media space
+#
+# DO NOT manually edit the [Accounts] section — the client
+# manages auth tokens and sync state automatically.
+
+[General]
+OptionConfirmExternalStorage=true
+NumberOfSyncConnections=3
+OptionalServerNotifications=true
+SkipUpdateCheck=false
+UpdateCheckInterval=86400
+UpdateChannel=stable
+
+[Accounts]
+# Populated automatically on first login to ocis.wyattau.com
+# Each account entry maps a local folder to a remote space.

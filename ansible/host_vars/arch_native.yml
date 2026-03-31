@@ -14,18 +14,19 @@ native_packages:
   - okular
   - spectacle
 
-  # Browsers & Media
+  # Browsers & Media Players
   - firefox
   - vlc
   - obs-studio
   - mpv
   - calibre
 
-  # Productivity
+  # Productivity & Reference
   - libreoffice-fresh
   - hunspell
   - hunspell-en_US
   - rnote
+  - zotero                  # Academic paper management
 
   # System Services & Networking (DO NOT RUN IN WSL)
   - networkmanager
@@ -49,7 +50,7 @@ native_packages:
   # Gaming
   - steam
   - lutris
-  - heroic-games-launcher
+  - heroic-games-launcher   # Epic + GOG in one app
   - gamemode
   - lib32-gamemode
   - mangohud
@@ -57,6 +58,7 @@ native_packages:
   - gamescope
   - wine
   - winetricks
+  - retroarch               # Unified emulation frontend
 
   # Tools
   - bleachbit
@@ -95,8 +97,10 @@ native_aur_pkgs:
 
   # Gaming
   - protonup-qt
+  - steam-rom-manager       # Manage ROMs for Steam
 
-  # Safety
+  # Sync & Safety
+  - owncloud-client         # Desktop sync to OCIS (ocis.wyattau.com)
   - pika-backup
   - visual-studio-code-bin
 

@@ -236,6 +236,15 @@
         group: "{{ user }}"
       loop: "{{ dev_structure | default([]) }}"
 
+    - name: Ensure Personal Directory Structure Exists
+      file:
+        path: "/home/{{ user }}/{{ item }}"
+        state: directory
+        mode: "0755"
+        owner: "{{ user }}"
+        group: "{{ user }}"
+      loop: "{{ personal_structure | default([]) }}"
+
     - name: Configure GHQ Root Directory in Git
       git_config:
         name: ghq.root
@@ -347,6 +356,38 @@
               default.clock.min-quantum = 1024
               default.clock.max-quantum = 2048
               }
+      when: not is_wsl
+
+    # ================================================================
+    # 10b. CONTAINER INFRASTRUCTURE (native only)
+    # ================================================================
+    - block:
+        - name: Create Docker compose directory
+          file:
+            path: "/home/{{ user }}/dev/docker"
+            state: directory
+            mode: "0755"
+            owner: "{{ user }}"
+            group: "{{ user }}"
+
+        - name: Deploy Portainer compose file
+          copy:
+            src: files/portainer-compose.yml
+            dest: "/home/{{ user }}/dev/docker/portainer-compose.yml"
+            mode: "0644"
+            owner: "{{ user }}"
+            group: "{{ user }}"
+
+        - name: Start Portainer
+          community.docker.docker_compose:
+            project_src: "/home/{{ user }}/dev/docker"
+            files:
+              - portainer-compose.yml
+            state: present
+            pull: always
+          become: true
+          become_user: "{{ user }}"
+          ignore_errors: yes
       when: not is_wsl
 
     # ================================================================
