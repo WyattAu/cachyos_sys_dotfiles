@@ -68,4 +68,6 @@ sysctl_tuning:
     # tcp_nodelay: not a sysctl — it's a per-socket option (set by apps)
 
 # --- SCX Scheduler ---
-scx_scheduler: "scx_lavd"      # Desktop/gaming balanced — good latency under mixed load
+# Handled by scx_loader --auto (D-Bus on-demand loader).
+# The loader auto-selects the best scheduler based on workload.
+# Override: /etc/systemd/system/scx_loader.service.d/override.conf

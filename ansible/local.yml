@@ -355,32 +355,29 @@
     # ================================================================
     # 13. PERFORMANCE TUNING: SCX SCHEDULER (native only)
     # ================================================================
+    # scx-scheds provides 'scx_loader.service' — a D-Bus on-demand loader.
+    # Override to launch with --auto for automatic scheduler selection.
     - block:
-        - name: Ensure SCX override directory exists
+        - name: Clean up stale scx.service.d override (if exists)
           file:
             path: /etc/systemd/system/scx.service.d
-            state: directory
-            mode: "0755"
+            state: absent
 
-        - name: Create SCX scheduler override
+        - name: Create SCX loader override
           copy:
-            dest: /etc/systemd/system/scx.service.d/override.conf
+            dest: /etc/systemd/system/scx_loader.service.d/override.conf
             content: |
               [Service]
               ExecStart=
-              ExecStart=/usr/bin/scx_{{ scx_scheduler | default('lavd') }}
-              Restart=on-failure
-              RestartSec=5
+              ExecStart=/usr/bin/scx_loader --auto
             mode: "0644"
-          when: scx_scheduler is defined
 
-        - name: Enable SCX scheduler
+        - name: Enable SCX scheduler loader
           systemd:
-            name: scx
+            name: scx_loader
             enabled: yes
+            state: started
             daemon_reload: yes
-          when: scx_scheduler is defined
-          ignore_errors: yes
       when: not is_wsl
 
     # ================================================================
