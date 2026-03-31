@@ -1,16 +1,22 @@
-# --- PACKAGES FOR ALL SYSTEMS (WSL + NATIVE) ---
+# =========================================================================
+# LAYER 1: BASE — Installed on ALL systems (WSL + Arch Native + CachyOS)
+# =========================================================================
+
+# --- CORE PACKAGES ---
 common_packages:
-  # Core
-  - base-devel
-  - git
-  - ansible
-  - chezmoi
+  # Shell & Terminal
   - fish
   - kitty
   - alacritty
   - starship
   - neovim
   - direnv
+
+  # CLI Essentials
+  - base-devel
+  - git
+  - ansible
+  - chezmoi
   - bat
   - eza
   - fzf
@@ -27,7 +33,7 @@ common_packages:
   - dunst
   - inetutils
   - keychain
-  
+
   # Fonts
   - ttf-jetbrains-mono-nerd
 
@@ -44,12 +50,12 @@ common_packages:
   - gmp
   - libffi
   - rustup
-  
-  # Python basics
+
+  # Python
   - python-pip
   - python-setuptools
 
-  # Graphics
+  # Graphics (baseline — works everywhere including WSLg)
   - mesa
   - mesa-utils
   - vulkan-icd-loader
@@ -57,9 +63,20 @@ common_packages:
   - libva
   - librewolf
 
-# --- AUR PACKAGES (CLI ONLY) ---
+# --- AUR PACKAGES (CLI only — safe on all platforms) ---
 common_aur_pkgs:
-  - github-desktop-bin   # Works in WSLg
-  - sublime-merge        # Works in WSLg
-  - localsend-bin        # Works in WSLg
+  - github-desktop-bin
+  - sublime-merge
+  - localsend-bin
   - elan-bin
+  - ghq                     # Repository manager (was missing from package list)
+
+# --- DETERMINISTIC DIRECTORY STRUCTURE ---
+dev_structure:
+  - dev/src                 # GHQ root
+  - dev/build               # Build artifacts
+  - dev/sandbox             # Experiments / spikes
+  - dev/scripts             # Personal scripts
+
+# --- GHQ ROOT ---
+ghq_root: "~/dev/src"

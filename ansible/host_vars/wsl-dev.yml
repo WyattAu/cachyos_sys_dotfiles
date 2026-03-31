@@ -1,18 +1,17 @@
-hardware_packages: []
+# =========================================================================
+# HOST: wsl-dev — WSL2 Development Container
+# =========================================================================
+# Layers: common.yml → THIS FILE (arch_native/arch_only/cachyos all skipped)
 
-host_packages:           
-  - wl-clipboard         # Clipboard sync with Windows
-  - man-db
-  - base-devel
-  - docker               # Native Docker engine (Faster than Docker Desktop)
+host_packages:
+  - wl-clipboard            # Clipboard sync with Windows host
+  - docker                  # Native Docker engine (faster than Docker Desktop)
   - docker-compose
 
 host_aur_pkgs:
-  - wslu
-  - yay
+  - wslu                    # WSL utilities
 
 host_services:
   - docker
-  # No bluetooth, no firewalld, no irqbalance needed here
 
 masked_services: []

@@ -5,7 +5,7 @@
 	helper = 
 	helper = !/usr/bin/gh auth git-credential
 [user]
-	email = wyatt_au@protonmail.com
-	name = WyattAu
+	email = {{ .email | default "wyatt_au@protonmail.com" }}
+	name = {{ .name | default "WyattAu" }}
 [ghq]
-	root = ~/dev/src
+	root = {{ .ghq_root | default "~/dev/src" }}

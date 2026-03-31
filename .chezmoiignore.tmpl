@@ -1,0 +1,8 @@
+{{- /* Platform-conditional file exclusion */}}
+{{- if .chezmoi.kernel.osrelease | contains "microsoft" }}
+# KDE/Plasma configs — WSL doesn't run KDE
+private_dot_config/kdeglobals
+private_dot_config/kwinrc
+private_dot_config/plasmashellrc
+private_dot_config/private_kglobalshortcutsrc
+{{- end }}

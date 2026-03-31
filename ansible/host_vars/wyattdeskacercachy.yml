@@ -1,0 +1,17 @@
+# =========================================================================
+# HOST: wyattdeskacercachy — Acer Desktop running CachyOS
+# =========================================================================
+# Hardware: Acer desktop (no special driver requirements)
+# Distro:   CachyOS (Layer 2c loaded automatically)
+# Layers:   common.yml → arch_native.yml → cachyos.yml → THIS FILE
+
+# No special hardware drivers needed — CachyOS handles kernel/modules
+host_packages: []
+host_aur_pkgs: []
+
+# Services specific to this host
+host_services:
+  - libvirtd                # KVM virtualization
+
+masked_services:
+  - packagekit.service      # Conflicts with pacman

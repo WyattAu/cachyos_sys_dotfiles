@@ -1,0 +1,15 @@
+# =========================================================================
+# LAYER 2b: ARCH-ONLY — Packages/services that conflict with CachyOS
+# CachyOS manages these differently (bundled, pre-configured, or replaced).
+# Only loaded when: native Linux AND NOT CachyOS.
+# =========================================================================
+
+# Packages that CachyOS provides via its own repos or pre-installs
+arch_only_packages:
+  - ananicy-cpp             # CachyOS bundles this; Arch needs it from AUR/official
+
+arch_only_aur_pkgs: []
+
+# Services CachyOS enables by default but Arch needs explicitly
+arch_only_services:
+  - ananicy-cpp

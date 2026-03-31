@@ -1,10 +1,18 @@
 #!/bin/bash
 set -e
-echo ">> 1. Pulling Updates..."
+echo ">> 1. Pulling dotfile updates..."
 chezmoi update --apply=false
-echo ">> 2. Running System Playbook..."
+
+echo ">> 2. Running system playbook..."
 sudo ~/.local/share/chezmoi/scripts/bootstrap.sh
-echo ">> 3. Applying User Configs..."
+
+echo ">> 3. Applying user configs..."
 chezmoi apply --force
-echo ">> 4. Reloading KDE..."
-qdbus6 org.kde.KWin /KWin reconfigure >/dev/null 2>&1 || true
+
+# 4. Reload KDE only if running a Plasma/Wayland session
+if command -v qdbus6 &>/dev/null && [[ -n "$WAYLAND_DISPLAY" ]]; then
+    echo ">> 4. Reloading KDE..."
+    qdbus6 org.kde.KWin /KWin reconfigure >/dev/null 2>&1 || true
+fi
+
+echo ">> Sync complete."

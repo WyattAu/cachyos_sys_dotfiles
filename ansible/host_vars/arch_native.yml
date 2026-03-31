@@ -1,4 +1,9 @@
-# --- PACKAGES FOR NATIVE LINUX ONLY (Skipped on WSL) ---
+# =========================================================================
+# LAYER 2: NATIVE LINUX — Installed on ALL bare-metal Linux (Arch + CachyOS)
+# Nothing here should conflict with CachyOS repos or defaults.
+# =========================================================================
+
+# --- NATIVE SYSTEM PACKAGES ---
 native_packages:
   # Desktop Environment
   - plasma-meta
@@ -8,21 +13,21 @@ native_packages:
   - gwenview
   - okular
   - spectacle
-  
+
   # Browsers & Media
   - firefox
   - vlc
   - obs-studio
   - mpv
   - calibre
-  
+
   # Productivity
   - libreoffice-fresh
   - hunspell
   - hunspell-en_US
   - rnote
-  
-  # System Services (DO NOT RUN IN WSL)
+
+  # System Services & Networking (DO NOT RUN IN WSL)
   - networkmanager
   - network-manager-applet
   - networkmanager-openvpn
@@ -32,15 +37,15 @@ native_packages:
   - openvpn
   - bluez
   - bluez-utils
-  - cups                 # Printing
-  
+  - cups
+
   # Sound
   - pipewire
   - pavucontrol
   - easyeffects
   - lsp-plugins
   - calf
-  
+
   # Gaming
   - steam
   - lutris
@@ -52,15 +57,15 @@ native_packages:
   - gamescope
   - wine
   - winetricks
-  
+
   # Tools
   - bleachbit
   - kdeconnect
   - filelight
   - gparted
   - element
-  
-  # Virtualization (KVM doesn't work well inside WSL2)
+
+  # Virtualization (KVM — unreliable inside WSL2)
   - qemu-full
   - virt-manager
   - virt-viewer
@@ -69,39 +74,38 @@ native_packages:
   - openbsd-netcat
   - libguestfs
 
-# --- AUR PACKAGES (GUI/Heavy) ---
+# --- NATIVE AUR PACKAGES (GUI / Heavy) ---
 native_aur_pkgs:
   # KDE Integration
   - ksshaskpass
-  
+
   # Browsers
   - floorp-bin
   - zen-browser-bin
   - tor-browser-bin
-  
+
   # Chat
   - vesktop-bin
-  - signal-desktop       # Moving Signal to AUR/Native is safer
+  - signal-desktop
   - whatsapp-for-linux
   - betterbird-bin
-  
+
   # Media
   - freetube-bin
-  
+
   # Gaming
   - protonup-qt
-  
+
   # Safety
   - pika-backup
-  - visual-studio-code-bin # In WSL, you usually use Windows VS Code + Remote Ext.
+  - visual-studio-code-bin
 
-# --- NATIVE SERVICES ---
+# --- NATIVE SERVICES (started on all bare-metal hosts) ---
 native_services:
   - NetworkManager
   - firewalld
   - docker
   - fstrim.timer
-  - ananicy-cpp
   - irqbalance
   - bluetooth
   - cups

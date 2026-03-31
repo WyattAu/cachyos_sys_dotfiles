@@ -24,7 +24,8 @@ host_aur_pkgs:
   - msi-perkeyrgb
 
 host_services:
-  - msi-speaker-fix
+  - msi-audio.service
+  - mcontrolcenter-helper.service
   - libvirtd
 
 masked_services:

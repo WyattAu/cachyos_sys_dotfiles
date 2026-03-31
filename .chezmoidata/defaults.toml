@@ -1,0 +1,6 @@
+# Template data for chezmoi (shared across all hosts)
+# Per-host overrides go in ~/.config/chezmoi/chezmoi.toml on each machine
+
+email = "wyatt_au@protonmail.com"
+name = "WyattAu"
+ghq_root = "~/dev/src"

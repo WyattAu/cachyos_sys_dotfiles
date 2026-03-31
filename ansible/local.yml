@@ -1,29 +1,80 @@
 ---
+# =========================================================================
+# CACHYOS / ARCH MULTI-HOST PLAYBOOK
+# =========================================================================
+# Variable loading order (4-layer inheritance):
+#   Layer 1: common.yml           — ALL systems (WSL + Native)
+#   Layer 2: arch_native.yml      — All bare-metal Linux (Arch + CachyOS)
+#   Layer 2b: arch_only.yml       — Vanilla Arch only (conflicts with CachyOS)
+#   Layer 2c: cachyos.yml         — CachyOS only (optimized additions)
+#   Layer 3: <hostname>.yml       — Device-specific overrides
+# =========================================================================
+
 - hosts: localhost
   connection: local
-  # 1. Start as root so you only type the password once
   become: true
 
   vars:
-    # 2. Define the user globally at the very top
     user: "{{ lookup('env', 'USER') }}"
 
   tasks:
-    # --- 1. LOAD VARIABLES (Must happen first) ---
-    - name: Load All Variables
-      include_vars: "{{ item }}"
-      loop:
-        - host_vars/common.yml
-        - host_vars/arch_native.yml
-      ignore_errors: yes
+    # ================================================================
+    # 1. ENVIRONMENT DETECTION (must run before any include_vars)
+    # ================================================================
+    - name: Detect WSL
+      set_fact:
+        is_wsl: "{{ 'microsoft' in (ansible_facts['kernel'] | default('')) }}"
 
-    - name: Load Host-Specific Overrides
+    - name: Detect CachyOS
+      stat:
+        path: /etc/cachyos-release
+      register: cachyos_release_check
+
+    - name: Set distro facts
+      set_fact:
+        is_cachyos: "{{ cachyos_release_check.stat.exists }}"
+
+    - name: Display environment
+      debug:
+        msg: >-
+          Host={{ ansible_facts['hostname'] }}
+          WSL={{ is_wsl }}
+          CachyOS={{ is_cachyos }}
+
+    # ================================================================
+    # 2. LOAD VARIABLES (4-layer inheritance)
+    # ================================================================
+    - name: "Layer 1: Load common variables (all systems)"
+      include_vars:
+        file: host_vars/common.yml
+
+    - name: "Layer 2: Load native Linux variables (skip WSL)"
+      include_vars:
+        file: host_vars/arch_native.yml
+      when: not is_wsl
+
+    - name: "Layer 2b: Load Arch-only variables (skip CachyOS and WSL)"
+      include_vars:
+        file: host_vars/arch_only.yml
+      when:
+        - not is_cachyos
+        - not is_wsl
+
+    - name: "Layer 2c: Load CachyOS-specific variables"
+      include_vars:
+        file: host_vars/cachyos.yml
+      when:
+        - is_cachyos
+        - not is_wsl
+
+    - name: "Layer 3: Load host-specific overrides"
       include_vars:
         file: "host_vars/{{ ansible_facts['hostname'] }}.yml"
       failed_when: false
-      ignore_errors: yes
 
-    # --- 2. AUTOMATION & MAINTENANCE ---
+    # ================================================================
+    # 3. AUTOMATION & MAINTENANCE (native only)
+    # ================================================================
     - name: Create Auto-Update Service
       copy:
         dest: /etc/systemd/system/auto-sys-sync.service
@@ -36,7 +87,7 @@
           Type=oneshot
           User={{ user }}
           ExecStart=/usr/bin/bash -c "/home/{{ user }}/.local/bin/sys-sync"
-      when: ansible_facts['hostname'] != "wsl-dev"
+      when: not is_wsl
 
     - name: Create Auto-Update Timer
       copy:
@@ -50,23 +101,25 @@
           Persistent=true
           [Install]
           WantedBy=timers.target
-      when: ansible_facts['hostname'] != "wsl-dev"
+      when: not is_wsl
 
     - name: Enable Auto-Update Timer
       systemd:
         name: auto-sys-sync.timer
         enabled: yes
         state: started
-      when: ansible_facts['hostname'] != "wsl-dev"
+      when: not is_wsl
 
-    # --- 3. PRIVILEGE & UPDATES ---
+    # ================================================================
+    # 4. PRIVILEGE & SYSTEM UPDATES
+    # ================================================================
     - name: Allow 'pacman' to run without password
       lineinfile:
         path: /etc/sudoers.d/11-ansible-pacman
         line: "{{ user }} ALL=(ALL) NOPASSWD: /usr/bin/pacman"
         create: yes
-        mode: '0440'
-        validate: 'visudo -cf %s'
+        mode: "0440"
+        validate: "visudo -cf %s"
 
     - name: Update System Repos
       community.general.pacman:
@@ -81,24 +134,38 @@
       become: true
       become_user: "{{ user }}"
 
-    # --- 4. CORE INSTALLATION ---
+    # ================================================================
+    # 5. PACKAGE INSTALLATION (merged from all layers)
+    # ================================================================
     - name: Install System Packages
       community.general.pacman:
-        name: "{{ common_packages + (native_packages | default([])) + (host_packages | default([])) }}"
+        name: >-
+          {{ common_packages
+           + (native_packages | default([]))
+           + (arch_only_packages | default([]))
+           + (cachyos_packages | default([]))
+           + (host_packages | default([])) }}
         state: present
 
     - name: Install AUR Packages
       kewlfft.aur.aur:
-        name: "{{ common_aur_pkgs + (native_aur_pkgs | default([])) + (host_aur_pkgs | default([])) }}"
+        name: >-
+          {{ common_aur_pkgs
+           + (native_aur_pkgs | default([]))
+           + (arch_only_aur_pkgs | default([]))
+           + (cachyos_aur_pkgs | default([]))
+           + (host_aur_pkgs | default([])) }}
         use: paru
       become: true
       become_user: "{{ user }}"
 
-    # --- 5. MANAGEMENT SCRIPTS (Executable Fix) ---
+    # ================================================================
+    # 6. MANAGEMENT SCRIPTS
+    # ================================================================
     - name: Ensure management scripts are executable
       file:
         path: "/home/{{ user }}/.local/share/chezmoi/scripts/{{ item }}"
-        mode: '0755'
+        mode: "0755"
         owner: "{{ user }}"
         group: "{{ user }}"
       loop:
@@ -106,27 +173,31 @@
         - sys-sync
         - bootstrap.sh
 
-    # --- 6. TOOLCHAINS ---
+    # ================================================================
+    # 7. TOOLCHAINS (installed as the actual user, NOT root)
+    # ================================================================
     - name: Initialize Global Rust Toolchain
-      shell: "rustup default stable"
+      command: rustup default stable
       args:
         creates: "/home/{{ user }}/.cargo/bin/cargo"
-      become: false
+      become: true
+      become_user: "{{ user }}"
 
     - name: Initialize Elan (Lean 4)
-      # Using the script to avoid ELAN GUI package collision
       shell: "curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y"
       args:
         creates: "/home/{{ user }}/.elan/bin/lean"
-      become: false
-      ignore_errors: yes
+      become: true
+      become_user: "{{ user }}"
 
-    # --- 7. DETERMINISTIC DIRECTORY MANAGEMENT (The missing part) ---
+    # ================================================================
+    # 8. DETERMINISTIC DIRECTORY MANAGEMENT
+    # ================================================================
     - name: Ensure Dev Directory Structure Exists
       file:
         path: "/home/{{ user }}/{{ item }}"
         state: directory
-        mode: '0755'
+        mode: "0755"
         owner: "{{ user }}"
         group: "{{ user }}"
       loop: "{{ dev_structure | default([]) }}"
@@ -136,36 +207,20 @@
         name: ghq.root
         scope: global
         value: "{{ ghq_root | default('~/dev/src') }}"
-      become: false
+      become: true
+      become_user: "{{ user }}"
 
-    # --- 8. NATIVE CONFIGS (Groups/Services) ---
-    - block:
-        - name: Ensure User Groups Exist
-          group: { name: "{{ item }}", state: present }
-          loop: [docker, libvirt, gamemode, input, video]
+    # ================================================================
+    # 9. HOST-SPECIFIC HARDWARE FIXES
+    # NOTE: Runs BEFORE service enablement so unit files exist.
+    # ================================================================
 
-        - name: Add User to Groups
-          user:
-            name: "{{ user }}"
-            groups: docker,libvirt,gamemode,input,video
-            append: yes
-
-        - name: Enable Native Services
-          systemd:
-            name: "{{ item }}"
-            enabled: yes
-            state: started
-            daemon_reload: yes
-          loop: "{{ native_services | default([]) }}"
-          ignore_errors: yes
-      when: ansible_facts['hostname'] != "wsl-dev"
-
-    # --- 9. MSI Z16 HARDWARE FIXES ---
+    # --- MSI Z16: Audio fix, service unit creation ---
     - block:
         - name: Create MSI Audio Fix Script
           copy:
             dest: /usr/local/bin/msi-audio-fix.sh
-            mode: '0755'
+            mode: "0755"
             content: |
               #!/bin/bash
               hda-verb /dev/snd/hwC0D0 0x17 SET_CONNECT_SEL 0x01
@@ -173,7 +228,7 @@
               hda-verb /dev/snd/hwC0D0 0x1a SET_AMP_GAIN_MUTE 0xb000
               hda-verb /dev/snd/hwC0D0 0x1a SET_PIN_WIDGET_CONTROL 0x40
 
-        - name: MSI Audio Service
+        - name: Create MSI Audio systemd Unit
           copy:
             dest: /etc/systemd/system/msi-audio.service
             content: |
@@ -186,13 +241,78 @@
               [Install]
               WantedBy=multi-user.target
 
-        - name: Enable MSI Services
-          systemd: { name: "{{ item }}", enabled: yes, state: started }
-          loop: [msi-audio.service, mcontrolcenter-helper.service]
+        - name: Reload systemd for new MSI units
+          systemd:
+            daemon_reload: yes
       when: ansible_facts['hostname'] == "msi-z16"
 
-  handlers:
-    - name: Reload Udev
-      shell: udevadm control --reload-rules && udevadm trigger
-    - name: Restart SCX
-      systemd: { name: scx, state: restarted, daemon_reload: yes }
+    # ================================================================
+    # 10. NATIVE SYSTEM CONFIGURATION (groups, services)
+    # ================================================================
+    - block:
+        - name: Ensure User Groups Exist
+          group:
+            name: "{{ item }}"
+            state: present
+          loop: [docker, libvirt, gamemode, input, video]
+
+        - name: Add User to Groups
+          user:
+            name: "{{ user }}"
+            groups: docker,libvirt,gamemode,input,video
+            append: yes
+
+        - name: Enable Native Services (Layer 2)
+          systemd:
+            name: "{{ item }}"
+            enabled: yes
+            state: started
+          loop: "{{ native_services | default([]) }}"
+          ignore_errors: yes
+
+        - name: Enable Arch-Only Services (Layer 2b)
+          systemd:
+            name: "{{ item }}"
+            enabled: yes
+            state: started
+          loop: "{{ arch_only_services | default([]) }}"
+          ignore_errors: yes
+
+        - name: Enable CachyOS Services (Layer 2c)
+          systemd:
+            name: "{{ item }}"
+            enabled: yes
+            state: started
+          loop: "{{ cachyos_services | default([]) }}"
+          ignore_errors: yes
+
+        - name: Enable Host-Specific Services (Layer 3)
+          systemd:
+            name: "{{ item }}"
+            enabled: yes
+            state: started
+            daemon_reload: yes
+          loop: "{{ host_services | default([]) }}"
+          ignore_errors: yes
+
+        - name: Mask Unwanted Services
+          systemd:
+            name: "{{ item }}"
+            masked: yes
+          loop: "{{ masked_services | default([]) }}"
+
+        - name: Optimize PipeWire for High-End Audio
+          copy:
+            dest: /etc/pipewire/pipewire.conf.d/99-custom-audio.conf
+            content: |
+              context.properties = {
+              # Force high-quality resampling
+              default.clock.rate = 48000
+              default.clock.allowed-rates = [ 44100, 48000, 88200, 96000 ]
+              # Increase buffer size to prevent distortion/crackling
+              default.clock.min-quantum = 1024
+              default.clock.max-quantum = 2048
+              }
+          become: true
+      when: not is_wsl
+

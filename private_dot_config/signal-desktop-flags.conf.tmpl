@@ -1,0 +1,7 @@
+{{- if .chezmoi.kernel.osrelease | contains "microsoft" }}
+--enable-features=UseOzonePlatform
+--ozone-platform=x11
+{{- else }}
+--enable-features=UseOzonePlatform,WaylandWindowDecorations
+--ozone-platform=wayland
+{{- end }}

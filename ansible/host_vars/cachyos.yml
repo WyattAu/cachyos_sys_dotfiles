@@ -1,0 +1,17 @@
+# =========================================================================
+# LAYER 2c: CACHYOS-SPECIFIC — Packages/services unique to CachyOS installs
+# Only loaded when /etc/cachyos-release is detected.
+# CachyOS provides optimized builds from its own repos automatically, so
+# most packages from arch_native.yml Just Work with CachyOS's versions.
+# Only add things here that CachyOS needs ON TOP of arch_native.
+# =========================================================================
+
+# CachyOS-specific packages (not in standard Arch repos)
+cachyos_packages: []
+
+# CachyOS-specific AUR packages
+cachyos_aur_pkgs: []
+
+# CachyOS-specific services
+# Note: ananicy-cpp, scx-scheds, irqbalance are handled by CachyOS internally
+cachyos_services: []

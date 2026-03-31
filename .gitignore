@@ -1,0 +1,31 @@
+# Never accidentally commit secrets or credentials
+*.key
+*.pem
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+id_ecdsa
+id_forgejo
+*.pub
+known_hosts
+*.secret
+.env
+.env.*
+
+# SSH directory (managed separately, never blanket-add)
+ssh/
+
+# Editor / OS noise
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Ansible retry files
+*.retry
+
+# Python cache
+__pycache__/
+*.pyc
