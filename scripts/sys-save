@@ -1,9 +1,19 @@
 #!/bin/bash
-MSG="${1:-Auto-save $(date +'%Y-%m-%d %H:%M')}"
-echo ">> Snapshotting User Configs..."
-chezmoi re-add
+set -e
 cd ~/.local/share/chezmoi
-git add .
-git commit -m "$MSG"
-git push origin master
-echo ">> Pushed to GitHub."
+
+# 1. ONLY re-add files that actually live in your home directory
+echo ">> Syncing dotfiles from home..."
+chezmoi re-add ~/.config ~/.local/bin ~/.ssh > /dev/null 2>&1 || true
+
+# 2. Check for changes (This picks up your manual edits to local.yml)
+if [[ -n $(git status -s) ]]; then
+    MSG="${1:-Auto-save $(date +'%Y-%m-%d %H:%M')}"
+    git add .
+    git commit -m "$MSG"
+    echo ">> Pushing to GitHub..."
+    git push origin master
+    echo ">> Done."
+else
+    echo ">> No changes to save."
+fi
