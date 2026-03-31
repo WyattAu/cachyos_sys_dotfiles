@@ -9,6 +9,10 @@ poloniumEnabled=true
 [Script-polonium]
 TilePopups=true
 
+[Tiling][1cd00aca-e55c-484b-8334-e819f47ce323][8b49eab3-a4c5-4fe2-a796-608d390e95ab]
+padding=4
+tiles={"layoutDirection":"horizontal","tiles":[{"width":0.25},{"width":0.5},{"width":0.25}]}
+
 [Tiling][1cd00aca-e55c-484b-8334-e819f47ce323][dc467afb-2df6-4e3c-ba11-4643769c53b0]
 padding=4
 tiles={"layoutDirection":"horizontal","tiles":[{"width":0.25},{"width":0.5},{"width":0.25}]}
