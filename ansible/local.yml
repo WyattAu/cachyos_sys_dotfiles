@@ -379,11 +379,10 @@
             group: "{{ user }}"
 
         - name: Start Portainer
-          community.docker.docker_compose:
+          community.docker.docker_compose_v2:
             project_src: "/home/{{ user }}/dev/docker"
             files:
               - portainer-compose.yml
-            state: present
             pull: always
           become: true
           become_user: "{{ user }}"
