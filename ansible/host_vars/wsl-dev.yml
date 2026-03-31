@@ -7,8 +7,6 @@
 
 host_packages:
   - wl-clipboard            # Clipboard sync with Windows host
-  - docker                  # Native Docker engine (faster than Docker Desktop)
-  - docker-compose
 
 host_aur_pkgs:
   - wslu                    # WSL utilities

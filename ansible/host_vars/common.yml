@@ -94,31 +94,31 @@ dev_structure:
 
 personal_structure:
   # --- Documents ---
-  - documents/work          # Work / HFT related
-  - documents/notes         # Notes, markdown, obsidian
-  - documents/pdfs          # Papers, manuals, whitepapers
-  - documents/receipts      # Purchase records, invoices
-  - documents/contracts      # Legal, employment, NDAs
+  - Documents/work          # Work / HFT related
+  - Documents/notes         # Notes, markdown, obsidian
+  - Documents/pdfs          # Papers, manuals, whitepapers
+  - Documents/receipts      # Purchase records, invoices
+  - Documents/contracts      # Legal, employment, NDAs
 
   # --- Media ---
-  - media/movies            # Films
-  - media/tv                # TV series
-  - media/anime             # Anime series
-  - media/music             # Music library
-  - media/audiobooks        # Audiobooks
-  - media/podcasts          # Podcast downloads
+  - Media/Movies            # Films
+  - Media/TV                # TV series
+  - Media/Anime             # Anime series
+  - Media/Music             # Music library
+  - Media/Audiobooks        # Audiobooks
+  - Media/Podcasts          # Podcast downloads
 
   # --- Library (managed by Calibre + Zotero) ---
-  - library/books           # Calibre library root
-  - library/papers          # Zotero storage
-  - library/audiobooks      # Calibre audiobooks
+  - Library/Books           # Calibre library root
+  - Library/Papers          # Zotero storage
+  - Library/Audiobooks      # Calibre audiobooks
 
   # --- Games (launchers manage their own subdirs) ---
-  - games/emulation         # ROMs, BIOS files
-  - games/emulation/saves   # Emulator save states
-  - games/saves             # PC game save backups
-  - games/mods              # Mod archives
-  - games/screenshots       # In-game screenshots
+  - Games/Emulation         # ROMs, BIOS files
+  - Games/Emulation/Saves   # Emulator save states
+  - Games/Saves             # PC game save backups
+  - Games/Mods              # Mod archives
+  - Games/Screenshots        # In-game screenshots
 
   # --- System ---
   - downloads               # Browser / app downloads

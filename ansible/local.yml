@@ -87,7 +87,7 @@
           [Service]
           Type=oneshot
           User={{ user }}
-          ExecStart=/usr/bin/bash -c "/home/{{ user }}/.local/bin/sys-sync"
+          ExecStart=/usr/bin/bash -c "/home/{{ user }}/.local/share/chezmoi/scripts/sys-sync"
       when: not is_wsl
 
     - name: Create Auto-Update Timer

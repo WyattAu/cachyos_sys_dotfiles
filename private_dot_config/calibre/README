@@ -1,7 +1,0 @@
-# Calibre library location
-# This file tells Calibre where to find/create the library.
-# On first launch, Calibre will use this path.
-# Run: calibre --with-library ~/library/books
-
-# Library path (set via environment or --with-library flag)
-# The actual library is managed inside this directory by Calibre.

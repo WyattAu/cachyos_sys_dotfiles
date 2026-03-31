@@ -4,7 +4,7 @@ BLUE='\033[0;34m'
 GREEN='\033[0;32m'
 NC='\033[0m'
 
-echo -e "${BLUE}>> CachyOS Infrastructure Bootstrap${NC}"
+echo -e "${BLUE}>> System Bootstrap${NC}"
 
 # 1. FORCE ROOT EXECUTION
 if [ "$EUID" -ne 0 ]; then
@@ -22,7 +22,7 @@ fi
 
 # 3. INSTALL COLLECTIONS (For Root)
 echo -e "${BLUE}>> Installing Ansible Collections...${NC}"
-ansible-galaxy collection install community.general kewlfft.aur
+ansible-galaxy collection install community.general kewlfft.aur community.docker
 
 # 4. RUN PLAYBOOK
 echo -e "${BLUE}>> Running Ansible Playbook...${NC}"

@@ -8,7 +8,6 @@ native_packages:
   # Desktop Environment
   - plasma-meta
   - dolphin
-  - kitty
   - ark
   - gwenview
   - okular
