@@ -363,6 +363,12 @@
             path: /etc/systemd/system/scx.service.d
             state: absent
 
+        - name: Ensure SCX loader override directory exists
+          file:
+            path: /etc/systemd/system/scx_loader.service.d
+            state: directory
+            mode: "0755"
+
         - name: Create SCX loader override
           copy:
             dest: /etc/systemd/system/scx_loader.service.d/override.conf
