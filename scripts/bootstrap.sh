@@ -27,6 +27,8 @@ ansible-galaxy collection install community.general kewlfft.aur
 # 4. RUN PLAYBOOK
 echo -e "${BLUE}>> Running Ansible Playbook...${NC}"
 cd "/home/$REAL_USER/.local/share/chezmoi/ansible"
-ansible-playbook local.yml --extra-vars "user=$REAL_USER"
+# -i localhost, tells Ansible this is an inline host list (trailing comma is intentional)
+# Without it, Ansible auto-discovers local.yml and host_vars/ as inventory sources
+ansible-playbook local.yml -i localhost, --extra-vars "user=$REAL_USER"
 
 echo -e "${GREEN}>> System Provisioning Complete.${NC}"
