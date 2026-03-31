@@ -1,0 +1,19 @@
+# Clangd — C/C++ Language Server global configuration
+# https://clangd.llvm.org/config
+
+Diagnostics:
+  UnusedIncludes: Strict
+  ClangTidy:
+    Add: [performance-*, bugprone-*, readability-*]
+    Remove: [modernize-use-trailing-return-type, readability-magic-numbers]
+
+InlayHints:
+  Enabled: Yes
+  ParameterNames: Yes
+  DeducedTypes: Yes
+
+Completion:
+  AllScopes: Yes
+
+Hover:
+  ShowAKA: Yes

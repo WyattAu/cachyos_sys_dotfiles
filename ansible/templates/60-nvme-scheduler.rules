@@ -1,0 +1,7 @@
+# Set 'none' (no-op) scheduler for all NVMe devices
+# NVMe controllers have their own internal parallelism and queue management.
+# Linux I/O scheduling adds overhead with zero benefit on NVMe.
+ACTION=="add|change", KERNEL=="nvme[0-9]*", ATTR{queue/scheduler}="none"
+
+# Also apply to NVMe partitions
+ACTION=="add|change", KERNEL=="nvme[0-9]*n[0-9]*", ATTR{queue/scheduler}="none"

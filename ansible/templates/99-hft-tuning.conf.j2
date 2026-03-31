@@ -1,0 +1,23 @@
+# =========================================================================
+# Performance & Latency Tuning (Ansible-managed — DO NOT EDIT BY HAND)
+# Generated from host_vars/{{ inventory_hostname }}.yml
+# =========================================================================
+
+{% if sysctl_tuning is defined %}
+
+# --- VM / Memory ---
+{% for key, val in (sysctl_tuning.vm | default({})).items() %}
+{{ key }} = {{ val }}
+{% endfor %}
+
+# --- Kernel ---
+{% for key, val in (sysctl_tuning.kernel | default({})).items() %}
+{{ key }} = {{ val }}
+{% endfor %}
+
+# --- Network ---
+{% for key, val in (sysctl_tuning.net | default({})).items() %}
+{{ key }} = {{ val }}
+{% endfor %}
+
+{% endif %}

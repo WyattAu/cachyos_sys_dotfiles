@@ -1,17 +1,71 @@
 # =========================================================================
 # HOST: wyattdeskacercachy — Acer Desktop running CachyOS
 # =========================================================================
-# Hardware: Acer desktop (no special driver requirements)
+# Hardware: Intel i5-9400F (6C/6T @ 4.1GHz), RTX 2060, NVMe
 # Distro:   CachyOS (Layer 2c loaded automatically)
 # Layers:   common.yml → arch_native.yml → cachyos.yml → THIS FILE
 
-# No special hardware drivers needed — CachyOS handles kernel/modules
+# --- Hardware Packages ---
 host_packages: []
 host_aur_pkgs: []
 
-# Services specific to this host
+# --- Services ---
 host_services:
   - libvirtd                # KVM virtualization
 
 masked_services:
   - packagekit.service      # Conflicts with pacman
+
+# =========================================================================
+# PERFORMANCE TUNING
+# =========================================================================
+
+# CPU governor: 'performance' keeps all cores at max frequency.
+# Gamemode overrides this on-demand when gaming.
+cpu_governor: "performance"
+
+# --- Kernel Boot Parameters (appended via Limine drop-in) ---
+# preempt=full         : Full kernel preemption — lower scheduling latency
+# nmi_watchdog=0       : Disable NMI watchdog — frees a perf counter, fewer interrupts
+# tsc=reliable         : Trust TSC as clocksource — prevents clocksource switching
+# nowatchdog           : Disable soft lockup detector (already in base, kept for clarity)
+# processor.max_cstate=3   : Limit deep C-states — reduces wake latency (~100μs→~10μs)
+# intel_idle.max_cstate=3  : Same for Intel firmware-managed idle states
+# mitigations=off      : Disable CPU mitigations — +5-30% IPC (SECURITY: trusted HW only)
+kernel_params:
+  - "preempt=full"
+  - "nmi_watchdog=0"
+  - "tsc=reliable"
+  - "nowatchdog"
+  - "processor.max_cstate=3"
+  - "intel_idle.max_cstate=3"
+  - "mitigations=off"
+
+# --- Sysctl Tuning (deployed to /etc/sysctl.d/99-hft-tuning.conf) ---
+sysctl_tuning:
+  vm:
+    vm.swappiness: 10                          # From CachyOS default 150 — drastic reduction
+    vm.dirty_ratio: 20                         # Start writeback at 20% of RAM
+    vm.dirty_background_ratio: 5               # Background writeback at 5%
+    vm.max_map_count: 262144                   # For large address spaces / WINE
+    vm.nr_hugepages: 512                       # 1GB of 2MB huge pages for low-latency workloads
+    vm.hugetlb_shm_group: 1000                 # Allow 'users' group to use huge pages
+  kernel:
+    kernel.perf_event_paranoid: 0              # Allow userspace perf profiling
+    kernel.split_lock_detect: 0                # Already set by CachyOS, explicit for clarity
+    kernel.sched_autogroup_enabled: 0          # Disable autogroup — prevents latency spikes
+    kernel.watchdog: 0                         # Disable soft lockup detector
+  net:
+    net.core.busy_poll: 50                     # Busy-poll Rx for 50μs — reduces NIC latency
+    net.core.busy_read: 50                     # Busy-poll socket reads
+    net.core.netdev_max_backlog: 16384         # Increase Rx queue depth
+    net.core.rmem_max: 16777216                # 16MB socket receive buffer
+    net.core.wmem_max: 16777216                # 16MB socket send buffer
+    net.core.rmem_default: 1048576             # 1MB default Rx buffer
+    net.core.wmem_default: 1048576             # 1MB default Tx buffer
+    net.core.optmem_max: 65536                 # Increase socket option buffer
+    net.ipv4.tcp_low_latency: 1                # Prefer latency over throughput
+    net.ipv4.tcp_nodelay: 1                    # Disable Nagle's algorithm
+
+# --- SCX Scheduler ---
+scx_scheduler: "scx_lavd"      # Desktop/gaming balanced — good latency under mixed load

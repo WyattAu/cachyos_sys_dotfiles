@@ -19,20 +19,20 @@
 
   tasks:
     # ================================================================
-    # 1. ENVIRONMENT DETECTION (must run before any include_vars)
+    # 1. ENVIRONMENT DETECTION
     # ================================================================
     - name: Detect WSL
       set_fact:
         is_wsl: "{{ 'microsoft' in (ansible_facts['kernel'] | default('')) }}"
 
     - name: Detect CachyOS
-      stat:
-        path: /etc/cachyos-release
-      register: cachyos_release_check
+      ansible.builtin.shell: . /etc/os-release && echo "$ID"
+      register: os_id
+      changed_when: false
 
     - name: Set distro facts
       set_fact:
-        is_cachyos: "{{ cachyos_release_check.stat.exists }}"
+        is_cachyos: "{{ 'cachyos' in os_id.stdout }}"
 
     - name: Display environment
       debug:
@@ -40,6 +40,7 @@
           Host={{ ansible_facts['hostname'] }}
           WSL={{ is_wsl }}
           CachyOS={{ is_cachyos }}
+          Kernel={{ ansible_facts['kernel'] }}
 
     # ================================================================
     # 2. LOAD VARIABLES (4-layer inheritance)
@@ -247,7 +248,7 @@
       when: ansible_facts['hostname'] == "msi-z16"
 
     # ================================================================
-    # 10. NATIVE SYSTEM CONFIGURATION (groups, services)
+    # 10. NATIVE SYSTEM CONFIGURATION (groups, services, audio)
     # ================================================================
     - block:
         - name: Ensure User Groups Exist
@@ -313,6 +314,148 @@
               default.clock.min-quantum = 1024
               default.clock.max-quantum = 2048
               }
-          become: true
       when: not is_wsl
 
+    # ================================================================
+    # 11. PERFORMANCE TUNING: SYSCTL (native only)
+    # ================================================================
+    - name: Deploy sysctl tuning
+      ansible.builtin.template:
+        src: templates/99-hft-tuning.conf.j2
+        dest: /etc/sysctl.d/99-hft-tuning.conf
+        mode: "0644"
+      when:
+        - not is_wsl
+        - sysctl_tuning is defined
+      notify: Reload sysctl
+
+    # ================================================================
+    # 12. PERFORMANCE TUNING: CPU GOVERNOR (native only)
+    # ================================================================
+    - name: Configure CPU power governor
+      ansible.builtin.template:
+        src: templates/cpupower.conf.j2
+        dest: /etc/default/cpupower-service.conf
+        mode: "0644"
+      when:
+        - not is_wsl
+        - cpu_governor is defined
+
+    - name: Enable cpupower service
+      systemd:
+        name: cpupower
+        enabled: yes
+        state: started
+        daemon_reload: yes
+      when:
+        - not is_wsl
+        - cpu_governor is defined
+      ignore_errors: yes
+
+    # ================================================================
+    # 13. PERFORMANCE TUNING: SCX SCHEDULER (native only)
+    # ================================================================
+    - block:
+        - name: Create SCX scheduler override
+          copy:
+            dest: /etc/systemd/system/scx.service.d/override.conf
+            content: |
+              [Service]
+              ExecStart=
+              ExecStart=/usr/bin/scx_{{ scx_scheduler | default('lavd') }}
+              Restart=on-failure
+              RestartSec=5
+            mode: "0644"
+          when: scx_scheduler is defined
+
+        - name: Enable SCX scheduler
+          systemd:
+            name: scx
+            enabled: yes
+            daemon_reload: yes
+          when: scx_scheduler is defined
+          ignore_errors: yes
+      when: not is_wsl
+
+    # ================================================================
+    # 14. PERFORMANCE TUNING: NVMe I/O SCHEDULER (native only)
+    # ================================================================
+    - name: Install NVMe udev scheduler rule
+      copy:
+        src: templates/60-nvme-scheduler.rules
+        dest: /etc/udev/rules.d/60-nvme-scheduler.rules
+        mode: "0644"
+      when: not is_wsl
+      notify: Reload udev
+
+    # ================================================================
+    # 15. PERFORMANCE TUNING: KERNEL BOOT PARAMETERS (native only)
+    # Uses Limine's drop-in system: /etc/limine-entry-tool.d/*.conf
+    # After deployment, run: sudo limine-update (rebuilds limine.conf)
+    # ================================================================
+    - name: Deploy kernel parameter drop-in
+      ansible.builtin.template:
+        src: templates/99-hft-kernel.conf
+        dest: /etc/limine-entry-tool.d/99-hft-kernel.conf
+        mode: "0644"
+      when:
+        - not is_wsl
+        - kernel_params is defined
+
+    - name: Notify user to update bootloader
+      debug:
+        msg: >-
+          WARNING: Kernel parameters changed.
+          Run 'sudo limine-update' then reboot for boot params to take effect.
+      when:
+        - not is_wsl
+        - kernel_params is defined
+
+    # ================================================================
+    # 16. PERFORMANCE TUNING: HUGE PAGES (native only)
+    # ================================================================
+    - name: Configure huge pages via sysctl
+      ansible.builtin.sysctl:
+        name: vm.nr_hugepages
+        value: "{{ (sysctl_tuning.vm['vm.nr_hugepages'] | default(0)) | string }}"
+        sysctl_set: yes
+        sysctl_file: /etc/sysctl.d/99-hft-tuning.conf
+      when:
+        - not is_wsl
+        - sysctl_tuning is defined
+        - sysctl_tuning.vm is defined
+        - sysctl_tuning.vm['vm.nr_hugepages'] is defined
+        - sysctl_tuning.vm['vm.nr_hugepages'] > 0
+      ignore_errors: yes
+
+    # ================================================================
+    # 17. PERFORMANCE TUNING: SECURITY LIMITS (native only)
+    # ================================================================
+    - block:
+        - name: Set performance event paranoid for profiling
+          ansible.builtin.sysctl:
+            name: kernel.perf_event_paranoid
+            value: "{{ (sysctl_tuning.kernel['kernel.perf_event_paranoid'] | default(1)) | string }}"
+            sysctl_set: yes
+            sysctl_file: /etc/sysctl.d/99-hft-tuning.conf
+          when: sysctl_tuning is defined and sysctl_tuning.kernel is defined
+          ignore_errors: yes
+
+        - name: Set file descriptor limits
+          ansible.builtin.template:
+            src: templates/99-perf-limits.conf
+            dest: /etc/security/limits.d/99-perf-limits.conf
+            mode: "0644"
+      when: not is_wsl
+
+  # ================================================================
+  # HANDLERS
+  # ================================================================
+  handlers:
+    - name: Reload sysctl
+      ansible.builtin.shell: sysctl --system
+      changed_when: false
+
+    - name: Reload udev
+      ansible.builtin.shell: udevadm control --reload-rules && udevadm trigger
+      changed_when: false

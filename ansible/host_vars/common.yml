@@ -44,6 +44,7 @@ common_packages:
   - clang
   - gdb
   - doxygen
+  - ccache
   - bun
   - pnpm
   - nodejs
@@ -54,6 +55,13 @@ common_packages:
   # Python
   - python-pip
   - python-setuptools
+
+  # Performance & Profiling
+  - perf
+  - bpftrace
+  - trace-cmd
+  - msr-tools
+  - cpupower
 
   # Graphics (baseline — works everywhere including WSLg)
   - mesa
@@ -69,7 +77,7 @@ common_aur_pkgs:
   - sublime-merge
   - localsend-bin
   - elan-bin
-  - ghq                     # Repository manager (was missing from package list)
+  - ghq                     # Repository manager
 
 # --- DETERMINISTIC DIRECTORY STRUCTURE ---
 dev_structure:
@@ -77,6 +85,7 @@ dev_structure:
   - dev/build               # Build artifacts
   - dev/sandbox             # Experiments / spikes
   - dev/scripts             # Personal scripts
+  - dev/benchmarks          # Performance benchmarks
 
 # --- GHQ ROOT ---
 ghq_root: "~/dev/src"

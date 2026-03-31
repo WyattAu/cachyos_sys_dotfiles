@@ -1,0 +1,45 @@
+# EditorConfig — cross-editor formatting consistency
+# https://editorconfig.org
+
+root = true
+
+# Default (Unix-style, UTF-8, trailing newline)
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# C/C++/Rust — 4 spaces
+[*.{c,h,cpp,hpp,cc,cxx,hxx,rs}]
+indent_size = 4
+
+# Python — PEP 8
+[*.py]
+indent_size = 4
+
+# Web/Config — 2 spaces
+[*.{json,yaml,yml,toml,html,css,scss,ts,tsx,jsx,xml}]
+indent_size = 2
+
+# Shell scripts — 2 spaces
+[*.sh]
+indent_size = 2
+
+# Makefiles require tabs
+[Makefile]
+indent_style = tab
+
+# Fish shell
+[*.fish]
+indent_size = 4
+
+# Lua
+[*.lua]
+indent_size = 4
+
+# Markdown — 2 spaces, no trailing whitespace
+[*.md]
+trim_trailing_whitespace = false

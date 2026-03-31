@@ -1,6 +1,8 @@
 # =========================================================================
 # HOST: wsl-dev — WSL2 Development Container
 # =========================================================================
+# WSL has no kernel control (Windows manages boot params, scheduler, etc.)
+# Only user-space tuning and packages are relevant here.
 # Layers: common.yml → THIS FILE (arch_native/arch_only/cachyos all skipped)
 
 host_packages:
@@ -15,3 +17,7 @@ host_services:
   - docker
 
 masked_services: []
+
+# --- No performance tuning for WSL ---
+# kernel_params, sysctl_tuning, cpu_governor, scx_scheduler are all ignored
+# because WSL has no control over the host kernel.

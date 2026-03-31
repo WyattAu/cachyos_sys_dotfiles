@@ -1,0 +1,14 @@
+# CPU Power Management (Ansible-managed — DO NOT EDIT BY HAND)
+# Sets the CPU frequency governor at boot.
+
+# Valid governors: performance, ondemand, powersave, conservative, userspace
+GOVERNOR='{{ cpu_governor | default("performance") }}'
+
+{% if cpu_min_freq is defined %}
+# Limit frequency range (optional)
+MIN_FREQ="{{ cpu_min_freq }}"
+{% endif %}
+
+{% if cpu_max_freq is defined %}
+MAX_FREQ="{{ cpu_max_freq }}"
+{% endif %}
