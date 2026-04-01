@@ -245,6 +245,14 @@
         group: "{{ user }}"
       loop: "{{ personal_structure | default([]) }}"
 
+    - name: Create Steam Symlink (Games/Steam -> ~/.local/share/Steam)
+      file:
+        src: "/home/{{ user }}/.local/share/Steam"
+        dest: "/home/{{ user }}/Games/Steam"
+        state: link
+        owner: "{{ user }}"
+        force: false
+
     - name: Configure GHQ Root Directory in Git
       git_config:
         name: ghq.root
@@ -392,20 +400,29 @@
     # ================================================================
     # 11. PERFORMANCE TUNING: SYSCTL (native only)
     # ================================================================
+    # Always deploy to ensure old overrides are cleared when removed from host_vars.
     - name: Deploy sysctl tuning
       ansible.builtin.template:
         src: templates/99-hft-tuning.conf.j2
         dest: /etc/sysctl.d/99-hft-tuning.conf
         mode: "0644"
-      when:
-        - not is_wsl
-        - sysctl_tuning is defined
+      when: not is_wsl
       notify: Reload sysctl
 
     # ================================================================
-    # 12. PERFORMANCE TUNING: CPU GOVERNOR (native only)
+    # 12. CPU GOVERNOR: managed by power-profiles-daemon
     # ================================================================
-    - name: Configure CPU power governor
+    # cpupower conflicts with power-profiles-daemon. Remove our override
+    # so power-profiles-daemon (balanced/performance/power-saver) controls it.
+    - name: Remove cpupower governor override (managed by power-profiles-daemon)
+      ansible.builtin.file:
+        path: /etc/default/cpupower-service.conf
+        state: absent
+      when:
+        - not is_wsl
+        - cpu_governor is not defined
+
+    - name: Configure CPU power governor (legacy, if explicitly set)
       ansible.builtin.template:
         src: templates/cpupower.conf.j2
         dest: /etc/default/cpupower-service.conf
@@ -474,25 +491,21 @@
     # ================================================================
     # 15. PERFORMANCE TUNING: KERNEL BOOT PARAMETERS (native only)
     # Uses Limine's drop-in system: /etc/limine-entry-tool.d/*.conf
-    # After deployment, run: sudo limine-update (rebuilds limine.conf)
+    # After deployment, limine-update rebuilds /boot/limine.conf automatically.
     # ================================================================
     - name: Deploy kernel parameter drop-in
       ansible.builtin.template:
         src: templates/99-hft-kernel.conf
         dest: /etc/limine-entry-tool.d/99-hft-kernel.conf
         mode: "0644"
-      when:
-        - not is_wsl
-        - kernel_params is defined
+      when: not is_wsl
 
-    - name: Notify user to update bootloader
-      debug:
-        msg: >-
-          WARNING: Kernel parameters changed.
-          Run 'sudo limine-update' then reboot for boot params to take effect.
+    - name: Rebuild Limine boot config
+      ansible.builtin.command: limine-update
       when:
         - not is_wsl
         - kernel_params is defined
+      changed_when: false
 
     # ================================================================
     # 16. PERFORMANCE TUNING: HUGE PAGES (native only)
@@ -509,6 +522,18 @@
         - sysctl_tuning.vm is defined
         - sysctl_tuning.vm['vm.nr_hugepages'] is defined
         - sysctl_tuning.vm['vm.nr_hugepages'] > 0
+      ignore_errors: yes
+
+    # Clear huge pages when not explicitly configured (frees reserved RAM)
+    - name: Clear huge pages reservation
+      ansible.builtin.sysctl:
+        name: vm.nr_hugepages
+        value: "0"
+        sysctl_set: yes
+        sysctl_file: /etc/sysctl.d/99-hft-tuning.conf
+      when:
+        - not is_wsl
+        - sysctl_tuning is not defined
       ignore_errors: yes
 
     # ================================================================

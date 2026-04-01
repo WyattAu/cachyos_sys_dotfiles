@@ -20,54 +20,17 @@ masked_services:
 # PERFORMANCE TUNING
 # =========================================================================
 
-# CPU governor: 'performance' keeps all cores at max frequency.
-# Gamemode overrides this on-demand when gaming.
-cpu_governor: "performance"
+# CPU governor: managed by power-profiles-daemon (balanced by default).
+# Use 'powerprofilesctl set performance' for temporary boost.
+# Do NOT set cpu_governor — it conflicts with power-profiles-daemon.
 
 # --- Kernel Boot Parameters (appended via Limine drop-in) ---
-# preempt=full         : Full kernel preemption — lower scheduling latency
-# nmi_watchdog=0       : Disable NMI watchdog — frees a perf counter, fewer interrupts
-# tsc=reliable         : Trust TSC as clocksource — prevents clocksource switching
-# nowatchdog           : Disable soft lockup detector (already in base, kept for clarity)
-# processor.max_cstate=3   : Limit deep C-states — reduces wake latency (~100μs→~10μs)
-# intel_idle.max_cstate=3  : Same for Intel firmware-managed idle states
-# mitigations=off      : Disable CPU mitigations — +5-30% IPC (SECURITY: trusted HW only)
+# Only mitigations=off — personal box, not internet-facing.
+# CachyOS handles zram, scheduler, and power management well by default.
 kernel_params:
-  - "preempt=full"
-  - "nmi_watchdog=0"
-  - "tsc=reliable"
-  - "nowatchdog"
-  - "processor.max_cstate=3"
-  - "intel_idle.max_cstate=3"
   - "mitigations=off"
 
-# --- Sysctl Tuning (deployed to /etc/sysctl.d/99-hft-tuning.conf) ---
-sysctl_tuning:
-  vm:
-    vm.swappiness: 10                          # From CachyOS default 150 — drastic reduction
-    vm.dirty_ratio: 20                         # Start writeback at 20% of RAM
-    vm.dirty_background_ratio: 5               # Background writeback at 5%
-    vm.max_map_count: 262144                   # For large address spaces / WINE
-    vm.nr_hugepages: 512                       # 1GB of 2MB huge pages for low-latency workloads
-    vm.hugetlb_shm_group: 1000                 # Allow 'users' group to use huge pages
-  kernel:
-    kernel.perf_event_paranoid: 0              # Allow userspace perf profiling
-    # split_lock_detect: not a sysctl on all kernels — skip
-    kernel.sched_autogroup_enabled: 0          # Disable autogroup — prevents latency spikes
-    kernel.watchdog: 0                         # Disable soft lockup detector
-  net:
-    net.core.busy_poll: 50                     # Busy-poll Rx for 50μs — reduces NIC latency
-    net.core.busy_read: 50                     # Busy-poll socket reads
-    net.core.netdev_max_backlog: 16384         # Increase Rx queue depth
-    net.core.rmem_max: 16777216                # 16MB socket receive buffer
-    net.core.wmem_max: 16777216                # 16MB socket send buffer
-    net.core.rmem_default: 1048576             # 1MB default Rx buffer
-    net.core.wmem_default: 1048576             # 1MB default Tx buffer
-    net.core.optmem_max: 65536                 # Increase socket option buffer
-    net.ipv4.tcp_low_latency: 1                # Prefer latency over throughput
-    # tcp_nodelay: not a sysctl — it's a per-socket option (set by apps)
-
-# --- SCX Scheduler ---
-# Handled by scx_loader --auto (D-Bus on-demand loader).
-# The loader auto-selects the best scheduler based on workload.
-# Override: /etc/systemd/system/scx_loader.service.d/override.conf
+# --- Sysctl Tuning ---
+# Removed — CachyOS defaults are optimal for zram-based desktop.
+# Previously set swappiness=10 which defeated zram compression.
+# power-profiles-daemon handles CPU governor dynamically.
