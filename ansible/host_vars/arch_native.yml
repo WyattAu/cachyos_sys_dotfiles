@@ -84,6 +84,7 @@ native_aur_pkgs:
   - ksshaskpass
 
   # Browsers
+  - brave-bin
   - floorp-bin
   - zen-browser-bin
   - tor-browser-bin
