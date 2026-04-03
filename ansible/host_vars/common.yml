@@ -67,6 +67,9 @@ common_packages:
   - docker
   - docker-compose             # Docker Compose v2 (provides `docker compose` subcommand)
 
+  # Flatpak
+  - flatpak
+
   # Graphics (baseline — works everywhere including WSLg)
   - mesa
   - mesa-utils

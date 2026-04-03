@@ -160,6 +160,11 @@
       become: true
       become_user: "{{ user }}"
 
+    - name: Ensure Flathub remote is configured
+      ansible.builtin.shell: >
+        flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+      changed_when: false
+
     # ================================================================
     # 6. MANAGEMENT SCRIPTS
     # ================================================================
