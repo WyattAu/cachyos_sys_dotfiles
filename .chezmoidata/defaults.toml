@@ -4,3 +4,11 @@
 email = "wyatt_au@protonmail.com"
 name = "WyattAu"
 ghq_root = "~/dev/src"
+
+# ProtonVPN defaults
+vpn_protocol = "wireguard"        # wireguard | openvpn
+vpn_killswitch = true             # Block traffic if VPN disconnects
+vpn_split_tunneling = true        # Route only specified apps through VPN (can be toggled in GUI)
+vpn_dns = true                    # Use ProtonVPN DNS (blocks ads/malware with NetShield)
+vpn_auto_connect = false          # Connect on app launch (false = manual)
+vpn_secure_core = false           # Route through privacy-friendly countries (slower)

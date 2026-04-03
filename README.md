@@ -67,6 +67,7 @@ chezmoi/                          # Repo root (~/.local/share/chezmoi)
 │   ├── heroic/config.json.tmpl  # Epic/GOG launcher
 │   ├── lutris/system.yml.tmpl   # Game launcher
 │   ├── ownCloud/owncloud.cfg  # OCIS sync client
+│   ├── protonvpn/README.md.tmpl # VPN preference reference (templated)
 │   └── electron-flags.conf.tmpl, element-desktop-flags.conf.tmpl,
 │       signal-desktop-flags.conf.tmpl, whatsapp-for-linux-flags.conf.tmpl  # Wayland
 │
@@ -266,6 +267,56 @@ The playbook creates two directory trees:
 
 All three are installed by the playbook as the actual user (not root), with idempotency guards — they only install once.
 
+## VPN (ProtonVPN)
+
+ProtonVPN is installed on all native Linux hosts (excluded on WSL). The stack includes:
+
+| Component | Package | Source | Purpose |
+|-----------|---------|--------|---------|
+| CLI | `proton-vpn-cli` | Official repos | Core VPN control (connect, disconnect, server lists) |
+| Daemon | `proton-vpn-daemon` | Official repos | System service, manages split tunneling |
+| GUI | `proton-vpn-qt-app` | AUR | Qt frontend, KDE-native dark theme, system tray |
+| Keyring | `gnome-keyring` | Official repos | Credential storage (works with KWallet) |
+
+**Default settings** (from `.chezmoidata/defaults.toml`):
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| Protocol | WireGuard | Faster, modern protocol |
+| Kill Switch | On | Blocks all traffic if VPN drops |
+| Split Tunneling | On | Only specified apps route through VPN (toggleable in GUI) |
+| DNS | On | ProtonVPN DNS with NetShield ad-blocker |
+| Auto-Connect | Off | Manual connection on launch |
+| Secure Core | Off | Route through privacy-friendly countries (slower) |
+
+**Split tunneling** is enabled by default but can be toggled off in the GUI at any time. When on, only apps you explicitly add go through the VPN — useful for keeping gaming traffic direct while routing browsers through the VPN.
+
+### First-Run Setup
+
+1. Open `proton_vpn_qt` from the application menu
+2. Sign in with your Proton account (interactive, stored in keyring)
+3. Configure split tunneling apps if desired (Settings → Split Tunneling)
+4. All other settings match the defaults above — adjust in the GUI as needed
+
+### CLI Usage
+
+```bash
+protonvpn c            # Connect to fastest server
+protonvpn c -p wireguard  # Connect with specific protocol
+protonvpn c US         # Connect to specific country
+protonvpn d            # Disconnect
+protonvpn s            # Show status
+```
+
+### Per-Host VPN Overrides
+
+Add to `~/.config/chezmoi/chezmoi.toml` on any machine:
+
+```toml
+vpn_protocol = "openvpn"
+vpn_split_tunneling = false
+```
+
 ## Shell Setup
 
 **Primary shell:** Fish (`~/.config/fish/config.fish`)
@@ -295,6 +346,7 @@ Key aliases:
 | Gaming stack | Full (Steam, Heroic, Lutris, RetroArch) | None |
 | Desktop configs | KDE/Plasma, MangoHud, RetroArch | Excluded via `.chezmoiignore.tmpl` |
 | Docker | Full (daemon + compose + Portainer) | Full (daemon + compose) |
+| VPN (ProtonVPN) | Full (CLI + GUI + daemon) | None |
 | Nix | Installed (multi-user daemon) | Skipped |
 
 ## First-Time Setup (Fresh Machine)
@@ -318,6 +370,7 @@ owncloudclient  # Connect to ocis.wyattau.com, configure sync folders
 books            # Calibre → set library path to ~/Library/Books
 zotero           # Set data dir to ~/Library/Papers
 heroic           # Connect Epic + GOG accounts
+proton_vpn_qt    # Sign in with Proton account, configure split tunneling
 ```
 
 Steps 1-4 take ~10 minutes. Step 5 takes ~15 minutes. After that, the system is fully configured.
@@ -342,6 +395,8 @@ save        # Capture dotfile changes, commit, push to GitHub
 | New movie | Drop in `~/Media/Movies/` | OCIS syncs |
 | New app (CLI) | Add to `common_packages` or `native_packages` → `sys-sync` | System package |
 | New app (GUI) | Add to `native_aur_pkgs` → `sys-sync` | AUR package |
+| New app (system) | Add to `native_packages` → `sys-sync` | System package |
+| VPN settings | Edit `.chezmoidata/defaults.toml` → `chezmoi apply` | `~/.config/protonvpn/` |
 | New host | Create `<hostname>.yml` in `host_vars/` → `sys-sync` | Host vars |
 | New sysctl | Add to `sysctl_tuning` in host vars → `sys-sync` | `/etc/sysctl.d/` |
 | New boot param | Add to `kernel_params` in host vars → `limine-update && reboot` | `/boot/limine.conf` |
@@ -367,6 +422,7 @@ If the new machine needs custom hardware or tuning, create a new `<hostname>.yml
 | Portainer not starting | Check `docker ps -a` — the compose file is at `~/dev/docker/portainer-compose.yml` |
 | Steam games not at `~/Games/Steam/` | The symlink is created on first Fish launch. Run `fish` then check `ls ~/Games/Steam` |
 | OCIS sync not working | Run `owncloudclient` → add account → `ocis.wyattau.com` → configure folder pairs |
+| ProtonVPN won't connect | Ensure `gnome-keyring` is running; check `protonvpn s` for status; verify `NetworkManager` is active |
 
 ## Repository
 

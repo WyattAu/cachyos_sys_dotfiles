@@ -38,6 +38,9 @@ native_packages:
   - bluez
   - bluez-utils
   - cups
+  - gnome-keyring            # Required by ProtonVPN for credential storage
+  - proton-vpn-cli          # Official ProtonVPN CLI (core VPN control)
+  - proton-vpn-daemon       # ProtonVPN system daemon (split tunneling service)
 
   # Sound
   - pipewire
@@ -102,6 +105,9 @@ native_aur_pkgs:
   - owncloud-client         # Desktop sync to OCIS (ocis.wyattau.com)
   - pika-backup
   - visual-studio-code-bin
+
+  # VPN
+  - proton-vpn-qt-app       # Qt GUI frontend for ProtonVPN CLI (KDE-native)
 
 # --- NATIVE SERVICES (started on all bare-metal hosts) ---
 native_services:

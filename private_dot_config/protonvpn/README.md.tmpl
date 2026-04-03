@@ -1,0 +1,70 @@
+# ProtonVPN Configuration Reference
+
+This directory stores ProtonVPN preference templates. The official ProtonVPN Linux
+GUI and CLI manage most settings internally via the `proton-vpn-daemon`, so these
+files serve as **declarative defaults** and a reference for your VPN setup.
+
+## Templated Preferences (from chezmoi)
+
+| Preference | Value | How to Change |
+|-----------|-------|---------------|
+| Protocol | {{ .vpn_protocol }} | GUI: Settings → Protocol, or CLI: `protonvpn c -p {{ .vpn_protocol }}` |
+| Kill Switch | {{ .vpn_killswitch }} | GUI: Settings → Kill Switch toggle |
+| Split Tunneling | {{ .vpn_split_tunneling }} | GUI: Settings → Split Tunneling (toggle on/off) |
+| Custom DNS | {{ .vpn_dns }} | GUI: Settings → DNS (NetShield ad-blocker) |
+| Auto-Connect | {{ .vpn_auto_connect }} | GUI: Settings → Auto-Connect |
+| Secure Core | {{ .vpn_secure_core }} | GUI: Settings → Secure Core toggle |
+
+## Per-Host Overrides
+
+Edit `~/.config/chezmoi/chezmoi.toml` on any machine to override:
+
+```toml
+[vpn]
+vpn_protocol = "openvpn"       # Switch to OpenVPN
+vpn_split_tunneling = false    # Disable split tunneling
+vpn_auto_connect = true        # Auto-connect on launch
+```
+
+Then run `chezmoi apply` to update this file.
+
+## Split Tunneling
+
+When enabled (default: {{ .vpn_split_tunneling }}), only apps added to the split
+tunneling list route through VPN. All other traffic goes direct.
+
+**To add/remove apps:** GUI → Settings → Split Tunneling → Add/Remove apps
+
+This is useful for:
+- Routing browsers through VPN while keeping gaming traffic direct
+- Using ProtonVPN for specific work apps only
+
+## CLI Quick Reference
+
+```bash
+# Connect to fastest server
+protonvpn c
+
+# Connect with specific protocol
+protonvpn c -p {{ .vpn_protocol }}
+
+# Connect to specific country
+protonvpn c US
+
+# Disconnect
+protonvpn d
+
+# Show connection status
+protonvpn s
+
+# List available servers
+protonvpn cc
+
+# Reconnect (same server)
+protonvpn r
+```
+
+## Keyring Notes
+
+ProtonVPN stores credentials in `gnome-keyring` (also works with KDE's KWallet).
+First login is interactive: open the GUI app and sign in with your Proton account.
