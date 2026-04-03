@@ -101,6 +101,7 @@ native_aur_pkgs:
   # Gaming
   - protonup-qt
   - steam-rom-manager       # Manage ROMs for Steam
+  - theclicker              # Auto clicker (Wayland + X11, uinput/evdev)
 
   # Sync & Safety
   - owncloud-client         # Desktop sync to OCIS (ocis.wyattau.com)
