@@ -11,11 +11,14 @@ chezmoi re-add \
   ~/.config/kitty/kitty.conf \
   ~/.config/nvim/init.lua \
   ~/.config/starship.toml \
-  ~/.config/kdeglobals \
   ~/.config/kwinrc \
   ~/.config/plasmashellrc \
   ~/.config/kglobalshortcutsrc \
   > /dev/null 2>&1 || true
+
+# NOTE: kdeglobals is intentionally excluded from re-add.
+# KDE's config write replaces ColorScheme=BreezeDark with just a hash,
+# and drops widgetStyle/[Icons] entirely. Re-adding would overwrite our fix.
 
 # 2. Stage and commit if there are changes
 if [[ -n $(git status -s) ]]; then
