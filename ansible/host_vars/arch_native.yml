@@ -15,6 +15,7 @@ native_packages:
 
   # Browsers & Media Players
   - firefox
+  - brave-bin
   - vlc
   - obs-studio
   - mpv
