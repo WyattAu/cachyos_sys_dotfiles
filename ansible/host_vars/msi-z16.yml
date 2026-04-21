@@ -24,7 +24,6 @@ host_aur_pkgs:
   - envycontrol
   - mcontrolcenter-git
   - msi-ec-dkms-git
-  - scx-git
   - whitesur-icon-theme-git
   - moe-theme-git
   - openrgb-git
@@ -45,6 +44,10 @@ masked_services:
 
 # CPU governor: managed by power-profiles-daemon (balanced by default).
 # Use 'powerprofilesctl set performance' when plugged in.
+
+# GPU: defaults to NVIDIA via envycontrol.
+# After first sys-sync, run: envycontrol -s nvidia && reboot
+# Switch to iGPU for battery: envycontrol -s integrated && reboot
 
 # --- Kernel Boot Parameters ---
 # Only hardware-specific params — no HFT-inspired tuning.
