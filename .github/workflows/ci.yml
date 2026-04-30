@@ -16,7 +16,7 @@ jobs:
       - name: Install dependencies
         run: |
           pacman -Syu --noconfirm
-          pacman -S --noconfirm git ansible python python-jinja2 python-yaml shellcheck
+          pacman -S --noconfirm git ansible shellcheck
 
       - name: Checkout
         uses: actions/checkout@v4
