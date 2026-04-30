@@ -83,9 +83,9 @@ jobs:
         run: |
           errors=0
           for tmpl in $(find . -name '*.tmpl' -not -path './.git/*' | sort); do
-            if ! chezmoi execute-template < "$tmpl" >/dev/null 2>&1; then
+            if ! chezmoi execute-template --source . < "$tmpl" >/dev/null 2>&1; then
               echo "FAIL: $tmpl"
-              chezmoi execute-template < "$tmpl" 2>&1
+              chezmoi execute-template --source . < "$tmpl" 2>&1
               errors=$((errors + 1))
             else
               echo "PASS: $(echo $tmpl | sed 's|^\./||')"
