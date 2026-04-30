@@ -16,7 +16,7 @@ jobs:
       - name: Install dependencies
         run: |
           pacman -Syu --noconfirm
-          pacman -S --noconfirm git ansible python python-pip shellcheck
+          pacman -S --noconfirm git ansible python python-jinja2 python-yaml shellcheck
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -51,7 +51,6 @@ jobs:
       # --- Jinja2 templates ---
       - name: Jinja2 template validation
         run: |
-          pip install jinja2
           python3 -c "
           from jinja2 import Environment, FileSystemLoader, StrictUndefined
           import os
@@ -99,7 +98,6 @@ jobs:
       # --- YAML validation ---
       - name: YAML syntax validation
         run: |
-          pip install pyyaml
           python3 -c "
           import yaml, sys, os
 
