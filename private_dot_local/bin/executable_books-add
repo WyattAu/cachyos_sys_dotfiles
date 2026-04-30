@@ -1,0 +1,55 @@
+#!/bin/bash
+# books-add — Import books into Calibre-Web from the local machine
+#
+# Usage:
+#   books-add <file-or-directory> [file-or-directory ...]
+#   books-add ~/Downloads/newbook.epub
+#   books-add ~/Downloads/newbooks/
+#
+# The files are SCP'd to TrueNAS, copied into the container, imported via
+# calibredb, then cleaned up. No need to stop the container or use
+# Calibre desktop.
+
+set -euo pipefail
+
+CONTAINER="calibre-web"
+STAGING="/tmp/books-import"
+
+if [[ $# -eq 0 ]]; then
+    echo "Usage: books-add <file-or-directory> [...]"
+    echo "Import books into Calibre-Web on TrueNAS."
+    exit 1
+fi
+
+# Expand tilde and globs
+args=()
+for arg in "$@"; do
+    # Skip non-existent globs
+    # shellcheck disable=SC2086
+    for f in $arg; do
+        [[ -e "$f" ]] && args+=("$f")
+    done
+done
+
+if [[ ${#args[@]} -eq 0 ]]; then
+    echo "Error: No files found." >&2
+    exit 1
+fi
+
+# 1. Clean up any previous failed import on TrueNAS host
+ssh truenas "sudo rm -rf $STAGING && sudo mkdir -p $STAGING && sudo chown truenas_admin:truenas_admin $STAGING" >&2
+
+# 2. Copy files to TrueNAS host
+echo ">> Copying ${#args[@]} item(s) to TrueNAS..."
+scp -r "${args[@]}" truenas:"$STAGING/" >&2
+
+# 3. Copy from TrueNAS host into the container, then import
+echo ">> Importing into Calibre library..."
+ssh truenas '
+    sudo docker cp "'$STAGING'/".'" '$CONTAINER:/tmp/books-import/" 2>/dev/null
+    sudo docker exec '$CONTAINER' calibredb add /tmp/books-import/ --with-library /books 2>&1
+    sudo docker exec '$CONTAINER' rm -rf /tmp/books-import/
+    sudo rm -rf "'$STAGING'"
+' >&2
+
+echo ">> Done."

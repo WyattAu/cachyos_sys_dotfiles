@@ -52,6 +52,13 @@ common_packages:
   - libffi
   - rustup
 
+  # Formatters & Linters (used by conform.nvim)
+  - stylua                   # Lua
+  - ruff                     # Python (linter + formatter)
+  - shfmt                    # Shell
+  - taplo-cli                # TOML
+  - prettier                 # JS/TS/JSON/YAML/Markdown
+
   # Python
   - python-pip
   - python-setuptools
@@ -66,6 +73,9 @@ common_packages:
   # Docker
   - docker
   - docker-compose             # Docker Compose v2 (provides `docker compose` subcommand)
+
+  # Infrastructure as Code
+  - terraform
 
   # Flatpak
   - flatpak
@@ -95,9 +105,12 @@ dev_structure:
   - dev/benchmarks          # Performance benchmarks
   - dev/docker              # Docker compose files (Portainer, OCIS, etc.)
 
+ssh_structure:
+  - .ssh/sockets            # SSH ControlMaster sockets
+
 personal_structure:
   # --- Documents ---
-  - Documents/work          # Work / HFT related
+  - Documents/work          # Work projects
   - Documents/notes         # Notes, markdown, obsidian
   - Documents/pdfs          # Papers, manuals, whitepapers
   - Documents/receipts      # Purchase records, invoices

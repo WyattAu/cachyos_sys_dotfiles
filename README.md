@@ -24,7 +24,7 @@ Personal infrastructure-as-code for a multi-device Arch/CachyOS/WSL environment.
 ```
 chezmoi/                          # Repo root (~/.local/share/chezmoi)
 ├── ansible/                      # System provisioning (run as root via bootstrap.sh)
-│   ├── local.yml               # Main playbook (549 lines, 17 sections)
+│   ├── local.yml               # Main playbook (~620 lines, 17 sections)
 │   ├── ansible.cfg            # Ansible settings
 │   ├── files/                  # Static files deployed by Ansible
 │   │   └── portainer-compose.yml
@@ -66,7 +66,6 @@ chezmoi/                          # Repo root (~/.local/share/chezmoi)
 │   ├── retroarch/retroarch.cfg # Emulation frontend
 │   ├── heroic/config.json.tmpl  # Epic/GOG launcher
 │   ├── lutris/system.yml.tmpl   # Game launcher
-│   ├── ownCloud/owncloud.cfg  # OCIS sync client
 │   ├── protonvpn/README.md.tmpl # VPN preference reference (templated)
 │   └── electron-flags.conf.tmpl, element-desktop-flags.conf.tmpl,
 │       signal-desktop-flags.conf.tmpl, whatsapp-for-linux-flags.conf.tmpl  # Wayland
@@ -116,46 +115,26 @@ The playbook (`local.yml`) runs in this order:
 | 12. CPU Governor | Set frequency governor via cpupower | Native only |
 | 13. SCX Scheduler | Enable sched_ext scheduler loader | Native only |
 | 14. NVMe Scheduler | Set `none` scheduler for NVMe via udev | Native only |
-| 15. Kernel Params | Deploy Limine drop-in with boot parameters | Native only |
-| 16. Huge Pages | Pre-allocate 2MB huge pages | Native only |
+| 15. Kernel Params | Deploy boot parameters (Limine on CachyOS, GRUB on Arch) | Native only |
+| 16. Huge Pages | Pre-allocate 2MB huge pages (if configured per-host) | Native only |
 | 17. Security Limits | File descriptor and memlock limits | Native only |
 
 ## Performance Tuning
 
-### Kernel Boot Parameters (via Limine drop-in)
+### Kernel Boot Parameters
 
-Applied after `sudo limine-update && sudo reboot`:
+Per-host values defined in each `<hostname>.yml` file. CachyOS uses Limine drop-ins (auto-updated via `limine-update`). Vanilla Arch uses GRUB (`/etc/default/grub`, auto-updated via `grub-mkconfig`).
 
-| Parameter | Purpose | Effect |
-|-----------|---------|--------|
-| `preempt=full` | Full kernel preemption | Lower scheduling latency |
-| `nmi_watchdog=0` | Disable NMI watchdog | Frees perf counter |
-| `tsc=reliable` | Trust TSC clocksource | Prevents clocksource switching |
-| `processor.max_cstate=3` | Limit deep C-states | Reduces wake latency (~100μs → ~10μs) |
-| `intel_idle.max_cstate=3` | Intel firmware C-state limit | Same as above |
-| `mitigations=off` | Disable CPU mitigations | +5-30% IPC (trusted hardware only) |
+| Host | Parameters | Purpose |
+|------|-----------|---------|
+| Acer Desktop (CachyOS) | `mitigations=off` | +5-30% IPC (personal box, not internet-facing) |
+| MSI Laptop (Arch) | `amdgpu.ppfeaturemask=0xffffffff`, `ibt=off` | Unlock AMD GPU overclocking, disable IBT for gaming perf |
 
-Per-host values defined in each `<hostname>.yml` file. The MSI laptop uses `amdgpu.ppfeaturemask=0xffffffff` instead of Intel C-state controls.
+All other CachyOS defaults are optimal — no additional sysctl tuning or CPU governor overrides needed. `power-profiles-daemon` manages CPU frequency (balanced = powersave governor, allows turbo boost).
 
-### Sysctl Tuning (deployed to `/etc/sysctl.d/99-hft-tuning.conf`)
+### Sysctl Tuning
 
-| Category | Parameter | Value (Desktop) | Value (Laptop) |
-|----------|-----------|------------------|----------------|
-| VM | `vm.swappiness` | 10 | 30 |
-| VM | `vm.dirty_ratio` | 20 | 20 |
-| VM | `vm.nr_hugepages` | 512 (1GB) | 256 (512MB) |
-| Kernel | `perf_event_paranoid` | 0 | 0 |
-| Kernel | `sched_autogroup_enabled` | 0 | 0 |
-| Net | `net.core.busy_poll` | 50μs | 50μs |
-| Net | `net.core.rmem_max` | 16MB | 16MB |
-| Net | `net.ipv4.tcp_low_latency` | 1 | 1 |
-
-### CPU Governor
-
-| Host | Governor | Rationale |
-|------|----------|------------|
-| Acer Desktop | `performance` | All cores maxed. Gamemode overrides on-demand. |
-| MSI Laptop | `ondemand` | Battery-friendly. Use `performance` when plugged in. |
+The playbook deploys `/etc/sysctl.d/99-hft-tuning.conf` on every run (even if empty, to clear stale values from previous configs). Per-host values are defined in `sysctl_tuning` in each `<hostname>.yml`.
 
 ### I/O Scheduler
 
@@ -164,10 +143,6 @@ All NVMe devices → `none` scheduler (no-op). Managed via udev rule.
 ### SCX Scheduler
 
 `sched_ext` scheduler via `scx_loader --auto` (D-Bus on-demand). Auto-selects the best scheduler based on workload. Enabled on all native hosts.
-
-### Huge Pages
-
-Pre-allocated at boot via sysctl. Desktop: 512 pages (1GB), Laptop: 256 pages (512MB). Used for low-latency shared memory and memory-mapped data structures.
 
 ## Directory Structure
 
@@ -190,7 +165,7 @@ The playbook creates two directory trees:
 ```
 ~/
 ├── Documents/
-│   ├── work/          # Work / HFT related
+│   ├── work/          # Work projects
 │   ├── notes/         # Notes, markdown
 │   ├── pdfs/          # Papers, manuals, whitepapers
 │   ├── receipts/      # Purchase records, invoices
@@ -239,7 +214,7 @@ The playbook creates two directory trees:
 |------|-----------|--------|
 | Calibre | `~/Library/Books/` | First launch: `books` → set library path |
 | Zotero | `~/Library/Papers/` | First launch: `zotero` → set data directory |
-| OCIS | Syncs to `ocis.wyattau.com` | `~/.config/ownCloud/owncloud.cfg` |
+| OCIS | Syncs to `ocis.wyattau.com` | `~/.config/ownCloud/owncloud.cfg` (runtime — not managed by chezmoi) |
 
 **How to add a book:** Drop PDF → `books` → add to Calibre → OCIS syncs to server.
 **How to add a paper:** Download PDF → `zotero` → import → OCIS syncs to server.
@@ -341,8 +316,8 @@ Key aliases:
 
 | Feature | Native (Arch/CachyOS) | WSL |
 |--------|--------------------------|-----|
-| Kernel params | Managed (Limine drop-in) | Windows controls kernel |
-| Performance tuning | Full (sysctl, governor, SCX, hugepages) | None |
+| Kernel params | Managed (Limine on CachyOS, GRUB on Arch) | Windows controls kernel |
+| Performance tuning | Kernel params, SCX scheduler | None |
 | Gaming stack | Full (Steam, Heroic, Lutris, RetroArch) | None |
 | Desktop configs | KDE/Plasma, MangoHud, RetroArch | Excluded via `.chezmoiignore.tmpl` |
 | Docker | Full (daemon + compose + Portainer) | Full (daemon + compose) |
@@ -352,18 +327,16 @@ Key aliases:
 ## First-Time Setup (Fresh Machine)
 
 ```bash
-# 1. Install OS and log in
+# 1. Install Arch (or CachyOS), create user, log in
 
-# 2. Install git and clone repo
-sudo pacman -S git
-git clone https://github.com/WyattAu/cachyos_sys_dotfiles.git ~/.local/share/chezmoi
+# 2. One-liner bootstrap (installs git, ansible, paru, clones repo, provisions system)
+curl -sSf https://raw.githubusercontent.com/WyattAu/cachyos_sys_dotfiles/master/scripts/bootstrap.sh | sudo bash
 
-# 3. Bootstrap (installs packages, configs, performance tuning, containers)
-sudo ~/.local/share/chezmoi/scripts/bootstrap.sh
-
-# 4. Reboot (activates kernel params, huge pages, governor, SCX)
-sudo limine-update
+# 3. Reboot (activates kernel params if any are configured for this host)
 sudo reboot
+
+# 4. Add SSH public key to GitHub and TrueNAS (if bootstrap generated a new key)
+cat ~/.ssh/id_ed25519.pub
 
 # 5. One-time app setup (post-reboot)
 owncloudclient  # Connect to ocis.wyattau.com, configure sync folders
@@ -373,7 +346,16 @@ heroic           # Connect Epic + GOG accounts
 proton_vpn_qt    # Sign in with Proton account, configure split tunneling
 ```
 
-Steps 1-4 take ~10 minutes. Step 5 takes ~15 minutes. After that, the system is fully configured.
+Steps 1-2 take ~10 minutes. Step 3-4 are one-time. Step 5 takes ~15 minutes. After that, the system is fully configured.
+
+**What the bootstrap does automatically:**
+- Installs `git`, `ansible`, `base-devel` (if missing)
+- Installs `paru` AUR helper from source (if missing)
+- Clones this repo to `~/.local/share/chezmoi/` (if missing)
+- Generates an ed25519 SSH key (if missing)
+- Installs Ansible collections (`community.general`, `kewlfft.aur`, `community.docker`)
+- Runs the full playbook (packages, toolchains, directories, configs, services, containers)
+- Applies all chezmoi dotfiles (shell, editor, terminal, gaming, desktop configs)
 
 ## Daily Operations
 
@@ -399,25 +381,24 @@ save        # Capture dotfile changes, commit, push to GitHub
 | VPN settings | Edit `.chezmoidata/defaults.toml` → `chezmoi apply` | `~/.config/protonvpn/` |
 | New host | Create `<hostname>.yml` in `host_vars/` → `sys-sync` | Host vars |
 | New sysctl | Add to `sysctl_tuning` in host vars → `sys-sync` | `/etc/sysctl.d/` |
-| New boot param | Add to `kernel_params` in host vars → `limine-update && reboot` | `/boot/limine.conf` |
+| New boot param | Add to `kernel_params` in host vars → `sys-sync` (GRUB updates automatically) | `/etc/default/grub` or `/boot/limine.conf` |
 
 ## Adding a New Machine
 
 ```bash
-# 1. Install OS
-# 2. git clone repo to ~/.local/share/chezmoi
-# 3. sudo bootstrap.sh
-# 4. Done — everything replicated automatically
+# 1. Install Arch (or CachyOS), create user, log in
+# 2. curl -sSf https://raw.githubusercontent.com/WyattAu/cachyos_sys_dotfiles/master/scripts/bootstrap.sh | sudo bash
+# 3. Reboot. Done — everything provisioned automatically.
 ```
 
-If the new machine needs custom hardware or tuning, create a new `<hostname>.yml` in `ansible/host_vars/` before running `bootstrap.sh`.
+If the new machine needs custom hardware or tuning, create a new `<hostname>.yml` in `ansible/host_vars/` and set the hostname (`hostnamectl set-hostname <name>`) before running the bootstrap.
 
 ## Troubleshooting
 
 | Issue | Fix |
 |-------|-----|
 | `sys-sync` fails with Ansible errors | Check that `bootstrap.sh` installed required collections (`community.general`, `kewlfft.aur`, `community.docker`) |
-| Performance tuning not applied after reboot | Run `sudo limine-update` then reboot — kernel params only apply after bootloader update |
+| Performance tuning not applied after reboot | CachyOS: run `sudo limine-update` then reboot. Arch: kernel params are set via GRUB automatically. |
 | `sys-sync` alias not found | The alias is defined in Fish's interactive block. Use `/home/<user>/.local/share/chezmoi/scripts/sys-sync` directly, or open a new Fish shell |
 | Portainer not starting | Check `docker ps -a` — the compose file is at `~/dev/docker/portainer-compose.yml` |
 | Steam games not at `~/Games/Steam/` | The symlink is created on first Fish launch. Run `fish` then check `ls ~/Games/Steam` |

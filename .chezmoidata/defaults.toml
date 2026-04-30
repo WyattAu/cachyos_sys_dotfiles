@@ -12,3 +12,12 @@ vpn_split_tunneling = true        # Route only specified apps through VPN (can b
 vpn_dns = true                    # Use ProtonVPN DNS (blocks ads/malware with NetShield)
 vpn_auto_connect = false          # Connect on app launch (false = manual)
 vpn_secure_core = false           # Route through privacy-friendly countries (slower)
+
+# SSH defaults
+truenas_ip = "192.168.1.3"
+forgejo_ssh_host = "ssh.wyattau.com"
+cloudflared_path = "~/.local/bin/cloudflared"
+
+# OCIS
+ocis_url = "https://ocis.wyattau.com"
+ocis_sync_root = "~/ownCloud"
