@@ -2,25 +2,31 @@
 set -e
 cd ~/.local/share/chezmoi
 
-# 1. Re-add only the specific managed configs (NEVER blanket-re-add directories)
-#    Add new files explicitly: chezmoi add ~/.config/<app>/config-file
+# Re-add all managed files that differ between source and target.
+# This captures any on-machine edits to dotfiles, configs, and Neovim plugins.
+#
+# kdeglobals is excluded: KDE replaces ColorScheme names with hashes and
+# drops widgetStyle/[Icons] on write. Re-adding would overwrite our fix.
 echo ">> Syncing managed dotfiles..."
-chezmoi re-add \
-  ~/.config/fish/config.fish \
-  ~/.config/fish/functions/__ghq_fzf_repo.fish \
-  ~/.config/kitty/kitty.conf \
-  ~/.config/nvim/init.lua \
-  ~/.config/starship.toml \
-  ~/.config/kwinrc \
-  ~/.config/plasmashellrc \
-  ~/.config/kglobalshortcutsrc \
-  > /dev/null 2>&1 || true
 
-# NOTE: kdeglobals is intentionally excluded from re-add.
-# KDE's config write replaces ColorScheme=BreezeDark with just a hash,
-# and drops widgetStyle/[Icons] entirely. Re-adding would overwrite our fix.
+# Build exclude list (files that drift due to application behavior)
+EXCLUDE_PATTERNS="kdeglobals"
 
-# 2. Stage and commit if there are changes
+# Get all managed files, filter out excludes, re-add
+chezmoi managed --include=files 2>/dev/null | while read -r file; do
+  skip=false
+  for pattern in $EXCLUDE_PATTERNS; do
+    if echo "$file" | grep -q "$pattern"; then
+      skip=true
+      break
+    fi
+  done
+  if [ "$skip" = false ]; then
+    chezmoi re-add "$file" > /dev/null 2>&1 || true
+  fi
+done
+
+# Stage and commit if there are changes
 if [[ -n $(git status -s) ]]; then
     MSG="${1:-Auto-save $(date +'%Y-%m-%d %H:%M')}"
     git add .

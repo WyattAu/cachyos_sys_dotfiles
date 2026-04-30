@@ -24,7 +24,7 @@ Personal infrastructure-as-code for a multi-device Arch/CachyOS/WSL environment.
 ```
 chezmoi/                          # Repo root (~/.local/share/chezmoi)
 ├── ansible/                      # System provisioning (run as root via bootstrap.sh)
-│   ├── local.yml               # Main playbook (~620 lines, 17 sections)
+│   ├── local.yml               # Main playbook (~630 lines, 17 sections)
 │   ├── ansible.cfg            # Ansible settings
 │   ├── files/                  # Static files deployed by Ansible
 │   │   └── portainer-compose.yml
@@ -54,8 +54,19 @@ chezmoi/                          # Repo root (~/.local/share/chezmoi)
 │   │   └── functions/__ghq_fzf_repo.fish
 │   ├── kitty/                 # Terminal
 │   │   └── kitty.conf.tmpl
-│   ├── nvim/                  # Editor
-│   │   └── init.lua
+│   ├── nvim/                  # Editor (modular lua/ architecture)
+│   │   ├── init.lua            # Entry: lazy.nvim bootstrap + require options/autocmds
+│   │   └── lua/
+│   │       ├── options.lua     # Settings, keymaps, diagnostic keymaps
+│   │       ├── autocmds.lua    # Yank highlight, cursorline, resize, q-to-close
+│   │       └── plugins/        # 36 lazy.nvim plugins
+│   │           ├── lsp.lua     # LSP: clangd, rust-analyzer, lean4, pyright, gopls, lua_ls, +5
+│   │           ├── cmp.lua     # Completion: nvim-cmp + LuaSnip + lspkind
+│   │           ├── dap.lua     # Debug: gdb (C/C++), rust, python, go/delve
+│   │           ├── conform.lua # Format-on-save: 14 formatters
+│   │           ├── treesitter.lua  # Syntax + textobjects
+│   │           ├── telescope.lua   # Fuzzy finder + LSP integration
+│   │           └── ...          # colorscheme, gitsigns, which-key, lean, utils
 │   ├── starship.toml          # Prompt
 │   ├── gitconfig.tmpl         # Git credentials (templated per-host)
 │   ├── editorconfig           # Cross-editor formatting
@@ -67,8 +78,9 @@ chezmoi/                          # Repo root (~/.local/share/chezmoi)
 │   ├── heroic/config.json.tmpl  # Epic/GOG launcher
 │   ├── lutris/system.yml.tmpl   # Game launcher
 │   ├── protonvpn/README.md.tmpl # VPN preference reference (templated)
-│   └── electron-flags.conf.tmpl, element-desktop-flags.conf.tmpl,
-│       signal-desktop-flags.conf.tmpl, whatsapp-for-linux-flags.conf.tmpl  # Wayland
+│   ├── ssh/config.tmpl          # SSH: ControlMaster, TrueNAS/Forgejo/GitHub hosts
+│   ├── electron-flags.conf.tmpl, element-desktop-flags.conf.tmpl,
+│   ├── signal-desktop-flags.conf.tmpl, whatsapp-for-linux-flags.conf.tmpl  # Wayland
 │
 ├── .chezmoidata/defaults.toml  # Chezmoi template variables
 ├── .chezmoiignore.tmpl       # Platform-conditional exclusions
@@ -112,7 +124,7 @@ The playbook (`local.yml`) runs in this order:
 | 10. System Config | Groups, services, PipeWire audio | Native only |
 | 10b. Container Infra | Portainer via docker compose | Native only |
 | 11. Sysctl Tuning | VM, kernel, network performance parameters | Native only |
-| 12. CPU Governor | Set frequency governor via cpupower | Native only |
+| 12. CPU Governor | Remove cpupower override (power-profiles-daemon manages it) | Native only |
 | 13. SCX Scheduler | Enable sched_ext scheduler loader | Native only |
 | 14. NVMe Scheduler | Set `none` scheduler for NVMe via udev | Native only |
 | 15. Kernel Params | Deploy boot parameters (Limine on CachyOS, GRUB on Arch) | Native only |

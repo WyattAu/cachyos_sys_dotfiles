@@ -248,7 +248,7 @@
         mode: "0755"
         owner: "{{ user }}"
         group: "{{ user }}"
-       loop: "{{ personal_structure | default([]) }}"
+      loop: "{{ personal_structure | default([]) }}"
 
     - name: Create SSH directories
       file:
@@ -502,66 +502,66 @@
       when: not is_wsl
       notify: Reload udev
 
-     # ================================================================
-     # 15. PERFORMANCE TUNING: KERNEL BOOT PARAMETERS (native only)
-     # CachyOS uses Limine (drop-in at /etc/limine-entry-tool.d/)
-     # Vanilla Arch uses GRUB (/etc/default/grub)
-     # ================================================================
+    # ================================================================
+    # 15. PERFORMANCE TUNING: KERNEL BOOT PARAMETERS (native only)
+    # CachyOS uses Limine (drop-in at /etc/limine-entry-tool.d/)
+    # Vanilla Arch uses GRUB (/etc/default/grub)
+    # ================================================================
 
-     # --- CachyOS: Limine drop-in ---
-     - name: Deploy kernel parameter drop-in (Limine / CachyOS)
-       ansible.builtin.template:
-         src: templates/99-hft-kernel.conf
-         dest: /etc/limine-entry-tool.d/99-hft-kernel.conf
-         mode: "0644"
-       when:
-         - not is_wsl
-         - is_cachyos
+    # --- CachyOS: Limine drop-in ---
+    - name: Deploy kernel parameter drop-in (Limine / CachyOS)
+      ansible.builtin.template:
+        src: templates/99-hft-kernel.conf
+        dest: /etc/limine-entry-tool.d/99-hft-kernel.conf
+        mode: "0644"
+      when:
+        - not is_wsl
+        - is_cachyos
 
-     - name: Rebuild Limine boot config
-       ansible.builtin.command: limine-update
-       when:
-         - not is_wsl
-         - is_cachyos
-         - kernel_params is defined
-       changed_when: false
+    - name: Rebuild Limine boot config
+      ansible.builtin.command: limine-update
+      when:
+        - not is_wsl
+        - is_cachyos
+        - kernel_params is defined
+      changed_when: false
 
-      # --- Vanilla Arch: GRUB default cmdline ---
-      # Idempotent: strips any existing instances of our params before re-appending.
-      # Safe to run on every sys-sync without doubling params.
-      - name: Ensure kernel parameters in GRUB config (Arch, idempotent)
-        ansible.builtin.shell: |
-          CURRENT=$(grep -oP '^GRUB_CMDLINE_LINUX_DEFAULT="\K[^"]+' /etc/default/grub 2>/dev/null || echo "")
-          # Remove any of our params that are already present (match by key before =)
-          for PARAM in {{ kernel_params | join(' ') }}; do
-            KEY="${PARAM%%=*}"
-            CURRENT=$(echo "$CURRENT" | sed "s/${KEY}=[^ ]*//g")
-          done
-          # Trim whitespace, append our params, trim again
-          CURRENT=$(echo "$CURRENT" | xargs)
-          FINAL="${CURRENT} {{ kernel_params | join(' ') }}"
-          FINAL=$(echo "$FINAL" | xargs)
-          # Only write if different (idempotent)
-          EXISTING=$(grep -oP '^GRUB_CMDLINE_LINUX_DEFAULT="\K[^"]+' /etc/default/grub 2>/dev/null || echo "")
-          if [ "$FINAL" != "$EXISTING" ]; then
-            sed -i "s|^GRUB_CMDLINE_LINUX_DEFAULT=.*|GRUB_CMDLINE_LINUX_DEFAULT=\"${FINAL}\"|" /etc/default/grub
-            echo "CHANGED"
-          fi
-        register: grub_updated
-        changed_when: "'CHANGED' in grub_updated.stdout"
-        when:
-          - not is_wsl
-          - not is_cachyos
-          - kernel_params is defined
+    # --- Vanilla Arch: GRUB default cmdline ---
+    # Idempotent: strips any existing instances of our params before re-appending.
+    # Safe to run on every sys-sync without doubling params.
+    - name: Ensure kernel parameters in GRUB config (Arch, idempotent)
+      ansible.builtin.shell: |
+        CURRENT=$(grep -oP '^GRUB_CMDLINE_LINUX_DEFAULT="\K[^"]+' /etc/default/grub 2>/dev/null || echo "")
+        # Remove any of our params that are already present (match by key before =)
+        for PARAM in {{ kernel_params | join(' ') }}; do
+          KEY="${PARAM%%=*}"
+          CURRENT=$(echo "$CURRENT" | sed "s/${KEY}=[^ ]*//g")
+        done
+        # Trim whitespace, append our params, trim again
+        CURRENT=$(echo "$CURRENT" | xargs)
+        FINAL="${CURRENT} {{ kernel_params | join(' ') }}"
+        FINAL=$(echo "$FINAL" | xargs)
+        # Only write if different (idempotent)
+        EXISTING=$(grep -oP '^GRUB_CMDLINE_LINUX_DEFAULT="\K[^"]+' /etc/default/grub 2>/dev/null || echo "")
+        if [ "$FINAL" != "$EXISTING" ]; then
+          sed -i "s|^GRUB_CMDLINE_LINUX_DEFAULT=.*|GRUB_CMDLINE_LINUX_DEFAULT=\"${FINAL}\"|" /etc/default/grub
+          echo "CHANGED"
+        fi
+      register: grub_updated
+      changed_when: "'CHANGED' in grub_updated.stdout"
+      when:
+        - not is_wsl
+        - not is_cachyos
+        - kernel_params is defined
 
-      - name: Rebuild GRUB config
-        ansible.builtin.command: grub-mkconfig -o /boot/grub/grub.cfg
-        when:
-          - not is_wsl
-          - not is_cachyos
-          - kernel_params is defined
-          - grub_updated is changed
-        changed_when: false
+    - name: Rebuild GRUB config
+      ansible.builtin.command: grub-mkconfig -o /boot/grub/grub.cfg
+      when:
+        - not is_wsl
+        - not is_cachyos
+        - kernel_params is defined
+        - grub_updated is changed
+      changed_when: false
 
     # ================================================================
     # 16. PERFORMANCE TUNING: HUGE PAGES (native only)
