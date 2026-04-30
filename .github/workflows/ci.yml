@@ -93,7 +93,7 @@ jobs:
           done
           echo ""
           echo "Chezmoi templates: $errors errors"
-          [ "$errors" -gt 0 ] && exit 1
+          if [ "$errors" -gt 0 ]; then exit 1; fi
 
       # --- YAML validation ---
       - name: YAML syntax validation
