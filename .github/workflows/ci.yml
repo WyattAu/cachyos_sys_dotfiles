@@ -1,0 +1,167 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  lint:
+    name: Lint & Validate
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+
+    steps:
+      - name: Install dependencies
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm git ansible python python-pip shellcheck
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # --- Ansible ---
+      - name: Ansible playbook syntax check
+        run: |
+          cd ansible
+          ansible-playbook local.yml --syntax-check -i localhost,
+
+      # --- Shell scripts ---
+      - name: Shell syntax check (bash -n)
+        run: |
+          for script in scripts/*.sh; do
+            echo "Checking $script..."
+            bash -n "$script"
+          done
+          echo "All shell scripts pass syntax check."
+
+      - name: ShellCheck static analysis
+        run: |
+          for script in scripts/*.sh; do
+            echo "Linting $script..."
+            shellcheck --severity=warning "$script"
+          done
+          echo "All shell scripts pass ShellCheck."
+
+      # --- Jinja2 templates ---
+      - name: Jinja2 template validation
+        run: |
+          pip install jinja2
+          python3 -c "
+          from jinja2 import Environment, FileSystemLoader, StrictUndefined
+          import os
+
+          env = Environment(
+              loader=FileSystemLoader('ansible/templates'),
+              undefined=StrictUndefined,
+              trim_blocks=True,
+              lstrip_blocks=True,
+          )
+
+          templates = os.listdir('ansible/templates')
+          errors = 0
+          for t in sorted(templates):
+              try:
+                  env.parse(env.loader.get_source(env, t)[0])
+                  print(f'PASS: {t}')
+              except Exception as e:
+                  print(f'FAIL: {t}: {e}')
+                  errors += 1
+          print(f'\nJinja2 templates: {errors} errors out of {len(templates)}')
+          exit(1 if errors > 0 else 0)
+          "
+
+      # --- Chezmoi templates ---
+      - name: Install chezmoi
+        run: pacman -S --noconfirm chezmoi
+
+      - name: Chezmoi template validation
+        run: |
+          errors=0
+          for tmpl in $(find . -name '*.tmpl' -not -path './.git/*' | sort); do
+            if ! chezmoi execute-template < "$tmpl" >/dev/null 2>&1; then
+              echo "FAIL: $tmpl"
+              chezmoi execute-template < "$tmpl" 2>&1
+              errors=$((errors + 1))
+            else
+              echo "PASS: $(echo $tmpl | sed 's|^\./||')"
+            fi
+          done
+          echo ""
+          echo "Chezmoi templates: $errors errors"
+          exit 1 if [ "$errors" -gt 0 ]; then exit 0; fi
+
+      # --- YAML validation ---
+      - name: YAML syntax validation
+        run: |
+          pip install pyyaml
+          python3 -c "
+          import yaml, sys, os
+
+          errors = 0
+          for root, dirs, files in os.walk('.'):
+              # Skip .git
+              if '.git' in root:
+                  continue
+              for f in files:
+                  if f.endswith(('.yml', '.yaml')):
+                      path = os.path.join(root, f)
+                      try:
+                          with open(path) as fh:
+                              yaml.safe_load(fh)
+                          print(f'PASS: {path}')
+                      except Exception as e:
+                          print(f'FAIL: {path}: {e}')
+                          errors += 1
+          print(f'\nYAML files: {errors} errors')
+          sys.exit(1 if errors > 0 else 0)
+          "
+
+      # --- Cross-reference: README files exist ---
+      - name: Verify README file references exist
+        run: |
+          errors=0
+          # Extract file paths referenced in README architecture tree
+          grep -oP '(?<=chezmoi/)[^\s`|]+' README.md | while read -r f; do
+            if [ ! -f "$f" ]; then
+              echo "MISSING: $f"
+              errors=$((errors + 1))
+            fi
+          done
+          if [ "$errors" -gt 0 ]; then
+            echo "README references $errors missing files"
+            exit 1
+          fi
+          echo "All README file references exist."
+
+      # --- Host vars consistency ---
+      - name: Verify host_vars variable consistency
+        run: |
+          python3 -c "
+          import yaml, os, sys
+
+          # Expected variable keys per layer
+          expected = {
+              'common.yml': ['common_packages', 'common_aur_pkgs'],
+              'arch_native.yml': ['native_packages', 'native_aur_pkgs', 'native_services'],
+              'arch_only.yml': ['arch_only_packages', 'arch_only_aur_pkgs', 'arch_only_services'],
+              'cachyos.yml': ['cachyos_packages', 'cachyos_aur_pkgs', 'cachyos_services'],
+          }
+
+          errors = 0
+          hostdir = 'ansible/host_vars'
+          for fname, keys in expected.items():
+              path = os.path.join(hostdir, fname)
+              if os.path.exists(path):
+                  with open(path) as f:
+                      data = yaml.safe_load(f)
+                  for key in keys:
+                      if key not in data:
+                          print(f'WARN: {fname} missing {key}')
+              else:
+                  print(f'MISSING: {fname}')
+                  errors += 1
+
+          sys.exit(1 if errors > 0 else 0)
+          "

@@ -28,6 +28,7 @@ common_packages:
   - unarchiver
   - wget
   - curl
+  - shellcheck
   - man-db
   - lazygit
   - dunst

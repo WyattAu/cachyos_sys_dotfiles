@@ -118,11 +118,8 @@ return {
       },
     })
 
-    -- Lean 4
-    lspconfig.lean4.setup({
-      capabilities = capabilities,
-      -- lean.nvim handles its own setup, but this is the fallback
-    })
+    -- Lean 4: handled entirely by lean.nvim plugin (lua/plugins/lean.lua).
+    -- Do NOT configure here — lean4 is not in lspconfig's registry.
 
     -- Lua (neodev for vim api)
     lspconfig.lua_ls.setup({

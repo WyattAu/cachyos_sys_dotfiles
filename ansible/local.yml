@@ -327,6 +327,14 @@
             groups: docker,libvirt,gamemode,input,video
             append: yes
 
+        - name: Enable Common Services (Layer 1)
+          systemd:
+            name: "{{ item }}"
+            enabled: yes
+            state: started
+          loop: "{{ common_services | default([]) }}"
+          ignore_errors: yes
+
         - name: Enable Native Services (Layer 2)
           systemd:
             name: "{{ item }}"
