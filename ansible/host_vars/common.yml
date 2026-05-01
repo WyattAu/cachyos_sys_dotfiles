@@ -29,6 +29,7 @@ common_packages:
   - wget
   - curl
   - shellcheck
+  - ventoy-bin
   - man-db
   - lazygit
   - dunst
