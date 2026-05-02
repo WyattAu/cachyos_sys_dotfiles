@@ -138,6 +138,13 @@
     # ================================================================
     # 5. PACKAGE INSTALLATION (merged from all layers)
     # ================================================================
+    - name: Remove AUR packages superseded by native repos
+      community.general.pacman:
+        name:
+          - heroic-games-launcher-bin
+        state: absent
+      ignore_errors: true
+
     - name: Install System Packages
       community.general.pacman:
         name: >-
