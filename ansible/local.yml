@@ -155,6 +155,20 @@
            + (host_packages | default([])) }}
         state: present
 
+    - name: Create temporary swap file for AUR builds
+      community.general.shell:
+        cmd: |
+          if [ ! -f /tmp/aur_build_swap ]; then
+            fallocate -l 4G /tmp/aur_build_swap
+            chmod 600 /tmp/aur_build_swap
+            mkswap /tmp/aur_build_swap
+            swapon /tmp/aur_build_swap
+            echo "Swap created"
+          else
+            echo "Swap already exists"
+          fi
+      changed_when: false
+
     - name: Install AUR Packages
       kewlfft.aur.aur:
         name: >-
@@ -164,8 +178,19 @@
            + (cachyos_aur_pkgs | default([]))
            + (host_aur_pkgs | default([])) }}
         use: paru
+        extra_args: --builddir /tmp/aur_build --makepkgconf '-j1'
       become: true
       become_user: "{{ user }}"
+
+    - name: Remove temporary swap file
+      community.general.shell:
+        cmd: |
+          if [ -f /tmp/aur_build_swap ]; then
+            swapoff /tmp/aur_build_swap
+            rm -f /tmp/aur_build_swap
+            echo "Swap removed"
+          fi
+      changed_when: false
 
     - name: Ensure Flathub remote is configured
       ansible.builtin.shell: >
