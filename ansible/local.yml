@@ -15,7 +15,7 @@
   become: true
 
   vars:
-    user: "{{ lookup('env', 'USER') }}"
+    user: "{{ lookup('env', 'SUDO_USER') | default(lookup('env', 'USER'), true) }}"
 
   tasks:
     # ================================================================
