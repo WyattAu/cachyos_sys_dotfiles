@@ -178,7 +178,7 @@
            + (cachyos_aur_pkgs | default([]))
            + (host_aur_pkgs | default([])) }}
         use: paru
-        extra_args: --builddir /tmp/aur_build --makepkgconf '-j1'
+        extra_args: "--clonedir /tmp/aur_build --mflags '-j1'"
       become: true
       become_user: "{{ user }}"
 
