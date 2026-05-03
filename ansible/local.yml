@@ -156,7 +156,7 @@
         state: present
 
     - name: Create temporary swap file for AUR builds
-      community.general.shell:
+      ansible.builtin.shell:
         cmd: |
           if [ ! -f /tmp/aur_build_swap ]; then
             fallocate -l 4G /tmp/aur_build_swap
@@ -183,7 +183,7 @@
       become_user: "{{ user }}"
 
     - name: Remove temporary swap file
-      community.general.shell:
+      ansible.builtin.shell:
         cmd: |
           if [ -f /tmp/aur_build_swap ]; then
             swapoff /tmp/aur_build_swap
