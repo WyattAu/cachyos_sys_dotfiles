@@ -159,7 +159,7 @@
       ansible.builtin.shell:
         cmd: |
           if [ ! -f /tmp/aur_build_swap ]; then
-            fallocate -l 4G /tmp/aur_build_swap
+            fallocate -l 8G /tmp/aur_build_swap
             chmod 600 /tmp/aur_build_swap
             mkswap /tmp/aur_build_swap
             swapon /tmp/aur_build_swap
@@ -169,18 +169,19 @@
           fi
       changed_when: false
 
-    - name: Install AUR Packages
+    - name: Install AUR Packages (one at a time to avoid OOM)
       kewlfft.aur.aur:
-        name: >-
-          {{ common_aur_pkgs
-           + (native_aur_pkgs | default([]))
-           + (arch_only_aur_pkgs | default([]))
-           + (cachyos_aur_pkgs | default([]))
-           + (host_aur_pkgs | default([])) }}
+        name: "{{ item }}"
         use: paru
         extra_args: "--clonedir /tmp/aur_build"
       become: true
       become_user: "{{ user }}"
+      loop: >-
+        {{ common_aur_pkgs
+         + (native_aur_pkgs | default([]))
+         + (arch_only_aur_pkgs | default([]))
+         + (cachyos_aur_pkgs | default([]))
+         + (host_aur_pkgs | default([])) }}
 
     - name: Remove temporary swap file
       ansible.builtin.shell:
