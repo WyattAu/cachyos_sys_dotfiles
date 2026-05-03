@@ -158,12 +158,12 @@
     - name: Create temporary swap file for AUR builds
       ansible.builtin.shell:
         cmd: |
-          if [ ! -f /tmp/aur_build_swap ]; then
-            fallocate -l 8G /tmp/aur_build_swap
-            chmod 600 /tmp/aur_build_swap
-            mkswap /tmp/aur_build_swap
-            swapon /tmp/aur_build_swap
-            echo "Swap created"
+          if [ ! -f /var/tmp/aur_build_swap ]; then
+            fallocate -l 8G /var/tmp/aur_build_swap
+            chmod 600 /var/tmp/aur_build_swap
+            mkswap /var/tmp/aur_build_swap
+            swapon /var/tmp/aur_build_swap
+            echo "Swap created at /var/tmp/aur_build_swap"
           else
             echo "Swap already exists"
           fi
@@ -173,7 +173,7 @@
       kewlfft.aur.aur:
         name: "{{ item }}"
         use: paru
-        extra_args: "--clonedir /tmp/aur_build"
+        extra_args: "--clonedir /var/tmp/aur_build"
       become: true
       become_user: "{{ user }}"
       loop: >-
@@ -186,9 +186,9 @@
     - name: Remove temporary swap file
       ansible.builtin.shell:
         cmd: |
-          if [ -f /tmp/aur_build_swap ]; then
-            swapoff /tmp/aur_build_swap
-            rm -f /tmp/aur_build_swap
+          if [ -f /var/tmp/aur_build_swap ]; then
+            swapoff /var/tmp/aur_build_swap
+            rm -f /var/tmp/aur_build_swap
             echo "Swap removed"
           fi
       changed_when: false
