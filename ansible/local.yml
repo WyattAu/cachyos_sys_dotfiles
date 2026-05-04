@@ -159,11 +159,12 @@
       ansible.builtin.shell:
         cmd: |
           if [ ! -f /var/tmp/aur_build_swap ]; then
-            fallocate -l 8G /var/tmp/aur_build_swap
+            truncate -s 8G /var/tmp/aur_build_swap
+            chattr +C /var/tmp/aur_build_swap 2>/dev/null || true
             chmod 600 /var/tmp/aur_build_swap
             mkswap /var/tmp/aur_build_swap
             swapon /var/tmp/aur_build_swap
-            echo "Swap created at /var/tmp/aur_build_swap"
+            echo "Swap created"
           else
             echo "Swap already exists"
           fi
