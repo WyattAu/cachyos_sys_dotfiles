@@ -122,18 +122,79 @@
         mode: "0440"
         validate: "visudo -cf %s"
 
+    - name: Add Chaotic-AUR keyring
+      ansible.builtin.shell: |
+        pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
+        pacman-key --lsign-key 3056513887B78AEB
+      changed_when: false
+
+    - name: Add Chaotic-AUR repository
+      ansible.builtin.blockinfile:
+        path: /etc/pacman.conf
+        block: |
+          [chaotic-aur]
+          Include = /etc/pacman.d/chaotic-mirrorlist
+        marker: "# {mark} ANSIBLE MANAGED: Chaotic-AUR"
+
+    - name: Install Chaotic-AUR keyring and mirrorlist
+      ansible.builtin.shell: |
+        if ! pacman -Q chaotic-keyring >/dev/null 2>&1; then
+          TMPDIR=$(mktemp -d)
+          curl -fsSL -o "$TMPDIR/chaotic-keyring.pkg.tar.zst" \
+            https://builds.garudalinux.org/repos/chaotic-aur/chaotic-keyring.pkg.tar.zst
+          curl -fsSL -o "$TMPDIR/chaotic-mirrorlist.pkg.tar.zst" \
+            https://builds.garudalinux.org/repos/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst
+          pacman -U --noconfirm "$TMPDIR/chaotic-keyring.pkg.tar.zst" "$TMPDIR/chaotic-mirrorlist.pkg.tar.zst"
+          rm -rf "$TMPDIR"
+          echo "INSTALLED"
+        else
+          echo "ALREADY_INSTALLED"
+        fi
+      register: chaotic_install
+      changed_when: "'INSTALLED' in chaotic_install.stdout"
+
     - name: Update System Repos
       community.general.pacman:
         update_cache: yes
         upgrade: yes
+
+    - name: Ensure /var/tmp/aur_build directory exists
+      ansible.builtin.file:
+        path: /var/tmp/aur_build
+        state: directory
+        mode: "0755"
+        owner: "{{ user }}"
+        group: "{{ user }}"
+
+    - name: Create temporary swap via loop device (btrfs-compatible)
+      ansible.builtin.shell:
+        cmd: |
+          if ! swapon --show=NAME --noheadings | grep -q '/dev/loop'; then
+            swapoff /dev/loop0 2>/dev/null || true
+            losetup -d /dev/loop0 2>/dev/null || true
+            rm -f /var/tmp/aur_build_swap.img
+            truncate -s 8G /var/tmp/aur_build_swap.img
+            losetup /dev/loop0 /var/tmp/aur_build_swap.img
+            mkswap /dev/loop0
+            swapon /dev/loop0
+            echo "Loop swap active on /dev/loop0"
+          else
+            echo "Swap already active"
+          fi
+      changed_when: false
 
     - name: Upgrade AUR Packages
       kewlfft.aur.aur:
         upgrade: yes
         use: paru
         aur_only: yes
+        extra_args: "--clonedir /var/tmp/aur_build --builddir /var/tmp/aur_build"
       become: true
       become_user: "{{ user }}"
+      ignore_errors: true
+      environment:
+        MAKEFLAGS: "-j4"
+        NINJAFLAGS: "-j4"
 
     # ================================================================
     # 5. PACKAGE INSTALLATION (merged from all layers)
@@ -155,28 +216,17 @@
            + (host_packages | default([])) }}
         state: present
 
-    - name: Create temporary swap file for AUR builds
-      ansible.builtin.shell:
-        cmd: |
-          if [ ! -f /var/tmp/aur_build_swap ]; then
-            truncate -s 8G /var/tmp/aur_build_swap
-            chattr +C /var/tmp/aur_build_swap 2>/dev/null || true
-            chmod 600 /var/tmp/aur_build_swap
-            mkswap /var/tmp/aur_build_swap
-            swapon /var/tmp/aur_build_swap
-            echo "Swap created"
-          else
-            echo "Swap already exists"
-          fi
-      changed_when: false
-
     - name: Install AUR Packages (one at a time to avoid OOM)
       kewlfft.aur.aur:
         name: "{{ item }}"
         use: paru
-        extra_args: "--clonedir /var/tmp/aur_build"
+        extra_args: "--clonedir /var/tmp/aur_build --builddir /var/tmp/aur_build"
       become: true
       become_user: "{{ user }}"
+      ignore_errors: true
+      environment:
+        MAKEFLAGS: "-j4"
+        NINJAFLAGS: "-j4"
       loop: >-
         {{ common_aur_pkgs
          + (native_aur_pkgs | default([]))
@@ -184,12 +234,13 @@
          + (cachyos_aur_pkgs | default([]))
          + (host_aur_pkgs | default([])) }}
 
-    - name: Remove temporary swap file
+    - name: Remove temporary swap (loop device)
       ansible.builtin.shell:
         cmd: |
-          if [ -f /var/tmp/aur_build_swap ]; then
-            swapoff /var/tmp/aur_build_swap
-            rm -f /var/tmp/aur_build_swap
+          if swapon --show=NAME --noheadings | grep -q '/dev/loop'; then
+            swapoff /dev/loop0 2>/dev/null || true
+            losetup -d /dev/loop0 2>/dev/null || true
+            rm -f /var/tmp/aur_build_swap.img
             echo "Swap removed"
           fi
       changed_when: false
@@ -299,7 +350,7 @@
         dest: "/home/{{ user }}/Games/Steam"
         state: link
         owner: "{{ user }}"
-        force: false
+        force: true
 
     - name: Configure GHQ Root Directory in Git
       git_config:
@@ -551,6 +602,15 @@
     # ================================================================
 
     # --- CachyOS: Limine drop-in ---
+    - name: Ensure Limine drop-in directory exists
+      ansible.builtin.file:
+        path: /etc/limine-entry-tool.d
+        state: directory
+        mode: "0755"
+      when:
+        - not is_wsl
+        - is_cachyos
+
     - name: Deploy kernel parameter drop-in (Limine / CachyOS)
       ansible.builtin.template:
         src: templates/99-hft-kernel.conf

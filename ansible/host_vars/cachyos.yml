@@ -7,11 +7,13 @@
 # =========================================================================
 
 # CachyOS-specific packages (not in standard Arch repos)
-cachyos_packages: []
+cachyos_packages:
+  - irqbalance
 
 # CachyOS-specific AUR packages
 cachyos_aur_pkgs: []
 
 # CachyOS-specific services
-# Note: ananicy-cpp, scx-scheds, irqbalance are handled by CachyOS internally
+# Note: ananicy-cpp, scx-scheds are handled by CachyOS internally
+# irqbalance is installed here because native_services enables it
 cachyos_services: []

@@ -91,10 +91,10 @@ common_packages:
   - vulkan-icd-loader
   - vulkan-swrast
   - libva
-  - librewolf
 
 # --- AUR PACKAGES (CLI only — safe on all platforms) ---
 common_aur_pkgs:
+  - librewolf
   - github-desktop-bin
   - sublime-merge
   - localsend-bin
