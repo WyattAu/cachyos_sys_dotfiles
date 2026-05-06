@@ -99,6 +99,7 @@ common_aur_pkgs:
   - sublime-merge
   - localsend-bin
   - elan-bin
+  - bitwarden-bin
   - ghq                     # Repository manager
 
 # --- DETERMINISTIC DIRECTORY STRUCTURE ---

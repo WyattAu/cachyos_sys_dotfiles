@@ -21,6 +21,23 @@
     # ================================================================
     # 1. ENVIRONMENT DETECTION
     # ================================================================
+    - name: Ensure correct hostname
+      ansible.builtin.hostname:
+        name: msi-z16
+      when: not is_wsl
+
+    - name: Set /etc/hostname
+      ansible.builtin.copy:
+        content: msi-z16
+        dest: /etc/hostname
+        mode: "0644"
+      when: not is_wsl
+
+    - name: Update hostname fact
+      set_fact:
+        ansible_facts: "{{ ansible_facts | combine({'hostname': 'msi-z16'}) }}"
+      when: not is_wsl
+
     - name: Detect WSL
       set_fact:
         is_wsl: "{{ 'microsoft' in (ansible_facts['kernel'] | default('')) }}"

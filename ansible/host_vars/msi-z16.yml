@@ -2,8 +2,8 @@
 # HOST: msi-z16 — MSI Creator Z16 Laptop
 # =========================================================================
 # Hardware: AMD Ryzen (scx-scheds), NVIDIA + iGPU hybrid, MSI EC
-# Distro:   Vanilla Arch Linux
-# Layers:   common.yml → arch_native.yml → arch_only.yml → THIS FILE
+# Distro:   CachyOS (was Vanilla Arch, reinstalled)
+# Layers:   common.yml → arch_native.yml → cachyos.yml → THIS FILE
 
 # --- Hardware Drivers & Peripherals ---
 host_packages:
