@@ -112,6 +112,9 @@ native_aur_pkgs:
   # VPN
   - proton-vpn-qt-app       # Qt GUI frontend for ProtonVPN CLI (KDE-native)
 
+  # Android
+  - android-udev             # Android device udev rules
+
 # --- NATIVE SERVICES (started on all bare-metal hosts) ---
 native_services:
   - NetworkManager

@@ -72,6 +72,9 @@ common_packages:
   - msr-tools
   - cpupower
 
+  # Android
+  - android-tools
+
   # Docker
   - docker
   - docker-compose             # Docker Compose v2 (provides `docker compose` subcommand)
