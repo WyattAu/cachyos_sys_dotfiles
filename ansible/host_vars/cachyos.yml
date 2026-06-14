@@ -9,6 +9,7 @@
 # CachyOS-specific packages (not in standard Arch repos)
 cachyos_packages:
   - irqbalance
+  - nodejs-lts-krypton
 
 # CachyOS-specific AUR packages
 cachyos_aur_pkgs: []

@@ -68,7 +68,7 @@ native_packages:
   - kdeconnect
   - filelight
   - gparted
-  - element
+  - element-desktop
 
   # Virtualization (KVM — unreliable inside WSL2)
   - qemu-full
@@ -78,6 +78,10 @@ native_packages:
   - vde2
   - openbsd-netcat
   - libguestfs
+
+  # System Info & Monitoring
+  - hardinfo2
+  - nvtop
 
 # --- NATIVE AUR PACKAGES (GUI / Heavy) ---
 native_aur_pkgs:

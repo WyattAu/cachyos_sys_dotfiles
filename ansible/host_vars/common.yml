@@ -29,6 +29,7 @@ common_packages:
   - wget
   - curl
   - shellcheck
+  - uv
   - ventoy-bin
   - man-db
   - lazygit
@@ -49,7 +50,6 @@ common_packages:
   - ccache
   - bun
   - pnpm
-  - nodejs
   - gmp
   - libffi
   - rustup
@@ -110,6 +110,8 @@ dev_structure:
   - dev/scripts             # Personal scripts
   - dev/benchmarks          # Performance benchmarks
   - dev/docker              # Docker compose files (Portainer, OCIS, etc.)
+  - dev/blender             # .blend project files
+  - dev/render              # Blender render output
 
 ssh_structure:
   - .ssh/sockets            # SSH ControlMaster sockets

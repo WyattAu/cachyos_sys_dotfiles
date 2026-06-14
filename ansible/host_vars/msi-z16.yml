@@ -6,37 +6,48 @@
 # Layers:   common.yml → arch_native.yml → cachyos.yml → THIS FILE
 
 # --- Hardware Drivers & Peripherals ---
+# NOTE: CachyOS provides NVIDIA via linux-cachyos-lts-nvidia-open (managed by
+# the kernel metapackage). Do NOT add nvidia-open-dkms here — it conflicts.
 host_packages:
-  - nvidia-open-dkms
   - nvidia-utils
   - nvidia-settings
   - libva-nvidia-driver
   - vulkan-tools
   - sof-firmware
   - alsa-tools
-  - scx-scheds
   - libfprint
   - fprintd
   - python-hidapi
   - python-setuptools
+  - blender
 
 host_aur_pkgs:
   - envycontrol
   - mcontrolcenter-git
   - msi-ec-dkms-git
   - whitesur-icon-theme-git
-  - moe-theme-git
   - openrgb-git
   - msi-perkeyrgb
 
 # --- Services ---
 host_services:
   - msi-audio.service
-  - mcontrolcenter-helper.service
   - libvirtd
 
 masked_services:
   - packagekit.service
+
+# --- Kernel Modules ---
+# msi_wmi conflicts with msi-ec on Creator Z16 — blacklist it so msi-ec
+# can handle Fn keys (brightness, RGB, fan mode, etc.)
+blacklisted_modules:
+  - msi_wmi
+  - msi_wmi_platform
+
+# msi-ec provides MSI Embedded Controller support (fan control, Fn keys,
+# battery thresholds). Must be loaded early for Fn+F5 (RGB) to work.
+loaded_modules:
+  - msi-ec
 
 # =========================================================================
 # PERFORMANCE TUNING

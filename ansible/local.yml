@@ -16,28 +16,24 @@
 
   vars:
     user: "{{ lookup('env', 'SUDO_USER') | default(lookup('env', 'USER'), true) }}"
+    arch_only_packages: []
+    arch_only_aur_pkgs: []
+    arch_only_services: []
+    cachyos_packages: []
+    cachyos_aur_pkgs: []
+    cachyos_services: []
+    host_packages: []
+    host_aur_pkgs: []
+    host_services: []
+    masked_services: []
+    dev_structure: []
+    personal_structure: []
+    ssh_structure: []
 
   tasks:
     # ================================================================
     # 1. ENVIRONMENT DETECTION
     # ================================================================
-    - name: Ensure correct hostname
-      ansible.builtin.hostname:
-        name: msi-z16
-      when: not is_wsl
-
-    - name: Set /etc/hostname
-      ansible.builtin.copy:
-        content: msi-z16
-        dest: /etc/hostname
-        mode: "0644"
-      when: not is_wsl
-
-    - name: Update hostname fact
-      set_fact:
-        ansible_facts: "{{ ansible_facts | combine({'hostname': 'msi-z16'}) }}"
-      when: not is_wsl
-
     - name: Detect WSL
       set_fact:
         is_wsl: "{{ 'microsoft' in (ansible_facts['kernel'] | default('')) }}"
@@ -103,8 +99,8 @@
           Wants=network-online.target
           [Service]
           Type=oneshot
-          User={{ user }}
-          ExecStart=/usr/bin/bash -c "/home/{{ user }}/.local/share/chezmoi/scripts/sys-sync"
+          Environment=SUDO_USER={{ user }}
+          ExecStart=/home/{{ user }}/.local/share/chezmoi/scripts/sys-sync
       when: not is_wsl
 
     - name: Create Auto-Update Timer
@@ -281,6 +277,26 @@
         - sys-sync
         - bootstrap.sh
 
+    - name: Ensure ~/.local/bin directory exists
+      file:
+        path: "/home/{{ user }}/.local/bin"
+        state: directory
+        mode: "0755"
+        owner: "{{ user }}"
+        group: "{{ user }}"
+
+    - name: Symlink scripts to ~/.local/bin for system-wide PATH access
+      file:
+        src: "/home/{{ user }}/.local/share/chezmoi/scripts/{{ item }}"
+        dest: "/home/{{ user }}/.local/bin/{{ item }}"
+        state: link
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        force: true
+      loop:
+        - sys-save
+        - sys-sync
+
     # ================================================================
     # 7. TOOLCHAINS (installed as the actual user, NOT root)
     # ================================================================
@@ -411,6 +427,29 @@
         - name: Reload systemd for new MSI units
           systemd:
             daemon_reload: yes
+
+        - name: Blacklist msi_wmi (conflicts with msi-ec on Creator Z16)
+          ansible.builtin.lineinfile:
+            path: /etc/modprobe.d/msi-z16.conf
+            line: "blacklist {{ item }}"
+            create: yes
+            mode: "0644"
+          loop: "{{ blacklisted_modules | default([]) }}"
+
+        - name: Load msi-ec at boot
+          ansible.builtin.lineinfile:
+            path: /etc/modules-load.d/msi-z16.conf
+            line: "{{ item }}"
+            create: yes
+            mode: "0644"
+          loop: "{{ loaded_modules | default([]) }}"
+
+        - name: Unload conflicting msi_wmi and load msi-ec
+          ansible.builtin.shell: |
+            modprobe -r msi_wmi_platform 2>/dev/null || true
+            modprobe -r msi_wmi 2>/dev/null || true
+            modprobe msi-ec 2>/dev/null || true
+          changed_when: false
       when: ansible_facts['hostname'] == "msi-z16"
 
     # ================================================================

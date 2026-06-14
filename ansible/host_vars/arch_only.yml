@@ -6,7 +6,8 @@
 
 # Packages that CachyOS provides via its own repos or pre-installs
 arch_only_packages:
-  - ananicy-cpp             # CachyOS bundles this; Arch needs it from AUR/official
+  - ananicy-cpp
+  - nodejs             # CachyOS bundles this; Arch needs it from AUR/official
 
 arch_only_aur_pkgs: []
 
