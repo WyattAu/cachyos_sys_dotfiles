@@ -592,6 +592,94 @@
       when: not is_wsl
 
     # ================================================================
+    # 10c. SECURITY, FONTS & MAINTENANCE (native only)
+    # ================================================================
+    - block:
+        - name: Install comprehensive font packages
+          community.general.pacman:
+            name:
+              - noto-fonts
+              - noto-fonts-cjk
+              - noto-fonts-emoji
+            state: present
+          ignore_errors: yes
+
+        - name: Install pika-backup
+          community.general.pacman:
+            name: pika-backup
+            state: present
+          ignore_errors: yes
+
+        - name: Install fail2ban
+          community.general.pacman:
+            name: fail2ban
+            state: present
+          ignore_errors: yes
+
+        - name: Enable fail2ban
+          systemd:
+            name: fail2ban
+            enabled: yes
+            state: started
+          ignore_errors: yes
+
+        - name: Disable SSH password authentication
+          ansible.builtin.lineinfile:
+            path: /etc/ssh/sshd_config
+            regexp: '^#?PasswordAuthentication'
+            line: 'PasswordAuthentication no'
+          notify: Restart sshd
+
+        - name: Disable SSH root login
+          ansible.builtin.lineinfile:
+            path: /etc/ssh/sshd_config
+            regexp: '^#?PermitRootLogin'
+            line: 'PermitRootLogin no'
+          notify: Restart sshd
+
+        - name: Open KDE Connect ports in firewalld
+          ansible.posix.firewalld:
+            port: "{{ item }}"
+            permanent: true
+            state: enabled
+          loop:
+            - "1714-1764/tcp"
+            - "1714-1764/udp"
+          ignore_errors: yes
+
+        - name: Enable paccache timer for pacman cache cleanup
+          ansible.builtin.copy:
+            dest: /etc/systemd/system/paccache.service
+            content: |
+              [Unit]
+              Description=Clean pacman cache
+              [Service]
+              Type=oneshot
+              ExecStart=/usr/bin/paccache -r
+            mode: "0644"
+
+        - name: Create paccache timer
+          ansible.builtin.copy:
+            dest: /etc/systemd/system/paccache.timer
+            content: |
+              [Unit]
+              Description=Clean pacman cache weekly
+              [Timer]
+              OnCalendar=weekly
+              Persistent=true
+              [Install]
+              WantedBy=timers.target
+            mode: "0644"
+
+        - name: Enable paccache timer
+          systemd:
+            name: paccache.timer
+            enabled: yes
+            state: started
+          ignore_errors: yes
+      when: not is_wsl
+
+    # ================================================================
     # 10b. CONTAINER INFRASTRUCTURE (native only)
     # ================================================================
     - block:
@@ -847,4 +935,9 @@
     - name: Restart nix-daemon
       ansible.builtin.systemd:
         name: nix-daemon
+        state: restarted
+
+    - name: Restart sshd
+      ansible.builtin.systemd:
+        name: sshd
         state: restarted

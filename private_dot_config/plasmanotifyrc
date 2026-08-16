@@ -1,0 +1,9 @@
+[General]
+HistorySize=100
+ShowPopups=true
+PopupPosition=3
+PopupTimeout=5000
+
+[LowPriority]
+ShowInNotificationArea=true
+ShowPopups=false

@@ -19,4 +19,9 @@ kwriteconfig6 --file kcminputrc --group Touchpad --key TapToClick true 2>/dev/nu
 kwriteconfig6 --file kcminputrc --group Touchpad --key XLbInptNaturalScroll true 2>/dev/null || true
 kwriteconfig6 --file kcminputrc --group Touchpad --key DisableWhileTyping true 2>/dev/null || true
 kwriteconfig6 --file kcminputrc --group Mouse --key XLbInptAccelProfileFlat true 2>/dev/null || true
+# KDE-native touchpad gestures (Plasma 6)
+kwriteconfig6 --file kcminputrc --group Touchpad --key DisableOnExternalMouse true 2>/dev/null || true
 {{- end }}
+
+# Bluetooth: keep adapter visible
+kwriteconfig6 --file bluedevilglobalrc --group General --key keepvisibility true 2>/dev/null || true

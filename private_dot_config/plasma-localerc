@@ -1,0 +1,2 @@
+[Formats]
+LANG={{ .system_locale }}

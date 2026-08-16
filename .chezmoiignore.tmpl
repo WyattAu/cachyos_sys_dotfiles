@@ -42,4 +42,19 @@ private_dot_config/protonvpn
 
 # Anti-drift scripts — only run on native KDE
 private_dot_local/share/chezmoi/run_onchange_kde-*.sh.tmpl
+
+# Additional WSL exclusions — no hardware/desktop on WSL
+private_dot_config/bluedevilglobalrc
+private_dot_config/kded5rc
+private_dot_config/kwinrulesrc
+private_dot_config/fontconfig
+private_dot_config/plasmanotifyrc
+private_dot_config/arkrc
+private_dot_config/alacritty
+private_dot_config/micro
+private_dot_config/pika-backup
+private_dot_config/plasma-localerc
+private_dot_config/user-dirs.dirs
+private_dot_config/user-dirs.locale
+private_dot_config/ktimezonedrc
 {{- end }}
