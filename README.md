@@ -16,7 +16,8 @@ Personal infrastructure-as-code for a multi-device Arch/CachyOS/WSL environment.
 | Hostname | Machine | OS | Layers Loaded |
 |----------|--------|----|---------------|
 | `wyattdeskacercachy` | Acer Desktop | CachyOS | common → arch_native → cachyos → host |
-| `msi-z16` | MSI Creator Z16 Laptop | Arch | common → arch_native → arch_only → host |
+| `msi-z16` | MSI Creator Z16 Laptop | CachyOS | common → arch_native → cachyos → host |
+| `msi-ge66` | MSI GE66 Raider Laptop | CachyOS | common → arch_native → cachyos → host |
 | `wsl-dev` | WSL2 Development | WSL (Arch) | common → host |
 
 ## Architecture
@@ -39,7 +40,8 @@ chezmoi/                          # Repo root (~/.local/share/chezmoi)
 │       ├── arch_native.yml      # All bare-metal Linux (Arch + CachyOS)
 │       ├── arch_only.yml       # Vanilla Arch only (conflicts with CachyOS)
 │       ├── cachyos.yml         # CachyOS-specific additions
-│       ├── msi-z16.yml         # MSI laptop overrides
+│       ├── msi-z16.yml         # MSI Creator Z16 laptop overrides
+│       ├── msi-ge66.yml        # MSI GE66 Raider laptop overrides
 │       ├── wyattdeskacercachy.yml  # Acer desktop overrides
 │       └── wsl-dev.yml        # WSL overrides
 │

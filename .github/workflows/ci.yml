@@ -38,7 +38,8 @@ jobs:
       # --- Shell scripts ---
       - name: Shell syntax check (bash -n)
         run: |
-          for script in scripts/*.sh; do
+          for script in scripts/*; do
+            [ -f "$script" ] || continue
             echo "Checking $script..."
             bash -n "$script"
           done
@@ -46,7 +47,8 @@ jobs:
 
       - name: ShellCheck static analysis
         run: |
-          for script in scripts/*.sh; do
+          for script in scripts/*; do
+            [ -f "$script" ] || continue
             echo "Linting $script..."
             shellcheck --severity=warning "$script"
           done
