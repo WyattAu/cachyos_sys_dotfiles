@@ -5,7 +5,7 @@ chezmoi update --apply=false
 
 echo ">> 2. Running system playbook..."
 cd ~/.local/share/chezmoi/ansible
-ansible-playbook local.yml -i localhost,
+sudo ansible-playbook local.yml -i localhost, --extra-vars "user=$USER"
 
 echo ">> 3. Applying user configs..."
 chezmoi apply --force
