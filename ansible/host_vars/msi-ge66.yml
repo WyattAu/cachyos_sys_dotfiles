@@ -1,0 +1,65 @@
+# =========================================================================
+# HOST: msi-ge66 — MSI GE66 Raider Laptop
+# =========================================================================
+# Hardware: Intel Core i9-11980HK, NVIDIA dGPU only (no hybrid iGPU)
+# Distro:   CachyOS
+# Layers:   common.yml → arch_native.yml → cachyos.yml → THIS FILE
+
+# --- Hardware Drivers & Peripherals ---
+host_packages:
+  - nvidia-utils
+  - nvidia-settings
+  - libva-nvidia-driver
+  - vulkan-tools
+  - sof-firmware
+  - alsa-tools
+  - libfprint
+  - fprintd
+  - python-hidapi
+  - python-setuptools
+  - blender
+
+host_aur_pkgs:
+  - envycontrol
+  - mcontrolcenter-git
+  - msi-ec-dkms-git
+  - whitesur-icon-theme-git
+  - openrgb-git
+  - msi-perkeyrgb
+
+# --- Services ---
+host_services:
+  - msi-audio.service
+  - libvirtd
+
+masked_services:
+  - packagekit.service
+
+# --- Kernel Modules ---
+# msi_wmi conflicts with msi-ec on MSI laptops — blacklist it so msi-ec
+# can handle Fn keys (brightness, RGB, fan mode, etc.)
+blacklisted_modules:
+  - msi_wmi
+  - msi_wmi_platform
+
+# msi-ec provides MSI Embedded Controller support (fan control, Fn keys,
+# battery thresholds). Must be loaded early for Fn+F5 (RGB) to work.
+loaded_modules:
+  - msi-ec
+
+# =========================================================================
+# PERFORMANCE TUNING
+# =========================================================================
+
+# CPU governor: managed by power-profiles-daemon (balanced by default).
+# Use 'powerprofilesctl set performance' when plugged in.
+
+# --- Kernel Boot Parameters ---
+# mitigations=off: +5-30% IPC (personal box, not internet-facing).
+# No amdgpu.ppfeaturemask needed — NVIDIA-only, no AMD iGPU.
+# No ibt=off needed — Intel 11th gen has no IBT issues.
+kernel_params:
+  - "mitigations=off"
+
+# --- Sysctl Tuning ---
+# Not defined — CachyOS defaults are optimal for laptop use.

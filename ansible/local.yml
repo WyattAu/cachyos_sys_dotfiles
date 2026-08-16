@@ -398,7 +398,7 @@
     # NOTE: Runs BEFORE service enablement so unit files exist.
     # ================================================================
 
-    # --- MSI Z16: Audio fix, service unit creation ---
+    # --- MSI Hardware Fixes: Audio, msi-ec, module blacklisting ---
     - block:
         - name: Create MSI Audio Fix Script
           copy:
@@ -428,17 +428,17 @@
           systemd:
             daemon_reload: yes
 
-        - name: Blacklist msi_wmi (conflicts with msi-ec on Creator Z16)
+        - name: Blacklist conflicting modules (msi_wmi vs msi-ec)
           ansible.builtin.lineinfile:
-            path: /etc/modprobe.d/msi-z16.conf
+            path: "/etc/modprobe.d/{{ ansible_facts['hostname'] }}.conf"
             line: "blacklist {{ item }}"
             create: yes
             mode: "0644"
           loop: "{{ blacklisted_modules | default([]) }}"
 
-        - name: Load msi-ec at boot
+        - name: Load required modules at boot
           ansible.builtin.lineinfile:
-            path: /etc/modules-load.d/msi-z16.conf
+            path: "/etc/modules-load.d/{{ ansible_facts['hostname'] }}.conf"
             line: "{{ item }}"
             create: yes
             mode: "0644"
@@ -450,7 +450,7 @@
             modprobe -r msi_wmi 2>/dev/null || true
             modprobe msi-ec 2>/dev/null || true
           changed_when: false
-      when: ansible_facts['hostname'] == "msi-z16"
+      when: blacklisted_modules is defined and blacklisted_modules | length > 0
 
     # ================================================================
     # 10. NATIVE SYSTEM CONFIGURATION (groups, services, audio)
