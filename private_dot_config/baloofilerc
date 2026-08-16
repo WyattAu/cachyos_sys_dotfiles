@@ -1,0 +1,8 @@
+[Basic Settings]
+Indexing Enabled=false
+
+[Filter]
+exclude filter=.git|*.o|*.pyc|__pycache__|node_modules|.cache|.local/share/Trash|*.tmp|*.swp|*.swo|*~
+exclude folders=$HOME/.cache|$HOME/.local/share/Trash|$HOME/dev/build|$HOME/dev/sandbox|$HOME/.cargo|$HOME/.rustup|$HOME/.elan|$HOME/nix
+exclude folders apart of=$HOME/dev/src|$HOME/Games|$HOME/Media|$HOME/Library
+max size=0

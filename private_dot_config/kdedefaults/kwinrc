@@ -1,0 +1,8 @@
+[Compositing]
+OpenGLIsUnsafe=false
+
+[Windows]
+BorderlessMaximizedWindows=true
+
+[Decoration]
+Theme=org.kde.breeze

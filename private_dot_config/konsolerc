@@ -1,0 +1,12 @@
+[General]
+DefaultProfile=profile.profile
+RememberWindowSize=false
+
+[Desktops]
+Number=1
+
+[TabBar]
+NewTabButton=true
+
+[UiSettings]
+ColorScheme=Breeze

@@ -1,0 +1,23 @@
+[General]
+DarkColorScheme=true
+
+[AC]
+LidCloseAction={{ if .is_laptop }}2{{ else }}0{{ end }}
+LidCloseScreen={{ if .is_laptop }}true{{ else }}false{{ end }}
+LidCloseLidAction={{ if .is_laptop }}2{{ else }}0{{ end }}
+
+[AC/HandleSystemSleepAfterResume]
+mode=0
+
+[AC/DisplayPowerSaving]
+idleTime=600
+idleAction=1
+
+[AC/SuspendSession]
+idleTime={{ if .is_laptop }}600{{ else }}0{{ end }}
+suspendType=4
+
+[AC/HandleButtonEvents]
+triggeredOnSessionDataRestore=false
+powerButtonAction=8
+powerDownAction=8

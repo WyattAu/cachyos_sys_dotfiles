@@ -1,0 +1,21 @@
+#!/bin/bash
+# Enforce Breeze Dark theme across all hosts
+# KDE mangles kdeglobals — kwriteconfig6 is deterministic
+
+# Theme
+kwriteconfig6 --file kdeglobals --group General --key ColorScheme "{{ .kde_color_scheme }}" 2>/dev/null || true
+kwriteconfig6 --file kdeglobals --group General --key LookAndFeelPackage "org.kde.breezedark.desktop" 2>/dev/null || true
+kwriteconfig6 --file kdeglobals --group KDE --key widgetStyle "{{ .kde_widget_style }}" 2>/dev/null || true
+kwriteconfig6 --file kdeglobals --group KDE --key AnimationDurationFactor "{{ .kde_animation_speed }}" 2>/dev/null || true
+kwriteconfig6 --file kdeglobals --group KDE --key contrast "{{ .kde_contrast }}" 2>/dev/null || true
+
+# Icons
+kwriteconfig6 --file kdeglobals --group Icons --key Theme "{{ .kde_icon_theme }}" 2>/dev/null || true
+
+# Cursor
+kwriteconfig6 --file kcminputrc --group Mouse --key XLbInptCursorTheme "{{ .kde_cursor_theme }}" 2>/dev/null || true
+kwriteconfig6 --file kcminputrc --group Mouse --key XLbInptCursorSize "{{ .kde_cursor_size }}" 2>/dev/null || true
+
+# Apply look-and-feel (sets cursor, color scheme, window decorations)
+plasma-apply-lookandfeel -a org.kde.breezedark.desktop 2>/dev/null || true
+plasma-apply-cursortheme --name "{{ .kde_cursor_theme }}" --size {{ .kde_cursor_size }} 2>/dev/null || true

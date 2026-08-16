@@ -1,0 +1,11 @@
+[Greeter]
+Theme=org.kde.breeze
+
+[General]
+Timeout=600
+LockOnResume=true
+AutolockTimeout=0
+
+[Appearance]
+ShowLogoutScreen=true
+ShowPasswordPlaceholder=true

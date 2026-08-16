@@ -1,10 +1,31 @@
 {{- /* Platform-conditional file exclusion */}}
 {{- if .chezmoi.kernel.osrelease | contains "microsoft" }}
 # KDE/Plasma configs — WSL doesn't run KDE
+private_dot_config/kdeglobals.tmpl
 private_dot_config/kdeglobals
+private_dot_config/kwinrc.tmpl
 private_dot_config/kwinrc
+private_dot_config/plasmashellrc.tmpl
 private_dot_config/plasmashellrc
 private_dot_config/private_kglobalshortcutsrc
+private_dot_config/kcminputrc.tmpl
+private_dot_config/kcminputrc
+private_dot_config/Trolltech.conf
+private_dot_config/dolphinrc
+private_dot_config/konsolerc
+private_dot_config/spectaclerc
+private_dot_config/krunnerrc
+private_dot_config/powerdevilrc.tmpl
+private_dot_config/kscreenlockerrc
+private_dot_config/klipperrc
+private_dot_config/baloofilerc
+private_dot_config/kdedefaults
+private_dot_config/environment.d
+
+# GTK integration — managed by KDE on native, not relevant on WSL
+private_dot_config/gtk-3.0
+private_dot_config/gtk-4.0
+private_dot_config/xsettingsd
 
 # Gaming — launchers not installed on WSL
 private_dot_config/MangoHud
@@ -18,4 +39,7 @@ private_dot_config/ownCloud
 
 # VPN — requires NetworkManager + system services (not available in WSL)
 private_dot_config/protonvpn
+
+# Anti-drift scripts — only run on native KDE
+private_dot_local/share/chezmoi/run_onchange_kde-*.sh.tmpl
 {{- end }}

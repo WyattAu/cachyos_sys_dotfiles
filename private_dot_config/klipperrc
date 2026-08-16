@@ -1,0 +1,6 @@
+[General]
+HistoryTimeLimit=10
+MaxClipboards=20
+
+[Filters]
+ExcludeConnectedApplications=false

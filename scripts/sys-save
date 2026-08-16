@@ -10,7 +10,11 @@ cd ~/.local/share/chezmoi
 echo ">> Syncing managed dotfiles..."
 
 # Build exclude list (files that drift due to application behavior)
-EXCLUDE_PATTERNS="kdeglobals"
+# kdeglobals: KDE replaces ColorScheme names with hashes and drops widgetStyle/[Icons] on write
+# plasmashellrc: Plasma adds migration entries to [Updates]/performed=
+# kconf_updaterc: KDE updates migration timestamps
+# plasma-org.kde.plasma.desktop-appletsrc: panel layout contains UUIDs
+EXCLUDE_PATTERNS="kdeglobals plasmashellrc kconf_updaterc plasma-org"
 
 # Get all managed files, filter out excludes, re-add
 chezmoi managed --include=files 2>/dev/null | while read -r file; do

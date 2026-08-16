@@ -1,0 +1,14 @@
+[General]
+DefaultSaveLocation=~/screenshots
+SaveFormat=png
+ShowNotification=false
+UseSingleImageMode=true
+SaveOnClick=true
+UseFreeformScreenRegionSelection=true
+AlwaysShowSaveDialog=false
+
+[Shortcuts]
+FullScreen=Print
+CurrentScreen=Shift+Print
+ActiveWindow=Ctrl+Print
+RectangularRegion=Meta+Print

@@ -1,0 +1,6 @@
+#!/bin/bash
+# Cursor + input settings — enforced on every chezmoi apply
+
+kwriteconfig6 --file kcminputrc --group Mouse --key XLbInptCursorTheme "{{ .kde_cursor_theme }}" 2>/dev/null || true
+kwriteconfig6 --file kcminputrc --group Mouse --key XLbInptCursorSize "{{ .kde_cursor_size }}" 2>/dev/null || true
+plasma-apply-cursortheme --name "{{ .kde_cursor_theme }}" --size {{ .kde_cursor_size }} 2>/dev/null || true

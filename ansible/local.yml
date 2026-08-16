@@ -530,6 +530,68 @@
       when: not is_wsl
 
     # ================================================================
+    # 10a. SYSTEM-LEVEL KDE CONFIGURATION (native only)
+    # ================================================================
+    - block:
+        - name: Set SDDM theme
+          ansible.builtin.copy:
+            dest: /etc/sddm.conf.d/theme.conf
+            content: |
+              [Theme]
+              Current=breeze
+            mode: "0644"
+            force: false
+
+        - name: Set system-wide cursor theme
+          ansible.builtin.copy:
+            dest: /usr/share/icons/default/index.theme
+            content: |
+              [Icon Theme]
+              Name=Default
+              Comment=Default Cursor Theme
+              Inherits=capitaine-cursors
+            mode: "0644"
+
+        - name: Set default terminal application
+          ansible.builtin.shell: >
+            xdg-settings set default-terminal-application kitty.desktop
+          changed_when: false
+          ignore_errors: true
+
+        - name: Set default file manager
+          ansible.builtin.shell: >
+            xdg-mime default org.kde.dolphin.desktop inode/directory
+          changed_when: false
+          ignore_errors: true
+
+        - name: Set default web browser
+          ansible.builtin.shell: >
+            xdg-settings set default-web-browser librewolf.desktop
+          changed_when: false
+          ignore_errors: true
+
+        - name: Create Qt/Wayland environment config
+          ansible.builtin.copy:
+            dest: /etc/environment.d/kde-wayland.conf
+            content: |
+              QT_QPA_PLATFORMTHEME=wayland
+              QT_AUTO_SCREEN_SCALE_FACTOR=1
+              XDG_CURRENT_DESKTOP=KDE
+            mode: "0644"
+
+        - name: Set KDE portal preferences
+          ansible.builtin.copy:
+            dest: /etc/xdg-desktop-portal/kde-portals.conf
+            content: |
+              [preferred]
+              default=kde
+              org.freedesktop.impl.portal.Settings=kde
+              org.freedesktop.impl.portal.Secret=kwallet
+              org.freedesktop.impl.portal.Notification=plasmanotify
+            mode: "0644"
+      when: not is_wsl
+
+    # ================================================================
     # 10b. CONTAINER INFRASTRUCTURE (native only)
     # ================================================================
     - block:

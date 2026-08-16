@@ -5,6 +5,9 @@
 # Distro:   CachyOS
 # Layers:   common.yml → arch_native.yml → cachyos.yml → THIS FILE
 
+# --- Host Type ---
+is_laptop: true
+
 # --- Hardware Drivers & Peripherals ---
 host_packages:
   - nvidia-utils

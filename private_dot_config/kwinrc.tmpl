@@ -1,0 +1,49 @@
+[Compositing]
+AnimationSpeed={{ .kde_animation_speed }}
+GLCore=true
+OpenGLIsUnsafe=false
+VSyncTimeMargin=0
+
+[Desktops]
+Number=1
+Rows=1
+
+[Effect-pipoverview]
+Fps=30
+Position=12
+Time=300
+
+[Plugins]
+blurEnabled=true
+contrastEnabled=true
+diminactiveEnabled=false
+minimizeanimationEnabled=true
+overviewEnabled=true
+screenedgeEnabled=true
+tileEnabled=false
+
+{{ if .kde_tiling_enabled }}
+[Plugins]
+poloniumEnabled=true
+
+[Script-polonium]
+TilePopups=true
+{{ end }}
+
+[Tiling]
+padding=4
+tiles={"layoutDirection":"horizontal","tiles":[{"width":0.25},{"width":0.5},{"width":0.25}]}
+
+[NightColor]
+Enabled={{ if .kde_night_color_enabled }}true{{ else }}false{{ end }}
+Mode=Plain
+NightTemperature={{ .kde_night_color_temp }}
+
+[Wayland]
+VirtualKeyboardEnabled=false
+
+[Xwayland]
+Scale=1
+
+[Windows]
+BorderlessMaximizedWindows=true

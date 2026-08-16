@@ -1,0 +1,14 @@
+[General]
+HistoryDisabled=false
+MaxRecentApps=10
+NumResults=10
+
+[Plugins]
+plasma-desktop Enabled=true
+baloo Enabled=true
+locations Enabled=true
+windows Enabled=true
+recent Documents Enabled=true
+powerdevil Enabled=true
+kwin Enabled=true
+services Enabled=true

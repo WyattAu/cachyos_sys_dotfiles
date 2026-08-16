@@ -1,0 +1,26 @@
+#!/bin/bash
+# Compositor + effects + night color — enforced on every chezmoi apply
+
+# Compositor
+kwriteconfig6 --file kwinrc --group Compositing --key AnimationSpeed "{{ .kde_animation_speed }}" 2>/dev/null || true
+kwriteconfig6 --file kwinrc --group Compositing --key GLCore true 2>/dev/null || true
+kwriteconfig6 --file kwinrc --group Compositing --key OpenGLIsUnsafe false 2>/dev/null || true
+kwriteconfig6 --file kwinrc --group Compositing --key VSyncTimeMargin 0 2>/dev/null || true
+
+# Night color
+kwriteconfig6 --file kwinrc --group NightColor --key Enabled {{ if .kde_night_color_enabled }}true{{ else }}false{{ end }} 2>/dev/null || true
+kwriteconfig6 --file kwinrc --group NightColor --key Mode "Plain" 2>/dev/null || true
+kwriteconfig6 --file kwinrc --group NightColor --key NightTemperature "{{ .kde_night_color_temp }}" 2>/dev/null || true
+
+# Effects
+kwriteconfig6 --file kwinrc --group Plugins --key blurEnabled true 2>/dev/null || true
+kwriteconfig6 --file kwinrc --group Plugins --key contrastEnabled true 2>/dev/null || true
+kwriteconfig6 --file kwinrc --group Plugins --key screenedgeEnabled true 2>/dev/null || true
+kwriteconfig6 --file kwinrc --group Plugins --key overviewEnabled true 2>/dev/null || true
+kwriteconfig6 --file kwinrc --group Plugins --key minimizeanimationEnabled true 2>/dev/null || true
+
+# Window management
+kwriteconfig6 --file kwinrc --group Windows --key BorderlessMaximizedWindows true 2>/dev/null || true
+
+# Reconfigure KWin
+qdbus6 org.kde.KWin /KWin reconfigure 2>/dev/null || true

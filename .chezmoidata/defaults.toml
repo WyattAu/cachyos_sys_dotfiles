@@ -21,3 +21,20 @@ cloudflared_path = "~/.local/bin/cloudflared"
 # OCIS
 ocis_url = "https://ocis.wyattau.com"
 ocis_sync_root = "~/ownCloud"
+
+# KDE Plasma Defaults
+kde_color_scheme = "BreezeDark"
+kde_icon_theme = "breeze-dark"
+kde_widget_style = "Breeze"
+kde_cursor_theme = "capitaine-cursors"
+kde_cursor_size = 24
+kde_animation_speed = 0.25
+kde_contrast = 4
+kde_panel_thickness = 42
+kde_panel_floating = true
+kde_tiling_enabled = true
+kde_night_color_enabled = true
+kde_night_color_temp = 4500
+kde_compositor_backend = "wayland"
+kde_font = "Noto Sans"
+kde_font_size = 10

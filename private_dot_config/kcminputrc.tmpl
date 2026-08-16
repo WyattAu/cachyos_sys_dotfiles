@@ -1,0 +1,10 @@
+[Mouse]
+XLbInptCursorTheme={{ .kde_cursor_theme }}
+XLbInptCursorSize={{ .kde_cursor_size }}
+
+{{- if .is_laptop }}
+[Touchpad]
+TapToClick=true
+XLbInptNaturalScroll=true
+DisableWhileTyping=true
+{{- end }}

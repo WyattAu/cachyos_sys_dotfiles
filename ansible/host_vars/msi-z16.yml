@@ -5,6 +5,9 @@
 # Distro:   CachyOS (was Vanilla Arch, reinstalled)
 # Layers:   common.yml → arch_native.yml → cachyos.yml → THIS FILE
 
+# --- Host Type ---
+is_laptop: true
+
 # --- Hardware Drivers & Peripherals ---
 # NOTE: CachyOS provides NVIDIA via linux-cachyos-lts-nvidia-open (managed by
 # the kernel metapackage). Do NOT add nvidia-open-dkms here — it conflicts.

@@ -1,0 +1,22 @@
+#!/bin/bash
+# Power management — adapts based on host type
+
+{{- if .is_laptop }}
+# Laptop: aggressive power saving
+kwriteconfig6 --file powerdevilrc --group AC --key LidCloseAction 2 2>/dev/null || true
+kwriteconfig6 --file powerdevilrc --group AC --key LidCloseScreen true 2>/dev/null || true
+kwriteconfig6 --file powerdevilrc --group AC --group SuspendSession --key IdleTime 600 2>/dev/null || true
+kwriteconfig6 --file powerdevilrc --group AC --group SuspendSession --key suspendType 4 2>/dev/null || true
+kwriteconfig6 --file powerdevilrc --group AC --group HandleLidClose --key lidCloseAction 2 2>/dev/null || true
+{{- else }}
+# Desktop: no suspend, no lid handling
+kwriteconfig6 --file powerdevilrc --group AC --group SuspendSession --key IdleTime 0 2>/dev/null || true
+{{- end }}
+
+# Touchpad (laptop only)
+{{- if .is_laptop }}
+kwriteconfig6 --file kcminputrc --group Touchpad --key TapToClick true 2>/dev/null || true
+kwriteconfig6 --file kcminputrc --group Touchpad --key XLbInptNaturalScroll true 2>/dev/null || true
+kwriteconfig6 --file kcminputrc --group Touchpad --key DisableWhileTyping true 2>/dev/null || true
+kwriteconfig6 --file kcminputrc --group Mouse --key XLbInptAccelProfileFlat true 2>/dev/null || true
+{{- end }}

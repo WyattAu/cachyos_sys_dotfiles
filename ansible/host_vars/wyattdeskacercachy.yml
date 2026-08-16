@@ -5,6 +5,9 @@
 # Distro:   CachyOS (Layer 2c loaded automatically)
 # Layers:   common.yml → arch_native.yml → cachyos.yml → THIS FILE
 
+# --- Host Type ---
+is_laptop: false
+
 # --- Hardware Packages ---
 host_packages: []
 host_aur_pkgs: []
