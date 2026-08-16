@@ -23,6 +23,7 @@ ocis_url = "https://ocis.wyattau.com"
 ocis_sync_root = "~/ownCloud"
 
 # KDE Plasma Defaults
+is_laptop = false                    # Override per-host in ~/.config/chezmoi/chezmoi.toml [data] section
 kde_color_scheme = "BreezeDark"
 kde_icon_theme = "breeze-dark"
 kde_widget_style = "Breeze"
