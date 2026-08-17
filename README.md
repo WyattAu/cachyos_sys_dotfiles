@@ -6,12 +6,14 @@ Personal infrastructure-as-code for a multi-device Arch/CachyOS/WSL environment.
 
 | Command | What It Does |
 |--------|--------------|
-| `sys-sync` | Pulls repo changes, reinstalls packages, applies configs, reloads KDE, runs smoke tests. Creates pre-sync snapshot for rollback. |
+| `sys-sync` | Full sync with pre-sync snapshot + smoke tests + logging. |
 | `sys-sync --dry-run` | Preview changes without applying (ansible --check + chezmoi diff). |
-| `sys-check` | Smoke tests: verifies services, kernel params, locale, SSH, theme, Docker. |
+| `sys-check` | Smoke tests: services, kernel, MSI EC, locale, SSH, theme, Docker. |
 | `save` | Captures dotfile changes, commits, pushes to GitHub. |
 | `bootstrap.sh` | Full system bootstrap from scratch. Run with `sudo`. |
-| `sys-save` | Legacy alias for `save`. |
+| `vault-init.sh` | Initialize HashiCorp Vault (run once). |
+| `vault-store.sh` | Store secrets in Vault from system. |
+| `nix develop` | Enter reproducible dev shell (requires flake.nix in project). |
 
 ## Supported Hosts
 

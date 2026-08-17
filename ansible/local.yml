@@ -730,6 +730,83 @@
       when: not is_wsl
 
     # ================================================================
+    # 10e. VICTORIAMETRICS (monitoring)
+    # ================================================================
+    - block:
+        - name: Create VictoriaMetrics data directory
+          ansible.builtin.file:
+            path: /var/lib/victoriametrics
+            state: directory
+            mode: "0755"
+
+        - name: Install VictoriaMetrics from AUR
+          kewlfft.aur.aur:
+            name: victoriametrics
+            use: paru
+            state: present
+          become: true
+          become_user: "{{ user }}"
+          ignore_errors: yes
+          environment:
+            MAKEFLAGS: "-j2"
+
+        - name: Install prometheus-node-exporter
+          community.general.pacman:
+            name: prometheus-node-exporter
+            state: present
+          ignore_errors: yes
+
+        - name: Install alertmanager
+          community.general.pacman:
+            name: prometheus-alertmanager
+            state: present
+          ignore_errors: yes
+
+        - name: Create VictoriaMetrics systemd service
+          ansible.builtin.copy:
+            dest: /etc/systemd/system/victoriametrics.service
+            content: |
+              [Unit]
+              Description=VictoriaMetrics time series database
+              After=network.target
+              [Service]
+              Type=simple
+              ExecStart=/usr/bin/victoria-metrics -storageDataPath=/var/lib/victoriametrics -httpListenAddr=:8428 -promscrape.config=/etc/victoriametrics/prometheus.yml
+              Restart=always
+              RestartSec=5
+              [Install]
+              WantedBy=multi-user.target
+            mode: "0644"
+
+        - name: Deploy VictoriaMetrics scrape config
+          ansible.builtin.copy:
+            src: files/vm-prometheus.yml
+            dest: /etc/victoriametrics/prometheus.yml
+            mode: "0644"
+
+        - name: Deploy alert rules
+          ansible.builtin.copy:
+            src: files/vm-alerts.yml
+            dest: /etc/victoriametrics/alerts.yml
+            mode: "0644"
+
+        - name: Enable VictoriaMetrics
+          systemd:
+            name: victoriametrics
+            enabled: yes
+            state: started
+            daemon_reload: yes
+          ignore_errors: yes
+
+        - name: Enable node_exporter
+          systemd:
+            name: node_exporter
+            enabled: yes
+            state: started
+          ignore_errors: yes
+      when: not is_wsl
+
+    # ================================================================
     # 10b. CONTAINER INFRASTRUCTURE (native only)
     # ================================================================
     - block:

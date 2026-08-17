@@ -16,6 +16,12 @@ fish_add_path "$PNPM_HOME"
 # Prevents stale LANG from keychain/plasma-localerc caching issues
 set -gx LANG en_GB.UTF-8
 
+# --- VAULT ---
+# HashiCorp Vault environment (secrets management)
+if test -f ~/.vault/token
+    set -gx VAULT_ADDR 'http://127.0.0.1:8200'
+end
+
 if status is-interactive
     # --- CORE ENVIRONMENT ---
     set -gx EDITOR nvim
