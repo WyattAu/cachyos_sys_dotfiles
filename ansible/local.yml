@@ -558,23 +558,17 @@
               Inherits=capitaine-cursors
             mode: "0644"
 
-        - name: Set default terminal application
-          ansible.builtin.shell: >
-            xdg-settings set default-terminal-application kitty.desktop
-          changed_when: false
-          ignore_errors: true
+        - name: Create /etc/environment.d directory
+          ansible.builtin.file:
+            path: /etc/environment.d
+            state: directory
+            mode: "0755"
 
-        - name: Set default file manager
-          ansible.builtin.shell: >
-            xdg-mime default org.kde.dolphin.desktop inode/directory
-          changed_when: false
-          ignore_errors: true
-
-        - name: Set default web browser
-          ansible.builtin.shell: >
-            xdg-settings set default-web-browser librewolf.desktop
-          changed_when: false
-          ignore_errors: true
+        - name: Create /etc/xdg-desktop-portal directory
+          ansible.builtin.file:
+            path: /etc/xdg-desktop-portal
+            state: directory
+            mode: "0755"
 
         - name: Create Qt/Wayland environment config
           ansible.builtin.copy:
