@@ -12,6 +12,10 @@ fish_add_path "$HOME/.bun/bin"
 set -gx PNPM_HOME "$HOME/.local/share/pnpm"
 fish_add_path "$PNPM_HOME"
 
+# --- LOCALE SAFEGUARD ---
+# Prevents stale LANG from keychain/plasma-localerc caching issues
+set -gx LANG en_GB.UTF-8
+
 if status is-interactive
     # --- CORE ENVIRONMENT ---
     set -gx EDITOR nvim
