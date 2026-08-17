@@ -533,6 +533,12 @@
     # 10a. SYSTEM-LEVEL KDE CONFIGURATION (native only)
     # ================================================================
     - block:
+        - name: Create SDDM config directory
+          ansible.builtin.file:
+            path: /etc/sddm.conf.d
+            state: directory
+            mode: "0755"
+
         - name: Set SDDM theme
           ansible.builtin.copy:
             dest: /etc/sddm.conf.d/theme.conf
