@@ -6,7 +6,9 @@ Personal infrastructure-as-code for a multi-device Arch/CachyOS/WSL environment.
 
 | Command | What It Does |
 |--------|--------------|
-| `sys-sync` | Pulls repo changes, reinstalls packages, applies configs, reloads KDE. Run after any infra change. |
+| `sys-sync` | Pulls repo changes, reinstalls packages, applies configs, reloads KDE, runs smoke tests. Creates pre-sync snapshot for rollback. |
+| `sys-sync --dry-run` | Preview changes without applying (ansible --check + chezmoi diff). |
+| `sys-check` | Smoke tests: verifies services, kernel params, locale, SSH, theme, Docker. |
 | `save` | Captures dotfile changes, commits, pushes to GitHub. |
 | `bootstrap.sh` | Full system bootstrap from scratch. Run with `sudo`. |
 | `sys-save` | Legacy alias for `save`. |
@@ -406,6 +408,51 @@ save        # Capture dotfile changes, commit, push to GitHub
 ```
 
 If the new machine needs custom hardware or tuning, create a new `<hostname>.yml` in `ansible/host_vars/` and set the hostname (`hostnamectl set-hostname <name>`) before running the bootstrap.
+
+## Disaster Recovery
+
+### Backup Locations
+
+| Data | Location | Access |
+|------|----------|--------|
+| **Dotfiles (source)** | GitHub `WyattAu/cachyos_sys_dotfiles` | `git clone` |
+| **System snapshots** | Snapper (Btrfs, timeline daily) | `snapper -c root list` |
+| **User data** | TrueNAS via pika-backup (`/mnt/truebackup`) | NFS mount |
+| **Cloud sync** | OCIS (`ocis.wyattau.com`) | ownCloud client |
+
+### Recovery Steps (Disk Failure)
+
+1. Install CachyOS/Arch, create user, log in
+2. Run bootstrap: `curl -sSf https://raw.githubusercontent.com/WyattAu/cachyos_sys_dotfiles/master/scripts/bootstrap.sh | sudo bash`
+3. Reboot
+4. Run `sys-sync` to apply all configs
+5. Mount TrueNAS: `sudo mount -t nfs 192.168.1.3:/mnt/pool/backup /mnt/truebackup`
+6. Configure apps (one-time): owncloudclient, books, zotero, heroic, proton_vpn_qt
+
+### Rollback (Bad Config)
+
+```bash
+# List snapshots
+sudo snapper -c root list
+
+# Rollback to a snapshot
+sudo snapper -c root rollback <number>
+
+# Or manually restore a specific file from git
+cd ~/.local/share/chezmoi
+git log --oneline -5  # find the good commit
+git checkout <commit> -- <file>
+chezmoi apply --force
+```
+
+### What's Preserved vs Lost
+
+| Preserved | Lost (must rebuild) |
+|-----------|-------------------|
+| All configs (chezmoi) | AUR build cache |
+| System state (snapper) | Nix store |
+| User data (TrueNAS/OCIS) | Docker images (re-pull) |
+| Git history | Browser profiles |
 
 ## Troubleshooting
 
