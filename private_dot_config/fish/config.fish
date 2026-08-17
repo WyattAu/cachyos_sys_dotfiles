@@ -36,7 +36,7 @@ if status is-interactive
             test -f ~/.ssh/$key && set -a ssh_keys $key
         end
         if test (count $ssh_keys) -gt 0
-            keychain --eval --quiet $ssh_keys | source
+            keychain --clear --eval --quiet $ssh_keys | source
         end
     end
 
