@@ -2,6 +2,10 @@
 # Enforce Breeze Dark theme across all hosts
 # KDE mangles kdeglobals — kwriteconfig6 is deterministic
 
+# Locale safeguard
+export LANG="{{ .system_locale }}"
+export LANGUAGE="en_GB"
+
 # Theme
 kwriteconfig6 --file kdeglobals --group General --key ColorScheme "{{ .kde_color_scheme }}" 2>/dev/null || true
 kwriteconfig6 --file kdeglobals --group General --key LookAndFeelPackage "org.kde.breezedark.desktop" 2>/dev/null || true
