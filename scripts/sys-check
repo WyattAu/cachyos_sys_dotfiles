@@ -1,0 +1,86 @@
+#!/bin/bash
+# sys-check — smoke tests to verify system matches declared state
+# Run after sys-sync or manually to validate system health
+
+ERRORS=0
+
+check_service() {
+    if systemctl is-active --quiet "$1" 2>/dev/null; then
+        echo "  ✓ $1"
+    else
+        echo "  ✗ $1 (not running)"
+        ERRORS=$((ERRORS + 1))
+    fi
+}
+
+echo ">> Running smoke tests..."
+
+echo "Services:"
+check_service docker
+check_service firewalld
+check_service NetworkManager
+check_service bluetooth
+check_service cups
+
+echo "Kernel:"
+if grep -q "mitigations=off" /proc/cmdline 2>/dev/null; then
+    echo "  ✓ mitigations=off"
+else
+    echo "  ✗ mitigations=off not active"
+    ERRORS=$((ERRORS + 1))
+fi
+
+echo "MSI EC:"
+if lsmod | grep -q msi_ec 2>/dev/null; then
+    echo "  ✓ msi_ec loaded"
+else
+    echo "  ✗ msi_ec not loaded"
+    ERRORS=$((ERRORS + 1))
+fi
+
+echo "Locale:"
+if [[ "$LANG" == "en_GB.UTF-8" ]]; then
+    echo "  ✓ LANG=en_GB.UTF-8"
+else
+    echo "  ✗ LANG=$LANG (expected en_GB.UTF-8)"
+    ERRORS=$((ERRORS + 1))
+fi
+
+echo "SSH agent:"
+if ssh-add -l &>/dev/null; then
+    echo "  ✓ keys loaded"
+else
+    echo "  ✗ no keys loaded"
+    ERRORS=$((ERRORS + 1))
+fi
+
+echo "Chezmoi:"
+if command -v chezmoi &>/dev/null; then
+    echo "  ✓ installed"
+else
+    echo "  ✗ not found"
+    ERRORS=$((ERRORS + 1))
+fi
+
+echo "KDE theme:"
+if grep -q "BreezeDark" ~/.config/kdeglobals 2>/dev/null; then
+    echo "  ✓ Breeze Dark"
+else
+    echo "  ✗ theme not set"
+    ERRORS=$((ERRORS + 1))
+fi
+
+echo "Docker containers:"
+if docker ps --format "{{.Names}}" 2>/dev/null | grep -q portainer; then
+    echo "  ✓ portainer running"
+else
+    echo "  ✗ portainer not running"
+    ERRORS=$((ERRORS + 1))
+fi
+
+if [[ $ERRORS -eq 0 ]]; then
+    echo ">> All checks passed."
+else
+    echo ">> $ERRORS check(s) failed."
+fi
+exit $ERRORS

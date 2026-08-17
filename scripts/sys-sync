@@ -1,5 +1,29 @@
 #!/bin/bash
+# sys-sync — Full system sync (pull + provision + apply + verify)
+# Usage: sys-sync [--dry-run]
+
 set -e
+
+LOGFILE="/var/log/sys-sync.log"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# Dry-run mode
+if [[ "$1" == "--dry-run" ]]; then
+    echo ">> DRY RUN — no changes will be applied"
+    cd ~/.local/share/chezmoi/ansible
+    sudo ansible-playbook local.yml -i localhost, --check --extra-vars "user=$USER"
+    chezmoi diff
+    exit 0
+fi
+
+# Logging
+exec > >(tee -a "$LOGFILE") 2>&1
+echo "=== sys-sync started $(date) ==="
+
+# Pre-sync snapshot (rollback point)
+echo ">> 0. Creating pre-sync snapshot..."
+sudo snapper -c root create -d "pre-sys-sync" -t pre 2>/dev/null || true
+
 echo ">> 1. Pulling dotfile updates..."
 chezmoi update --apply=false
 
@@ -15,4 +39,8 @@ if command -v qdbus6 &>/dev/null && [[ -n "$WAYLAND_DISPLAY" ]]; then
     qdbus6 org.kde.KWin /KWin reconfigure >/dev/null 2>&1 || true
 fi
 
-echo ">> Sync complete."
+echo ">> 5. Running health checks..."
+"$SCRIPT_DIR/sys-check" 2>/dev/null || true
+
+echo "=== sys-sync completed $(date) ==="
+echo ">> Log saved to $LOGFILE"
