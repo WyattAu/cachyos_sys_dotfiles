@@ -25,7 +25,6 @@ host_packages:
 host_aur_pkgs:
   - envycontrol
   - mcontrolcenter-git
-  - msi-ec-dkms-git
   - whitesur-icon-theme-git
   - openrgb-git
   - msi-perkeyrgb

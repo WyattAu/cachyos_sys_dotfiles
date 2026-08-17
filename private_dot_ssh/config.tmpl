@@ -27,8 +27,22 @@ Host truenas
 # ── Cloud / Git ──
 
 # Forgejo Git SSH via Cloudflare Tunnel
-Host {{ .forgejo_ssh_host | default "ssh.wyattau.com" }}
+Host git.wyattau.com
     ProxyCommand {{ .cloudflared_path | default "~/.local/bin/cloudflared" }} access ssh --hostname %h
+    User git
+    Port 22
+    IdentityFile ~/.ssh/id_ed25519
+
+Host ssh.wyattau.com
+    ProxyCommand {{ .cloudflared_path | default "~/.local/bin/cloudflared" }} access ssh --hostname %h
+    User git
+    Port 22
+    IdentityFile ~/.ssh/id_ed25519
+
+# Forgejo alias
+Host forgejo
+    HostName git.wyattau.com
+    ProxyCommand {{ .cloudflared_path | default "~/.local/bin/cloudflared" }} access ssh --hostname git.wyattau.com
     User git
     Port 22
     IdentityFile ~/.ssh/id_ed25519
