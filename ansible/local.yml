@@ -312,16 +312,23 @@
         creates: "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh"
       when: not is_wsl
 
-    - name: Configure Nix trusted-users
-      copy:
-        dest: /etc/nix/nix.conf
-        content: |
-          # Ansible-managed Nix configuration
-          experimental-features = nix-command flakes
-          trusted-users = root {{ user }}
+    - name: Configure Nix experimental features
+      ansible.builtin.lineinfile:
+        path: /etc/nix/nix.conf
+        regexp: '^experimental-features'
+        line: 'experimental-features = nix-command flakes'
+        create: yes
         mode: "0644"
-        owner: root
-        group: root
+      when: not is_wsl
+      notify: Restart nix-daemon
+
+    - name: Configure Nix trusted users
+      ansible.builtin.lineinfile:
+        path: /etc/nix/nix.conf
+        regexp: '^trusted-users'
+        line: 'trusted-users = root {{ user }}'
+        create: yes
+        mode: "0644"
       when: not is_wsl
       notify: Restart nix-daemon
 
