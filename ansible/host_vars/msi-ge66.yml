@@ -19,7 +19,6 @@ host_packages:
   - libfprint
   - fprintd
   - python-hidapi
-  - python-setuptools
   - blender
 
 host_aur_pkgs:

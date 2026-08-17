@@ -99,7 +99,8 @@
           Wants=network-online.target
           [Service]
           Type=oneshot
-          Environment=SUDO_USER={{ user }}
+          User={{ user }}
+          Environment=HOME=/home/{{ user }}
           ExecStart=/home/{{ user }}/.local/share/chezmoi/scripts/sys-sync
       when: not is_wsl
 

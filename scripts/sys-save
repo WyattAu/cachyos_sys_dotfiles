@@ -33,7 +33,7 @@ done
 # Stage and commit if there are changes
 if [[ -n $(git status -s) ]]; then
     MSG="${1:-Auto-save $(date +'%Y-%m-%d %H:%M')}"
-    git add .
+    git add -u
     git commit -m "$MSG"
     echo ">> Pushing to GitHub..."
     git push origin master

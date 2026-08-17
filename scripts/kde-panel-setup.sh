@@ -21,7 +21,7 @@ echo ">> Setting up deterministic panel layout..."
 
 # Wait for plasmashell to be ready
 WAIT_COUNT=0
-while ! qdbus org.kde.PlasmaShell /PlasmaShell org.kde.PlasmaShell.evaluateScript 'panelIds.length' &>/dev/null; do
+while ! qdbus6 org.kde.PlasmaShell /PlasmaShell org.kde.PlasmaShell.evaluateScript 'panelIds.length' &>/dev/null; do
     if [[ $WAIT_COUNT -ge 30 ]]; then
         echo ">> plasmashell not ready after 30s, aborting."
         exit 1
@@ -33,7 +33,7 @@ done
 echo ">> plasmashell ready, configuring panel..."
 
 # Configure panel via D-Bus scripting API
-qdbus org.kde.PlasmaShell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
+qdbus6 org.kde.PlasmaShell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
 // Panel configuration
 var panelIds = PanelIds;
 if (panelIds.length > 0) {
@@ -82,7 +82,7 @@ if (panelIds.length > 0) {
 ' 2>/dev/null || true
 
 # Configure widget-specific settings
-qdbus org.kde.PlasmaShell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
+qdbus6 org.kde.PlasmaShell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
 var panelIds = PanelIds;
 if (panelIds.length > 0) {
     var panel = panelById(panelIds[0]);
