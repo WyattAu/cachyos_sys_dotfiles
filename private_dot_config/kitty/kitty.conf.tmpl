@@ -4,12 +4,42 @@ italic_font      auto
 bold_italic_font auto
 font_size 11.5
 background_opacity 0.9
+
+# Scrollback
+scrollback_lines 10000
+scrollback_pager_history_size 100
+
+# Performance
+repaint_delay 10
+input_delay 3
+sync_to_monitor yes
+
+# Terminal
+term xterm-256color
+editor .
+
+# Cursor
+cursor_shape beam
+cursor_blink_interval 0
+
+# Mouse
+mouse_hide_wait 3.0
+url_style curly
+
+# Bell
+enable_audio_bell no
+visual_bell_duration 0.0
+
+# Window
+window_padding_width 4
+hide_window_decorations no
+confirm_os_window_close 1
+
 {{- if .chezmoi.kernel.osrelease | contains "microsoft" }}
-# WSL - Use X11/Wayland hybrid
+# WSL - Use X11
 linux_display_server x11
 {{- else }}
 # Native Linux - Use Wayland
 linux_display_server wayland
-sync_to_monitor yes
 wayland_titlebar_color background
 {{- end }}

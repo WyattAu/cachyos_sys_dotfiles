@@ -3,8 +3,8 @@
 # This script is deployed by chezmoi and runs on first apply only.
 # It calls the main panel setup script which is idempotent.
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PANEL_SCRIPT="$SCRIPT_DIR/../../scripts/kde-panel-setup.sh"
+CHEZMOI_DIR="$HOME/.local/share/chezmoi"
+PANEL_SCRIPT="$CHEZMOI_DIR/scripts/kde-panel-setup.sh"
 
 if [[ -f "$PANEL_SCRIPT" ]]; then
     exec "$PANEL_SCRIPT"
