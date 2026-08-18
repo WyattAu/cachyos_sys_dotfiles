@@ -18,8 +18,9 @@ set -gx LANG en_GB.UTF-8
 
 # --- VAULT ---
 # HashiCorp Vault environment (secrets management)
-if test -f ~/.vault/token
+if test -f ~/.vault-secrets/token
     set -gx VAULT_ADDR 'http://127.0.0.1:8200'
+    set -gx VAULT_TOKEN (cat ~/.vault-secrets/token)
 end
 
 if status is-interactive

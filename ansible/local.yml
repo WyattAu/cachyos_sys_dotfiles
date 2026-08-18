@@ -730,7 +730,68 @@
       when: not is_wsl
 
     # ================================================================
-    # 10e. VICTORIAMETRICS (monitoring)
+    # 10e. HASHICORP VAULT (secrets management)
+    # ================================================================
+    - block:
+        - name: Create vault-unseal service
+          ansible.builtin.copy:
+            dest: /etc/systemd/system/vault-unseal.service
+            content: |
+              [Unit]
+              Description=Auto-unseal Vault
+              After=vault.service
+              Wants=vault.service
+              [Service]
+              Type=oneshot
+              User={{ user }}
+              Environment=HOME=/home/{{ user }}
+              Environment=VAULT_ADDR=http://127.0.0.1:8200
+              ExecStart=/home/{{ user }}/.local/share/chezmoi/scripts/vault-unseal.sh
+              [Install]
+              WantedBy=multi-user.target
+            mode: "0644"
+
+        - name: Create vault-unseal timer
+          ansible.builtin.copy:
+            dest: /etc/systemd/system/vault-unseal.timer
+            content: |
+              [Unit]
+              Description=Unseal Vault after boot
+              [Timer]
+              OnBootSec=30s
+              [Install]
+              WantedBy=timers.target
+            mode: "0644"
+
+        - name: Enable Vault service
+          systemd:
+            name: vault
+            enabled: yes
+            daemon_reload: yes
+          ignore_errors: yes
+
+        - name: Enable vault-unseal timer
+          systemd:
+            name: vault-unseal.timer
+            enabled: yes
+            state: started
+            daemon_reload: yes
+          ignore_errors: yes
+
+        - name: Make vault scripts executable
+          ansible.builtin.file:
+            path: "/home/{{ user }}/.local/share/chezmoi/scripts/{{ item }}"
+            mode: "0755"
+            owner: "{{ user }}"
+            group: "{{ user }}"
+          loop:
+            - vault-init.sh
+            - vault-store.sh
+            - vault-unseal.sh
+      when: not is_wsl
+
+    # ================================================================
+    # 10f. VICTORIAMETRICS (monitoring)
     # ================================================================
     - block:
         - name: Create VictoriaMetrics data directory
