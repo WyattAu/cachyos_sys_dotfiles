@@ -394,6 +394,17 @@
       environment:
         XDG_STATE_HOME: "/home/{{ user }}/.local/state"
 
+    - name: Install global npm packages (pnpm)
+      # Idempotent no-op when the version is already present; picks up
+      # upstream releases on each sync. pnpm ships with nodejs-lts.
+      command: pnpm add -g {{ item }}
+      become: true
+      become_user: "{{ user }}"
+      changed_when: false
+      loop: "{{ pnpm_global_pkgs | default([]) }}"
+      environment:
+        PNPM_HOME: "/home/{{ user }}/.local/share/pnpm"
+
     # ================================================================
     # 8. DETERMINISTIC DIRECTORY MANAGEMENT
     # ================================================================

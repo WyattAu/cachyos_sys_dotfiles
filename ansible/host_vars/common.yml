@@ -7,6 +7,12 @@
 # it lives in /etc/alertmanager/telegram-token, deployed by vm-setup.sh)
 telegram_chat_id: 8905506473
 
+# --- GLOBAL NPM PACKAGES (installed via pnpm) ---
+# Bins land in ~/.local/share/pnpm/bin (on PATH via Fish config).
+# freebuff = CodebuffAI free coding agent (self-downloads native binary on first run)
+pnpm_global_pkgs:
+  - freebuff
+
 # Central VictoriaMetrics collector (TrueNAS). When set, the host runs
 # vmagent with remote-write to this URL instead of relying on local
 # VictoriaMetrics. Empty = local-only monitoring.

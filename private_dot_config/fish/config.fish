@@ -11,6 +11,7 @@ fish_add_path "$HOME/.opencode/bin"
 fish_add_path "$HOME/.bun/bin"
 set -gx PNPM_HOME "$HOME/.local/share/pnpm"
 fish_add_path "$PNPM_HOME"
+fish_add_path "$PNPM_HOME/bin"
 
 # --- LOCALE SAFEGUARD ---
 # Prevents stale LANG from keychain/plasma-localerc caching issues
