@@ -852,7 +852,7 @@
               After=network.target
               [Service]
               Type=simple
-              ExecStart=/usr/bin/victoria-metrics -storageDataPath=/var/lib/victoriametrics -httpListenAddr=:8428 -promscrape.config=/etc/victoriametrics/prometheus.yml -retentionPeriod=30d -storage.minFreeDiskSpace=1GB -memory.allowedPercent=5
+              ExecStart=/usr/bin/victoria-metrics -storageDataPath=/var/lib/victoriametrics -httpListenAddr=:8428 -promscrape.config=/etc/victoriametrics/prometheus.yml -retentionPeriod=30d -storage.minFreeDiskSpaceBytes=1GB -memory.allowedPercent=5
               Restart=always
               RestartSec=30
               [Install]
