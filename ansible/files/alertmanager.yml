@@ -12,13 +12,8 @@ receivers:
   - name: 'telegram'
     telegram_configs:
       - bot_token_file: '/etc/alertmanager/telegram-token'
-        chat_id: 0  # Set via vm-setup.sh
+        chat_id: 8905506473
         parse_mode: 'HTML'
-        message: |
-          {{ template "telegram.default" . }}
-
-templates:
-  - '/etc/alertmanager/templates/*.tmpl'
 
 inhibit_rules:
   - source_match:
