@@ -1,16 +1,15 @@
 #!/bin/bash
 # mic-lock — Control mic-volume auto-adjust protection
 #
-# PipeWire quirk 'block-source-volume' stops apps (Discord, browsers, Zoom)
-# from changing microphone volume. The protection itself is deployed by
-# chezmoi; this command manages mic volume through the native (unblocked)
-# path and can temporarily disable protection.
+# Blocks apps with AGC (browsers, Discord, Zoom, Teams...) from changing
+# microphone volume. Targeted list — your mixers (pavucontrol, KDE audio
+# widget, wpctl) keep working normally.
 #
 # Usage:
 #   mic-lock                  show status + current mic volume
 #   mic-lock on               re-apply protection (same as sys-sync)
 #   mic-lock off              temporarily disable protection
-#   mic-lock set 80%          set mic volume (works while protection on)
+#   mic-lock set 80%          set mic volume
 
 set -e
 
