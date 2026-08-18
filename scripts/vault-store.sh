@@ -5,12 +5,12 @@ set -e
 
 export VAULT_ADDR='http://127.0.0.1:8200'
 
-if [ ! -f ~/.vault/token ]; then
-    echo "ERROR: ~/.vault/token not found. Run vault-init first."
+if [ ! -f ~/.vault-secrets/token ]; then
+    echo "ERROR: ~/.vault-secrets/token not found. Run vault-init first."
     exit 1
 fi
 
-export VAULT_TOKEN=$(cat ~/.vault/token)
+export VAULT_TOKEN=$(cat ~/.vault-secrets/token)
 
 echo ">> Storing SSH keys..."
 if [ -f ~/.ssh/id_ed25519 ]; then
