@@ -771,9 +771,9 @@
               After=network.target
               [Service]
               Type=simple
-              ExecStart=/usr/bin/victoria-metrics -storageDataPath=/var/lib/victoriametrics -httpListenAddr=:8428 -promscrape.config=/etc/victoriametrics/prometheus.yml
+              ExecStart=/usr/bin/victoria-metrics -storageDataPath=/var/lib/victoriametrics -httpListenAddr=:8428 -promscrape.config=/etc/victoriametrics/prometheus.yml -retentionPeriod=30d -storage.minFreeDiskSpace=1GB -memory.allowedPercent=5
               Restart=always
-              RestartSec=5
+              RestartSec=30
               [Install]
               WantedBy=multi-user.target
             mode: "0644"
@@ -793,16 +793,16 @@
         - name: Enable VictoriaMetrics
           systemd:
             name: victoriametrics
-            enabled: yes
-            state: started
+            enabled: no
+            state: stopped
             daemon_reload: yes
           ignore_errors: yes
 
         - name: Enable node_exporter
           systemd:
             name: node_exporter
-            enabled: yes
-            state: started
+            enabled: no
+            state: stopped
           ignore_errors: yes
       when: not is_wsl
 
