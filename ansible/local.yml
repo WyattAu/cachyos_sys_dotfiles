@@ -819,9 +819,29 @@
 
         - name: Install alertmanager
           community.general.pacman:
-            name: prometheus-alertmanager
+            name: alertmanager
             state: present
           ignore_errors: yes
+
+        - name: Create alertmanager config directory
+          ansible.builtin.file:
+            path: /etc/alertmanager
+            state: directory
+            mode: "0755"
+          ignore_errors: yes
+
+        - name: Deploy alertmanager config
+          ansible.builtin.copy:
+            src: files/alertmanager.yml
+            dest: /etc/alertmanager/alertmanager.yml
+            mode: "0644"
+          ignore_errors: yes
+
+        - name: Create VictoriaMetrics config directory
+          ansible.builtin.file:
+            path: /etc/victoriametrics
+            state: directory
+            mode: "0755"
 
         - name: Create VictoriaMetrics systemd service
           ansible.builtin.copy:
