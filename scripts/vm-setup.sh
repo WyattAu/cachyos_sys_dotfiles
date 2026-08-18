@@ -15,8 +15,8 @@ if ! command -v victoria-metrics &>/dev/null; then
 fi
 
 # Check if node_exporter is available
-if ! command -v node_exporter &>/dev/null; then
-    echo ">> ERROR: node_exporter not installed."
+if ! command -v prometheus-node-exporter &>/dev/null; then
+    echo ">> ERROR: prometheus-node-exporter not installed."
     echo ">> Run sys-sync first to install it."
     exit 1
 fi
@@ -68,7 +68,7 @@ echo ""
 
 # Start monitoring
 echo ">> Starting VictoriaMetrics..."
-sudo systemctl start victoriametrics node_exporter 2>/dev/null || true
+sudo systemctl start victoriametrics prometheus-node-exporter 2>/dev/null || true
 
 echo ">> Starting alertmanager..."
 sudo systemctl start alertmanager 2>/dev/null || true
