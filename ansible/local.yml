@@ -383,6 +383,17 @@
       become: true
       become_user: "{{ user }}"
 
+    - name: Install nix-direnv (fast cached 'use flake')
+      command: /nix/var/nix/profiles/default/bin/nix profile install nixpkgs#nix-direnv
+      args:
+        creates: "/home/{{ user }}/.local/state/nix/profiles/profile-1-link"
+      become: true
+      become_user: "{{ user }}"
+      when: not is_wsl
+      ignore_errors: yes  # AUDIT-KEEP: absent until nix installer ran (first run)
+      environment:
+        XDG_STATE_HOME: "/home/{{ user }}/.local/state"
+
     # ================================================================
     # 8. DETERMINISTIC DIRECTORY MANAGEMENT
     # ================================================================

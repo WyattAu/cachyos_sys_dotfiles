@@ -17,6 +17,7 @@ Personal infrastructure-as-code for a multi-device Arch/CachyOS/WSL environment.
 | `nix develop` | Enter reproducible dev shell (requires flake.nix in project). |
 | `mic-lock [on/off/set %]` | Mic auto-adjust protection — AGC apps blocked, mixers work. |
 | *TrueNAS monitoring* | Central stack + deploy guide: [`truenas/README.md`](truenas/README.md). |
+| `use flake` | Auto dev-shell: `.envrc` with `use flake` in any project → toolchain loads on `cd` (nix-direnv caches). |
 
 ## Supported Hosts
 
