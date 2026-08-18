@@ -11,6 +11,11 @@ scrape_configs:
 
 remoteWrite:
   - url: '{{ monitoring_remote_write_url }}'
+{% if monitoring_remote_write_user is defined and monitoring_remote_write_user | length > 0 %}
+    basicAuth:
+      username: '{{ monitoring_remote_write_user }}'
+      password: '{{ monitoring_remote_write_pass | default("") }}'
+{% endif %}
     # Remote write buffers locally when TrueNAS is unreachable, flushes on
     # reconnect — safe for laptops that sleep.
     queue:

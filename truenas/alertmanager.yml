@@ -1,0 +1,26 @@
+# Alertmanager for the central TrueNAS monitoring stack.
+# Telegram bot token lives in the mounted telegram-token file (NOT here).
+# chat_id: set to your Telegram chat id (same one vm-setup.sh used locally).
+global:
+  resolve_timeout: 5m
+
+route:
+  group_by: ['alertname', 'instance']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  receiver: 'telegram'
+
+receivers:
+  - name: 'telegram'
+    telegram_configs:
+      - bot_token_file: '/etc/alertmanager/telegram-token'
+        chat_id: 8905506473
+        parse_mode: 'HTML'
+
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'instance']

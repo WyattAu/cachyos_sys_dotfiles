@@ -15,6 +15,8 @@ Personal infrastructure-as-code for a multi-device Arch/CachyOS/WSL environment.
 | `vault-store.sh` | Store secrets in Vault from system. |
 | `sys-monitor start/stop/status` | Start/stop monitoring services on demand. |
 | `nix develop` | Enter reproducible dev shell (requires flake.nix in project). |
+| `mic-lock [on/off/set %]` | Mic auto-adjust protection — AGC apps blocked, mixers work. |
+| *TrueNAS monitoring* | Central stack + deploy guide: [`truenas/README.md`](truenas/README.md). |
 
 ## Supported Hosts
 

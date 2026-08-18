@@ -885,6 +885,17 @@
             mode: "0640"
           when: telegram_token_stat.stat.exists
 
+        # TrueNAS is the always-on alert source; local alertmanager stays
+        # stopped by default (same on-demand pattern as VM/node-exporter).
+        # Start manually for offline testing: systemctl start alertmanager
+        - name: Ensure local alertmanager stopped by default
+          systemd:
+            name: alertmanager
+            enabled: no
+            state: stopped
+          # AUDIT-KEEP: unit absent until first install above on fresh hosts
+          ignore_errors: yes
+
         - name: Create VictoriaMetrics config directory
           ansible.builtin.file:
             path: /etc/victoriametrics
