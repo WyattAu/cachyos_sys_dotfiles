@@ -43,7 +43,7 @@ echo ">> Initializing Vault (1 key, threshold 1)..."
 # Initialize directly via API to avoid token helper issues
 INIT_RAW=$(curl -s -X PUT http://127.0.0.1:8200/v1/sys/init \
     -H "Content-Type: application/json" \
-    -d '{"key_shares":1,"key_threshold":1}')
+    -d '{"secret_shares":1,"secret_threshold":1}')
 
 UNSEAL_KEY=$(echo "$INIT_RAW" | jq -r '.keys_base64[0]')
 ROOT_TOKEN=$(echo "$INIT_RAW" | jq -r '.root_token')
