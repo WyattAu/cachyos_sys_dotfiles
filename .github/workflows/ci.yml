@@ -1,9 +1,5 @@
 name: CI
 
-env:
-  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
-  NODE_VERSION: "24"
-
 on:
   push:
     branches: [master]
@@ -28,12 +24,18 @@ jobs:
       # --- Ansible ---
       - name: Install Ansible collections
         run: |
-          ansible-galaxy collection install community.general kewlfft.aur community.docker
+          ansible-galaxy collection install community.general kewlfft.aur community.docker ansible.posix
 
       - name: Ansible playbook syntax check
         run: |
           cd ansible
           ansible-playbook local.yml --syntax-check -i localhost,
+
+      - name: Ansible playbook check mode
+        run: |
+          cd ansible
+          ansible-playbook local.yml --check -i localhost, --extra-vars "user=ci"
+        continue-on-error: true  # check mode reports false failures on first-run tasks (collections install, mounts)
 
       # --- Shell scripts ---
       - name: Shell syntax check (bash -n)

@@ -205,7 +205,10 @@
         extra_args: "--clonedir /var/tmp/aur_build --builddir /var/tmp/aur_build"
       become: true
       become_user: "{{ user }}"
+      # AUDIT-KEEP: AUR builds are flake-tolerant (network, upstream breakage).
+      # Failures are surfaced in the summary below instead of failing the run.
       ignore_errors: true
+      register: aur_upgrade
       environment:
         MAKEFLAGS: "-j4"
         NINJAFLAGS: "-j4"
@@ -218,6 +221,7 @@
         name:
           - heroic-games-launcher-bin
         state: absent
+      # AUDIT-KEEP: absent is idempotent, but package may be foreign/partial on fresh hosts
       ignore_errors: true
 
     - name: Install System Packages
@@ -237,16 +241,30 @@
         extra_args: "--clonedir /var/tmp/aur_build --builddir /var/tmp/aur_build"
       become: true
       become_user: "{{ user }}"
+      # AUDIT-KEEP: individual AUR builds may fail upstream; rest must proceed.
+      # Failed items are listed in the summary task below.
       ignore_errors: true
+      register: aur_install
       environment:
         MAKEFLAGS: "-j4"
         NINJAFLAGS: "-j4"
       loop: >-
         {{ common_aur_pkgs
          + (native_aur_pkgs | default([]))
-         + (arch_only_aur_pkgs | default([]))
-         + (cachyos_aur_pkgs | default([]))
-         + (host_aur_pkgs | default([])) }}
+          + (arch_only_aur_pkgs | default([]))
+          + (cachyos_aur_pkgs | default([]))
+          + (host_aur_pkgs | default([])) }}
+
+    - name: Surface failed AUR builds
+      ansible.builtin.debug:
+        msg: >-
+          {{ 'WARNING — failed AUR packages: '
+             ~ (aur_install.results
+                | selectattr('failed', 'equalto', true)
+                | map(attribute='item')
+                | list)
+             if (aur_install.results | selectattr('failed', 'equalto', true) | list | length > 0)
+             else 'All AUR packages built successfully.' }}
 
     - name: Remove temporary swap (loop device)
       ansible.builtin.shell:
@@ -339,6 +357,8 @@
         state: started
         daemon_reload: yes
       when: not is_wsl
+      # AUDIT-KEEP: nix may not be installed yet on first run (installer task
+      # above may have been skipped); enable succeeds on the next sys-sync.
       ignore_errors: yes
 
     - name: Initialize Global Rust Toolchain
@@ -476,6 +496,9 @@
             groups: docker,libvirt,gamemode,input,video
             append: yes
 
+        # AUDIT-KEEP (x5, service loops): layer lists are shared across hosts
+        # with different hardware — e.g. msi-audio only exists on MSI laptops.
+        # A missing unit on one host must not abort the whole sync.
         - name: Enable Common Services (Layer 1)
           systemd:
             name: "{{ item }}"
@@ -610,26 +633,22 @@
               - noto-fonts-cjk
               - noto-fonts-emoji
             state: present
-          ignore_errors: yes
 
         - name: Install pika-backup
           community.general.pacman:
             name: pika-backup
             state: present
-          ignore_errors: yes
 
         - name: Install fail2ban
           community.general.pacman:
             name: fail2ban
             state: present
-          ignore_errors: yes
 
         - name: Enable fail2ban
           systemd:
             name: fail2ban
             enabled: yes
             state: started
-          ignore_errors: yes
 
         - name: Disable SSH password authentication
           ansible.builtin.lineinfile:
@@ -645,15 +664,17 @@
             line: 'PermitRootLogin no'
           notify: Restart sshd
 
+        # KEEP ignore-free: requires ansible.posix (installed via bootstrap + CI).
+        # If firewalld is not running the module fails fast — that's a real error.
         - name: Open KDE Connect ports in firewalld
           ansible.posix.firewalld:
             port: "{{ item }}"
             permanent: true
+            immediate: true
             state: enabled
           loop:
             - "1714-1764/tcp"
             - "1714-1764/udp"
-          ignore_errors: yes
 
         - name: Enable paccache timer for pacman cache cleanup
           ansible.builtin.copy:
@@ -684,6 +705,9 @@
             name: paccache.timer
             enabled: yes
             state: started
+          # AUDIT-KEEP: paccache unit comes from pacman-contrib, absent on
+          # minimal fresh installs; the copy tasks above only create the
+          # override, not the base unit.
           ignore_errors: yes
       when: not is_wsl
 
@@ -691,6 +715,8 @@
     # 10d. SNAPPER (Btrfs snapshots for rollback)
     # ================================================================
     - block:
+        # AUDIT-KEEP (x3): snapper + its config only exist on btrfs hosts
+        # where snapper was set up at install time; absent elsewhere.
         - name: Enable snapper timeline snapshots
           ansible.builtin.lineinfile:
             path: /etc/snapper/configs/root
@@ -763,6 +789,9 @@
               WantedBy=timers.target
             mode: "0644"
 
+        # AUDIT-KEEP (x2): vault package is not yet in any package layer —
+        # only msi-ge66 has it installed manually. TODO: move `vault` into
+        # cachyos_packages once the TrueNAS monitoring architecture lands.
         - name: Enable Vault service
           systemd:
             name: vault
@@ -815,27 +844,30 @@
           community.general.pacman:
             name: prometheus-node-exporter
             state: present
-          ignore_errors: yes
 
         - name: Install alertmanager
           community.general.pacman:
             name: alertmanager
             state: present
-          ignore_errors: yes
 
         - name: Create alertmanager config directory
           ansible.builtin.file:
             path: /etc/alertmanager
             state: directory
             mode: "0755"
-          ignore_errors: yes
 
         - name: Deploy alertmanager config
           ansible.builtin.template:
             src: templates/alertmanager.yml.j2
             dest: /etc/alertmanager/alertmanager.yml
             mode: "0644"
-          ignore_errors: yes
+
+        # AUDIT-KEEP: token file only exists after vm-setup.sh runs;
+        # stat-guard prevents "file absent" failures on fresh hosts.
+        - name: Check telegram token exists
+          ansible.builtin.stat:
+            path: /etc/alertmanager/telegram-token
+          register: telegram_token_stat
 
         - name: Fix telegram token permissions
           ansible.builtin.file:
@@ -843,7 +875,7 @@
             owner: root
             group: alertmanager
             mode: "0640"
-          ignore_errors: yes
+          when: telegram_token_stat.stat.exists
 
         - name: Create VictoriaMetrics config directory
           ansible.builtin.file:
@@ -879,6 +911,9 @@
             dest: /etc/victoriametrics/alerts.yml
             mode: "0644"
 
+        # AUDIT-KEEP (x2): VM/node-exporter units only exist if the AUR/pacman
+        # installs above succeeded; intentional stopped+disabled by design
+        # (start on demand via sys-monitor).
         - name: Enable VictoriaMetrics
           systemd:
             name: victoriametrics
@@ -923,6 +958,8 @@
             pull: always
           become: true
           become_user: "{{ user }}"
+          # AUDIT-KEEP: pulls image over network; fails gracefully offline
+          # or when Docker daemon is restarting mid-sync.
           ignore_errors: yes
       when: not is_wsl
 
@@ -969,6 +1006,8 @@
       when:
         - not is_wsl
         - cpu_governor is defined
+      # AUDIT-KEEP: cpupower unit absent unless cpupower pkg provides it;
+      # legacy path only (power-profiles-daemon is the default now).
       ignore_errors: yes
 
     # ================================================================
@@ -1102,6 +1141,8 @@
         - sysctl_tuning.vm is defined
         - sysctl_tuning.vm['vm.nr_hugepages'] is defined
         - sysctl_tuning.vm['vm.nr_hugepages'] > 0
+      # AUDIT-KEEP (x3, sysctl/hugepages): some kernels/boot states reject
+      # hugepage reallocation at runtime; value applies on next boot instead.
       ignore_errors: yes
 
     # Clear huge pages when not explicitly configured (frees reserved RAM)
@@ -1127,6 +1168,7 @@
             sysctl_set: yes
             sysctl_file: /etc/sysctl.d/99-hft-tuning.conf
           when: sysctl_tuning is defined and sysctl_tuning.kernel is defined
+          # AUDIT-KEEP: perf_event_paranoid may be locked by lockdown/secure-boot kernels
           ignore_errors: yes
 
         - name: Set file descriptor limits

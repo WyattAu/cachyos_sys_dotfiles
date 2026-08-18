@@ -82,7 +82,7 @@ fi
 
 # 5. INSTALL ANSIBLE COLLECTIONS
 echo -e "${BLUE}>> Installing Ansible Collections...${NC}"
-ansible-galaxy collection install community.general kewlfft.aur community.docker
+ansible-galaxy collection install community.general kewlfft.aur community.docker ansible.posix
 
 # 6. RUN PLAYBOOK
 echo -e "${BLUE}>> Running Ansible Playbook...${NC}"
