@@ -56,7 +56,8 @@ fi
 
 # Store bot token securely
 echo "$BOT_TOKEN" | sudo tee /etc/alertmanager/telegram-token > /dev/null
-sudo chmod 600 /etc/alertmanager/telegram-token
+sudo chown root:alertmanager /etc/alertmanager/telegram-token
+sudo chmod 640 /etc/alertmanager/telegram-token
 
 # Update alertmanager config with real chat_id
 sudo sed -i "s/chat_id: 0/chat_id: $CHAT_ID/" /etc/alertmanager/alertmanager.yml

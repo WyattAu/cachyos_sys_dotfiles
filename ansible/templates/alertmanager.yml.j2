@@ -12,7 +12,7 @@ receivers:
   - name: 'telegram'
     telegram_configs:
       - bot_token_file: '/etc/alertmanager/telegram-token'
-        chat_id: 8905506473
+        chat_id: {{ telegram_chat_id | default(0) }}
         parse_mode: 'HTML'
 
 inhibit_rules:

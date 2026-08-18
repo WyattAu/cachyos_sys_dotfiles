@@ -2,6 +2,11 @@
 # LAYER 1: BASE — Installed on ALL systems (WSL + Arch Native + CachyOS)
 # =========================================================================
 
+# --- MONITORING ---
+# Telegram chat for alertmanager notifications (bot token NOT stored here —
+# it lives in /etc/alertmanager/telegram-token, deployed by vm-setup.sh)
+telegram_chat_id: 8905506473
+
 # --- CORE PACKAGES ---
 common_packages:
   # Shell & Terminal
