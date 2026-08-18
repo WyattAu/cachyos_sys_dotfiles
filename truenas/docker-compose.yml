@@ -1,0 +1,84 @@
+# Central monitoring stack for TrueNAS SCALE
+# VictoriaMetrics (storage) + vmalert (rule evaluation) + alertmanager (Telegram)
+#
+# Deploy: see truenas/README.md in the dotfiles repo.
+# Versions pinned to match the laptop-tested stack (VM 1.138.0, AM 0.33.1).
+
+services:
+  victoriametrics:
+    image: victoriametrics/victoria-metrics:v1.138.0
+    container_name: victoriametrics
+    restart: unless-stopped
+    volumes:
+      - vm-data:/victoriametrics-data
+      - ./vm-prometheus.yml:/etc/vm-prometheus.yml:ro
+    command:
+      - "-storageDataPath=/victoriametrics-data"
+      - "-httpListenAddr=:8428"
+      - "-promscrape.config=/etc/vm-prometheus.yml"
+      - "-retentionPeriod=180d"
+      # Remote-write auth. Replace the password at deploy time:
+      #   docker compose exec victoriametrics ... (see README)
+      # Generate with: htpasswd -nBC10 "" <user> | tr -d ':\n'
+      - "-httpAuth.username=${VM_AUTH_USER}"
+      - "-httpAuth.password=${VM_AUTH_PASSWORD}"
+      - "-httpAuth.usernameFile="
+      - "-httpAuth.passwordFile="
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8428/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - monitoring
+
+  vmalert:
+    image: victoriametrics/vmalert:v1.138.0
+    container_name: vmalert
+    restart: unless-stopped
+    depends_on:
+      - victoriametrics
+    volumes:
+      - ./alerts.yml:/etc/vmalert/alerts.yml:ro
+    command:
+      - "-datasource.url=http://victoriametrics:8428"
+      - "-remoteWrite.url=http://victoriametrics:8428"
+      - "-remoteRead.url=http://victoriametrics:8428"
+      - "-notifier.url=http://alertmanager:9093"
+      - "-rule=/etc/vmalert/alerts.yml"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8880/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - monitoring
+
+  alertmanager:
+    image: prom/alertmanager:v0.33.1
+    container_name: alertmanager
+    restart: unless-stopped
+    depends_on:
+      - vmalert
+    volumes:
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      # Create this file on the NAS — contains ONLY the bot token:
+      #   echo -n "123456:ABC-DEF..." > telegram-token
+      - ./telegram-token:/etc/alertmanager/telegram-token:ro
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--web.listen-address=:9093"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9093/-/ready"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - monitoring
+
+volumes:
+  vm-data:
+
+networks:
+  monitoring:
+    driver: bridge

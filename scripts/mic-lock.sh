@@ -18,6 +18,8 @@ SRC="$HOME/.local/share/chezmoi/private_dot_config/pipewire/pipewire-pulse.conf.
 
 restart_pulse() {
     systemctl --user restart pipewire-pulse.service 2>/dev/null || true
+    echo ">> pipewire-pulse restarted — audio apps with live calls may need"
+    echo ">> a full restart (Electron apps like Element/Discord reconnect poorly)."
 }
 
 case "${1:-status}" in

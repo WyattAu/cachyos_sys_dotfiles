@@ -1,0 +1,11 @@
+# Central VictoriaMetrics scrape config (TrueNAS).
+# Hosts do NOT get scraped from here — they push via vmagent remote-write.
+# This only self-scrapes so the stack can watch its own health.
+global:
+  scrape_interval: 60s
+
+scrape_configs:
+  - job_name: victoriametrics
+    static_configs:
+      - targets: ['localhost:8428']
+    scrape_interval: 300s

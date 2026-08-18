@@ -1,0 +1,53 @@
+# Alert rules for the central vmalert (TrueNAS).
+# Same rule set as the laptop-local stack, adapted for multi-host:
+# every rule groups by instance (the pushing host's hostname label).
+groups:
+  - name: system
+    rules:
+      - alert: HighCPU
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU on {{ $labels.instance }}"
+          description: "CPU usage is above 80% for 5 minutes"
+
+      - alert: HighMemory
+        expr: (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory on {{ $labels.instance }}"
+          description: "Memory usage is above 85% for 5 minutes"
+
+      - alert: DiskSpaceLow
+        expr: (1 - node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 > 85
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Disk space low on {{ $labels.instance }}"
+          description: "Root filesystem is above 85% usage"
+
+      - alert: SystemLoadHigh
+        expr: node_load15 > count without (cpu, mode) (node_cpu_seconds_total{mode="idle"}) * 2
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High system load on {{ $labels.instance }}"
+          description: "15-minute load average is above 2x CPU count"
+
+      # 1h threshold: laptops sleep (vmagent offline) — only page when a
+      # host is genuinely missing, not merely suspended. Set per-host labels
+      # if a machine is permanently retired instead of silencing this.
+      - alert: HostNoData
+        expr: absent_over_time(up{job="node"}[1h])
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "No data from {{ $labels.instance }}"
+          description: "Host has sent no metrics for over 1 hour (offline, asleep, or vmagent dead)"

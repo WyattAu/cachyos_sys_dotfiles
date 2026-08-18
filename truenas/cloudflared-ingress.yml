@@ -1,0 +1,32 @@
+# Cloudflare Tunnel ingress for the TrueNAS monitoring stack.
+#
+# Merge these ingress rules into your EXISTING cloudflared config.yml on the
+# NAS (the one already tunneling ssh.wyattau.com etc.) — do not run a second
+# tunnel. See truenas/README.md section "Tunnel" for the full procedure.
+#
+# Path routing:
+#   /api/v1/write  -> remote-write endpoint (basic auth, used by vmagent)
+#   everything else -> VictoriaMetrics UI (protected by Cloudflare Access)
+
+# In your existing ingress list, add:
+#
+#   - hostname: vm.wyattau.com
+#     service: http://localhost:8428
+#     originRequest:
+#       # No TLS between cloudflared and local VM; both run on the same box.
+#       noTLSVerify: true
+#
+# Then create a Cloudflare Access application (Zero Trust dashboard) for
+# vm.wyattau.com with an email-OTP policy for your address — this guards
+# the UI and the query API. The /api/v1/write path carries its own basic
+# auth (set at compose deploy), so vmagent traffic passes through Access
+# via a Service Auth bypass rule:
+#
+#   Access > Applications > Add > Self-hosted:
+#     Application domain: vm.wyattau.com
+#     Path: /api/v1/write
+#     Policy action: Service Auth > Bypass   (VM's basic auth protects it)
+#
+# And a second self-hosted app for the whole domain:
+#     Application domain: vm.wyattau.com
+#     Policy action: Allow > Emails > your address (email OTP)
