@@ -13,6 +13,7 @@ Personal infrastructure-as-code for a multi-device Arch/CachyOS/WSL environment.
 | `bootstrap.sh` | Full system bootstrap from scratch. Run with `sudo`. |
 | `vault-init.sh` | Initialize HashiCorp Vault (run once). |
 | `vault-store.sh` | Store secrets in Vault from system. |
+| `sys-monitor start/stop/status` | Start/stop monitoring services on demand. |
 | `nix develop` | Enter reproducible dev shell (requires flake.nix in project). |
 
 ## Supported Hosts
