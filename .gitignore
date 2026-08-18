@@ -30,3 +30,7 @@ Thumbs.db
 __pycache__/
 *.pyc
 scripts/debug-aur.sh
+
+# Nix build links
+result
+tests/result
