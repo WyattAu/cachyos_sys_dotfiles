@@ -7,18 +7,18 @@ set -e
 case "$1" in
     start)
         echo ">> Starting monitoring..."
-        sudo systemctl start victoriametrics node_exporter 2>/dev/null || true
+        sudo systemctl start victoriametrics prometheus-node-exporter 2>/dev/null || true
         echo "  VictoriaMetrics: http://localhost:8428"
         echo "  Node metrics:    http://localhost:9100/metrics"
         ;;
     stop)
         echo ">> Stopping monitoring..."
-        sudo systemctl stop victoriametrics node_exporter 2>/dev/null || true
+        sudo systemctl stop victoriametrics prometheus-node-exporter 2>/dev/null || true
         echo "  All monitoring stopped."
         ;;
     status)
         echo ">> Monitoring status:"
-        for svc in victoriametrics node_exporter vault; do
+        for svc in victoriametrics prometheus-node-exporter vault; do
             STATUS=$(systemctl is-active $svc 2>/dev/null || echo "inactive")
             if [ "$STATUS" = "active" ]; then
                 echo "  ✓ $svc (active)"

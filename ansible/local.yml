@@ -881,7 +881,7 @@
 
         - name: Enable node_exporter
           systemd:
-            name: node_exporter
+            name: prometheus-node-exporter
             enabled: no
             state: stopped
           ignore_errors: yes
