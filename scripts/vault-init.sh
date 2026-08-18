@@ -5,6 +5,21 @@ set -e
 
 export VAULT_ADDR='http://127.0.0.1:8200'
 
+# Ensure Vault is running
+echo ">> Checking Vault service..."
+if ! systemctl is-active --quiet vault 2>/dev/null; then
+    echo ">> Starting Vault service..."
+    sudo systemctl start vault
+    sleep 2
+    # Wait for Vault to be ready
+    for i in {1..10}; do
+        if vault status -format=json 2>/dev/null | grep -q '"initialized"'; then
+            break
+        fi
+        sleep 1
+    done
+fi
+
 echo ">> Checking Vault status..."
 if vault status -format=json 2>/dev/null | grep -q '"initialized":true'; then
     echo ">> Vault already initialized."
