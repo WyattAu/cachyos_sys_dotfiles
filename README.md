@@ -448,6 +448,43 @@ git checkout <commit> -- <file>
 chezmoi apply --force
 ```
 
+### Secrets Recovery (Vault)
+
+Vault data lives in `/opt/vault/data`; the unseal key + root token live in
+`~/.vault-secrets/` (never committed). `vault-backup.sh` mirrors recovery
+material to `~/Library/Vault/`, which pika-backup carries to TrueNAS.
+
+**Recovery procedure after disk loss:**
+
+1. Reinstall + bootstrap as usual, then: `sudo pacman -S vault`
+2. Restore two things from backup:
+   - `/opt/vault/data/` (system backup / snapper archives)
+   - `~/Library/Vault/` (pika-backup / TrueNAS)
+3. Unseal:
+   ```bash
+   sudo systemctl start vault
+   export VAULT_ADDR=http://127.0.0.1:8200
+   vault operator unseal "$(cat ~/Library/Vault/unseal.key)"
+   export VAULT_TOKEN="$(cat ~/Library/Vault/token)"
+   vault kv list secret/   # verify
+   ```
+4. Restore secrets to disk if needed, e.g. SSH key:
+   `vault kv get -field=private_key secret/ssh/ed25519 > ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519`
+
+**Higher-assurance option:** also record the unseal key in a password manager
+or on paper. Without it (and without the backup), Vault contents are
+cryptographically unrecoverable.
+
+### Storing New Secrets
+
+```bash
+export VAULT_ADDR=http://127.0.0.1:8200
+export VAULT_TOKEN="$(cat ~/.vault-secrets/token)"
+vault kv put secret/ocis/credentials url=https://ocis.wyattau.com username=USER password=PASS
+vault-store.sh      # re-captures SSH key + gh token if changed
+vault-backup.sh     # refresh recovery mirror
+```
+
 ### What's Preserved vs Lost
 
 | Preserved | Lost (must rebuild) |

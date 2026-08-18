@@ -315,6 +315,13 @@
       loop:
         - sys-save
         - sys-sync
+        - sys-check
+        - sys-monitor.sh
+        - vault-init.sh
+        - vault-store.sh
+        - vault-unseal.sh
+        - vault-backup.sh
+        - vm-setup.sh
 
     # ================================================================
     # 7. TOOLCHAINS (installed as the actual user, NOT root)

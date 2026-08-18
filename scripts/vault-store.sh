@@ -23,17 +23,22 @@ else
 fi
 
 echo ">> Storing GitHub token..."
-if [ -f ~/.config/gh/hosts.yml ]; then
-    GH_TOKEN=$(grep -A1 "github.com" ~/.config/gh/hosts.yml 2>/dev/null | grep oauth_token | awk '{print $2}' | tr -d '"')
-    if [ -n "$GH_TOKEN" ]; then
-        vault kv put secret/github/token \
-            token="$GH_TOKEN" 2>/dev/null
-        echo "  ✓ GitHub token stored"
-    else
-        echo "  ⚠ GitHub token not found in gh config"
-    fi
+# Prefer `gh auth token` (works with keyring/hosts.yml storage);
+# fall back to raw hosts.yml grep for non-interactive contexts.
+GH_TOKEN=""
+if command -v gh &>/dev/null; then
+    GH_TOKEN=$(gh auth token 2>/dev/null || true)
+fi
+if [ -z "$GH_TOKEN" ] && [ -f ~/.config/gh/hosts.yml ]; then
+    GH_TOKEN=$(grep oauth_token ~/.config/gh/hosts.yml 2>/dev/null | head -1 | awk '{print $2}' | tr -d '"')
+fi
+if [ -n "$GH_TOKEN" ]; then
+    vault kv put secret/github/token \
+        token="$GH_TOKEN" 2>/dev/null
+    echo "  ✓ GitHub token stored"
 else
-    echo "  ⚠ gh CLI config not found"
+    echo "  ⚠ No GitHub token — run: gh auth login -h github.com"
+    echo "    then re-run vault-store.sh"
 fi
 
 echo ">> Storing OCIS credentials..."
