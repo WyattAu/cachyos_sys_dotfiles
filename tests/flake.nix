@@ -3,23 +3,16 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nixos-test.url = "github:NixOS/nixpkgs/nixos-unstable#nixosTests";
   };
 
-  outputs = { self, nixpkgs, ... }: {
-    packages.x86_64-linux.system-tests = import ./system.nix {
+  outputs = { self, nixpkgs }:
+    let
       system = "x86_64-linux";
-      pkgs = nixpkgs.legacyPackages.x86_64-linux;
+      pkgs = import nixpkgs { inherit system; };
+    in {
+      checks.${system} = {
+        system = pkgs.testers.runNixOSTest (import ./system.nix { inherit pkgs; });
+        roles = pkgs.testers.runNixOSTest (import ./roles.nix { inherit pkgs; });
+      };
     };
-
-    packages.x86_64-linux.role-tests = import ./roles.nix {
-      system = "x86_64-linux";
-      pkgs = nixpkgs.legacyPackages.x86_64-linux;
-    };
-
-    checks.x86_64-linux = {
-      system = self.packages.x86_64-linux.system-tests;
-      roles = self.packages.x86_64-linux.role-tests;
-    };
-  };
 }

@@ -15,6 +15,9 @@
       systemd.services.NetworkManager.enable = true;
 
       # Test packages
+      programs.fish.enable = true;
+      users.groups.docker = {};
+      users.groups.video = {};
       environment.systemPackages = with pkgs; [
         fish
         neovim

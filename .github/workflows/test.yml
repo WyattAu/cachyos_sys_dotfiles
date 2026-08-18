@@ -24,13 +24,11 @@ jobs:
 
       - name: Run system tests
         run: |
-          nix build .#checks.x86_64-linux.system --print-build-logs
-        continue-on-error: true
+          nix build ./tests#checks.x86_64-linux.system --print-build-logs
 
       - name: Run role tests
         run: |
-          nix build .#checks.x86_64-linux.roles --print-build-logs
-        continue-on-error: true
+          nix build ./tests#checks.x86_64-linux.roles --print-build-logs
 
   ansible-lint:
     name: Ansible Lint
