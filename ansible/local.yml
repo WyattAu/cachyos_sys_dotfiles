@@ -322,6 +322,7 @@
         - vault-unseal.sh
         - vault-backup.sh
         - vm-setup.sh
+        - mic-lock.sh
 
     # ================================================================
     # 7. TOOLCHAINS (installed as the actual user, NOT root)
@@ -934,6 +935,45 @@
             name: prometheus-node-exporter
             enabled: no
             state: stopped
+          ignore_errors: yes
+
+        # --- Central monitoring (TrueNAS remote-write) ---
+        # Active only when monitoring_remote_write_url is set on the host
+        # (host_vars override). vmagent buffers locally when the collector
+        # is unreachable — safe for sleeping laptops.
+        - name: Deploy vmagent config (central remote-write)
+          ansible.builtin.template:
+            src: templates/vmagent-conf.yml.j2
+            dest: /etc/victoriametrics/vmagent.yml
+            mode: "0644"
+          when: monitoring_remote_write_url is defined and monitoring_remote_write_url | length > 0
+
+        - name: Create vmagent systemd service
+          ansible.builtin.copy:
+            dest: /etc/systemd/system/vmagent.service
+            content: |
+              [Unit]
+              Description=vmagent (remote-write to central VictoriaMetrics)
+              After=network-online.target
+              Wants=network-online.target
+              [Service]
+              Type=simple
+              ExecStart=/usr/bin/vmagent -promscrape.config=/etc/victoriametrics/vmagent.yml -remoteWrite.tmpDataPath=/var/lib/victoriametrics/vmagent-remote-write
+              Restart=always
+              RestartSec=30
+              [Install]
+              WantedBy=multi-user.target
+            mode: "0644"
+          when: monitoring_remote_write_url is defined and monitoring_remote_write_url | length > 0
+
+        - name: Enable vmagent (central remote-write)
+          systemd:
+            name: vmagent
+            enabled: yes
+            state: started
+            daemon_reload: yes
+          when: monitoring_remote_write_url is defined and monitoring_remote_write_url | length > 0
+          # AUDIT-KEEP: vmagent binary comes from the victoriametrics AUR pkg
           ignore_errors: yes
       when: not is_wsl
 
