@@ -1,56 +1,26 @@
-#!/bin/bash
-# mic-lock — Control mic-volume auto-adjust protection
+#!/usr/bin/env bash
+# mic-lock: keep the internal digital mic volume pinned while Element
+# records. Chromium's WebRTC AGC2 ("input volume controller") rewrites
+# the OS mic volume every few seconds during calls, ignoring
+# --disable-features=WebRtcAllowInputVolumeAdjustment on Electron 43.
+# This pins the volume ONLY while an Element source-output exists;
+# outside calls you can adjust the mic freely.
 #
-# Blocks apps with AGC (browsers, Discord, Zoom, Teams...) from changing
-# microphone volume. Targeted list — your mixers (pavucontrol, KDE audio
-# widget, wpctl) keep working normally.
-#
-# Usage:
-#   mic-lock                  show status + current mic volume
-#   mic-lock on               re-apply protection (same as sys-sync)
-#   mic-lock off              temporarily disable protection
-#   mic-lock set 80%          set mic volume
+# Change the pinned level:  ~/.config/mic-lock.conf  ->  PIN=65
 
-set -e
+PIN="${PIN:-70}"
+CONF="$HOME/.config/mic-lock.conf"
+[ -f "$CONF" ] && source "$CONF"
+PIN="${PIN:-70}"
 
-CONF="$HOME/.config/pipewire/pipewire-pulse.conf.d/51-block-source-volume.conf"
-SRC="$HOME/.local/share/chezmoi/private_dot_config/pipewire/pipewire-pulse.conf.d/51-block-source-volume.conf"
+SRC="alsa_input.pci-0000_00_1f.3-platform-skl_hda_dsp_generic.HiFi__Mic1__source"
 
-restart_pulse() {
-    systemctl --user restart pipewire-pulse.service 2>/dev/null || true
-    echo ">> pipewire-pulse restarted — audio apps with live calls may need"
-    echo ">> a full restart (Electron apps like Element/Discord reconnect poorly)."
-}
-
-case "${1:-status}" in
-    on)
-        mkdir -p "$(dirname "$CONF")"
-        install -m 644 "$SRC" "$CONF"
-        restart_pulse
-        echo ">> Mic auto-adjust protection ON (apps cannot change mic volume)"
-        echo ">> Note: next sys-sync also re-enables this automatically."
-        ;;
-    off)
-        rm -f "$CONF"
-        restart_pulse
-        echo ">> Mic auto-adjust protection OFF (apps can change mic volume)"
-        echo ">> Temporary — sys-sync or 'mic-lock on' restores it."
-        ;;
-    set)
-        VOL="${2:?usage: mic-lock set 80%}"
-        wpctl set-volume --limit 1.0 "$VOL" @DEFAULT_AUDIO_SOURCE@
-        wpctl get-volume @DEFAULT_AUDIO_SOURCE@
-        ;;
-    status)
-        if [ -f "$CONF" ]; then
-            echo ">> Protection: ON"
-        else
-            echo ">> Protection: OFF"
+while true; do
+    if pactl list source-outputs short 2>/dev/null | grep -qi element; then
+        cur="$(pactl get-source-volume "$SRC" 2>/dev/null | grep -o '[0-9]*%' | head -n1)"
+        if [ -n "$cur" ] && [ "$cur" != "${PIN}%" ]; then
+            pactl set-source-volume "$SRC" "${PIN}%" 2>/dev/null
         fi
-        wpctl get-volume @DEFAULT_AUDIO_SOURCE@ || true
-        ;;
-    *)
-        echo "Usage: mic-lock [on|off|set VOL%|status]"
-        exit 1
-        ;;
-esac
+    fi
+    sleep 0.4
+done
