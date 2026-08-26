@@ -404,6 +404,7 @@
       loop: "{{ pnpm_global_pkgs | default([]) }}"
       environment:
         PNPM_HOME: "/home/{{ user }}/.local/share/pnpm"
+        PATH: "/home/{{ user }}/.local/share/pnpm/bin:{{ ansible_env.PATH | default('/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl') }}"
 
     # ================================================================
     # 8. DETERMINISTIC DIRECTORY MANAGEMENT
