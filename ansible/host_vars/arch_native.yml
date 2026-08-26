@@ -97,6 +97,7 @@ native_aur_pkgs:
   # Chat
   - vesktop-bin
   - signal-desktop
+  - telegram-desktop
   - betterbird-bin
 
   # Media
