@@ -27,8 +27,14 @@ Host truenas
 # ── Tailnet (Headscale mesh VPN) ──
 # Works from anywhere; falls back to LAN entries above when at home
 
-# CachyOS runner server
-Host cachyos cachyos-ts
+# CachyOS headless server (192.168.1.191)
+Host cachyos-x8664 cachyos-server
+    HostName 100.64.0.2
+    User wyatt
+    IdentityFile ~/.ssh/id_ed25519
+
+# Acer desktop
+Host wyattdeskacercachy acer
     HostName 100.64.0.3
     User wyatt
     IdentityFile ~/.ssh/id_ed25519
