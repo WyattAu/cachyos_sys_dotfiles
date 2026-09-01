@@ -142,13 +142,9 @@
         pacman-key --lsign-key 3056513887B78AEB
       changed_when: false
 
-    - name: Add Chaotic-AUR repository
-      ansible.builtin.blockinfile:
-        path: /etc/pacman.conf
-        block: |
-          [chaotic-aur]
-          Include = /etc/pacman.d/chaotic-mirrorlist
-        marker: "# {mark} ANSIBLE MANAGED: Chaotic-AUR"
+    # NOTE: runs BEFORE the pacman.conf block below — on fresh hosts the
+    # [chaotic-aur] Include would otherwise reference a not-yet-existing
+    # mirrorlist file and brick every subsequent pacman call.
 
     - name: Install Chaotic-AUR keyring and mirrorlist
       ansible.builtin.shell: |
@@ -166,6 +162,14 @@
         fi
       register: chaotic_install
       changed_when: "'INSTALLED' in chaotic_install.stdout"
+
+    - name: Add Chaotic-AUR repository
+      ansible.builtin.blockinfile:
+        path: /etc/pacman.conf
+        block: |
+          [chaotic-aur]
+          Include = /etc/pacman.d/chaotic-mirrorlist
+        marker: "# {mark} ANSIBLE MANAGED: Chaotic-AUR"
 
     - name: Update System Repos
       community.general.pacman:
