@@ -63,7 +63,9 @@ else
 fi
 
 echo "KDE theme:"
-if grep -q "BreezeDark" ~/.config/kdeglobals 2>/dev/null; then
+# Plasma >= 6.3 stores ColorSchemeHash instead of the scheme name string.
+# BreezeDark = 9d38eb71ded8ff549da26d57d7cbab9164da243a (stable content hash).
+if grep -qE "ColorScheme=BreezeDark|ColorSchemeHash=9d38eb71ded8ff549da26d57d7cbab9164da243a" ~/.config/kdeglobals 2>/dev/null; then
     echo "  ✓ Breeze Dark"
 else
     echo "  ✗ theme not set"
