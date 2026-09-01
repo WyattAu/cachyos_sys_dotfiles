@@ -1,6 +1,12 @@
 #!/bin/bash
 # Power management — adapts based on host type
 
+# Headless hosts (servers) have no Plasma session — skip cleanly.
+if [[ -z "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]] && ! pgrep -x plasmashell >/dev/null 2>&1; then
+    echo "No display session detected — skipping"
+    exit 0
+fi
+
 {{- if .is_laptop }}
 # Laptop: aggressive power saving
 kwriteconfig6 --file powerdevilrc --group AC --key LidCloseAction 2 2>/dev/null || true

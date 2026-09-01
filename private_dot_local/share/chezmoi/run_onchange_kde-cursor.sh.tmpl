@@ -1,6 +1,12 @@
 #!/bin/bash
 # Cursor + input settings — enforced on every chezmoi apply
 
+# Headless hosts (servers) have no Plasma session — skip cleanly.
+if [[ -z "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]] && ! pgrep -x plasmashell >/dev/null 2>&1; then
+    echo "No display session detected — skipping"
+    exit 0
+fi
+
 kwriteconfig6 --file kcminputrc --group Mouse --key XLbInptCursorTheme "{{ .kde_cursor_theme }}" 2>/dev/null || true
 kwriteconfig6 --file kcminputrc --group Mouse --key XLbInptCursorSize "{{ .kde_cursor_size }}" 2>/dev/null || true
 plasma-apply-cursortheme --name "{{ .kde_cursor_theme }}" --size {{ .kde_cursor_size }} 2>/dev/null || true

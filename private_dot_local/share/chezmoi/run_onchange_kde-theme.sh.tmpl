@@ -3,6 +3,12 @@
 # KDE mangles kdeglobals — kwriteconfig6 is deterministic
 
 # Locale safeguard
+# Headless hosts (servers) have no Plasma session — skip cleanly.
+if [[ -z "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]] && ! pgrep -x plasmashell >/dev/null 2>&1; then
+    echo "No display session detected — skipping"
+    exit 0
+fi
+
 export LANG="{{ .system_locale }}"
 export LANGUAGE="en_GB"
 

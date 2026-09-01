@@ -2,6 +2,12 @@
 # Compositor + effects + night color — enforced on every chezmoi apply
 
 # Compositor
+# Headless hosts (servers) have no Plasma session — skip cleanly.
+if [[ -z "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]] && ! pgrep -x plasmashell >/dev/null 2>&1; then
+    echo "No display session detected — skipping"
+    exit 0
+fi
+
 kwriteconfig6 --file kwinrc --group Compositing --key AnimationSpeed "{{ .kde_animation_speed }}" 2>/dev/null || true
 kwriteconfig6 --file kwinrc --group Compositing --key GLCore true 2>/dev/null || true
 kwriteconfig6 --file kwinrc --group Compositing --key OpenGLIsUnsafe false 2>/dev/null || true
