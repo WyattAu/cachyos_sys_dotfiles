@@ -3,6 +3,13 @@
 # This script is deployed by chezmoi and runs on first apply only.
 # It calls the main panel setup script which is idempotent.
 
+# Headless hosts (servers) have no Plasma session — skip cleanly
+# instead of failing chezmoi apply after the 30s plasmashell wait.
+if [[ -z "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]] && ! pgrep -x plasmashell >/dev/null 2>&1; then
+    echo "No display session detected — skipping KDE panel setup"
+    exit 0
+fi
+
 CHEZMOI_DIR="$HOME/.local/share/chezmoi"
 PANEL_SCRIPT="$CHEZMOI_DIR/scripts/kde-panel-setup.sh"
 
