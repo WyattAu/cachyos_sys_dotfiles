@@ -21,6 +21,21 @@ monitoring_remote_write_url: ""
 monitoring_remote_write_user: ""
 monitoring_remote_write_pass: ""
 
+# --- SSH: WORKSTATION KEYS AUTHORIZED ON ALL HOSTS ---
+# Pubkeys only (never private). Every host running local.yml authorizes
+# these for the local user — gives the workstation fleet-wide access
+# over the tailnet. Ansible manages them as a marked block.
+ssh_authorized_keys:
+  - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEnFvs3qfjUVQZ9ep/TF7XTlJG7qb5HWnDZ/PJ5+wEkM wyatt@msi-ge66
+
+# --- TAILSCALE / HEADSCALE ---
+# Client enrolls against the self-hosted Headscale control server
+# (SimpleInfrastructureStack on TrueNAS). The pre-auth key is NOT stored
+# here — it lives at /etc/tailscale/headscale-authkey (0600) or in Vault
+# at secret/vpn/tailscale; the enrollment script retries via timer until
+# one is available (see local.yml section 10g).
+headscale_url: "https://headscale.wyattau.com"
+
 # --- CORE PACKAGES ---
 common_packages:
   # Shell & Terminal
@@ -100,6 +115,9 @@ common_packages:
 
   # Infrastructure as Code
   - terraform
+
+  # Mesh VPN (enrolls to self-hosted Headscale — see local.yml section 10g)
+  - tailscale
 
   # Flatpak
   - flatpak

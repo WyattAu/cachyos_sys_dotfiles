@@ -24,6 +24,21 @@ Host truenas
     User truenas_admin
     IdentityFile ~/.ssh/id_ed25519
 
+# ── Tailnet (Headscale mesh VPN) ──
+# Works from anywhere; falls back to LAN entries above when at home
+
+# CachyOS runner server
+Host cachyos cachyos-ts
+    HostName 100.64.0.3
+    User wyatt
+    IdentityFile ~/.ssh/id_ed25519
+
+# TrueNAS over the tailnet
+Host truenas-ts
+    HostName 100.64.0.8
+    User truenas_admin
+    IdentityFile ~/.ssh/id_ed25519
+
 # ── Cloud / Git ──
 
 # Forgejo Git SSH via Cloudflare Tunnel

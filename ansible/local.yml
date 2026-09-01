@@ -171,6 +171,19 @@
       community.general.pacman:
         update_cache: yes
         upgrade: yes
+      # AUDIT-KEEP: repo transitions declare replaces/conflicts (e.g.
+      # python-proton-vpn-api-core replacing python-proton-vpn-local-agent);
+      # the module's --noconfirm answers the default N to conflict prompts
+      # and aborts. The retry below accepts the repo's own conflict resolution.
+      ignore_errors: yes
+      register: sysupgrade
+
+    - name: Resolve package conflicts and complete upgrade (repo transitions)
+      # Only runs when the module-based upgrade failed. `yes |` accepts the
+      # conflict prompts; if the upgrade still fails, the play fails here.
+      ansible.builtin.shell: set -o pipefail; yes | pacman -Syu
+      when: sysupgrade is failed
+      changed_when: true
 
     - name: Ensure /var/tmp/aur_build directory exists
       ansible.builtin.file:
@@ -216,10 +229,12 @@
     # ================================================================
     # 5. PACKAGE INSTALLATION (merged from all layers)
     # ================================================================
-    - name: Remove AUR packages superseded by native repos
+    - name: Remove packages superseded by repo transitions or native repos
       community.general.pacman:
         name:
           - heroic-games-launcher-bin
+          # merged into python-proton-vpn-api-core 5.5.15+
+          - python-proton-vpn-local-agent
         state: absent
       # AUDIT-KEEP: absent is idempotent, but package may be foreign/partial on fresh hosts
       ignore_errors: true
@@ -695,6 +710,18 @@
             line: 'PermitRootLogin no'
           notify: Restart sshd
 
+        # Fleet access: authorize workstation pubkeys for the local user
+        # (managed block — removing a key here removes it on next sync).
+        - name: Ensure workstation SSH keys are authorized
+          ansible.builtin.blockinfile:
+            path: "/home/{{ user }}/.ssh/authorized_keys"
+            block: "{{ ssh_authorized_keys | default([]) | join('\n') }}"
+            marker: "# {mark} ANSIBLE MANAGED: workstation keys"
+            create: yes
+            owner: "{{ user }}"
+            group: "{{ user }}"
+            mode: "0600"
+
         # KEEP ignore-free: requires ansible.posix (installed via bootstrap + CI).
         # If firewalld is not running the module fails fast — that's a real error.
         - name: Open KDE Connect ports in firewalld
@@ -1042,6 +1069,141 @@
           # AUDIT-KEEP: pulls image over network; fails gracefully offline
           # or when Docker daemon is restarting mid-sync.
           ignore_errors: yes
+      when: not is_wsl
+
+    # ================================================================
+    # 10g. TAILSCALE (mesh VPN via self-hosted Headscale)
+    # ================================================================
+    # Package comes from common_packages (Layer 1, all hosts incl. WSL).
+    # Enrollment is secret-gated: the pre-auth key lives either at
+    # /etc/tailscale/headscale-authkey (0600, like the alertmanager
+    # telegram-token pattern) or in the local Vault (secret/vpn/tailscale).
+    # Until a key is available the enroll script exits 0 and the timer
+    # retries — fresh hosts converge without failing the sync.
+    - block:
+        - name: Ensure /etc/tailscale exists
+          ansible.builtin.file:
+            path: /etc/tailscale
+            state: directory
+            mode: "0750"
+
+        # AUDIT-KEEP: tailscaled unit is shipped by the tailscale package
+        # (common_packages) which installs earlier in this same run; absent
+        # on fresh hosts until pacman finishes.
+        - name: Enable tailscaled
+          ansible.builtin.systemd:
+            name: tailscaled
+            enabled: yes
+            state: started
+          ignore_errors: yes
+
+        - name: Deploy tailscale enrollment script
+          ansible.builtin.copy:
+            dest: /usr/local/bin/tailscale-enroll.sh
+            mode: "0755"
+            content: |
+              #!/bin/bash
+              # tailscale-enroll — idempotent enrollment against Headscale.
+              # Invoked by tailscale-enroll.service (timer-driven). Exits 0
+              # when already enrolled or when no auth key is available yet;
+              # exits 1 only on a real enrollment failure (timer retries).
+              set -uo pipefail
+
+              HEADSCALE_URL="{{ headscale_url | default('https://headscale.wyattau.com') }}"
+              KEY_FILE=/etc/tailscale/headscale-authkey
+              VAULT_ADDR_LOCAL=http://127.0.0.1:8200
+              VAULT_TOKEN_FILE=/home/{{ user }}/.vault-secrets/token
+
+              log() { echo "tailscale-enroll: $*"; }
+
+              command -v tailscale >/dev/null 2>&1 || { log "tailscale not installed"; exit 0; }
+              systemctl is-active --quiet tailscaled || { log "tailscaled not running"; exit 0; }
+
+              # BackendState Running/Starting/NeedsMachineAuth = already
+              # logged in (NeedsMachineAuth = registered, awaiting approval).
+              STATE=$(tailscale status --json 2>/dev/null | grep -o '"BackendState"[^,]*' | head -1)
+              if echo "$STATE" | grep -qE 'Running|Starting|NeedsMachineAuth'; then
+                  log "already enrolled ($STATE)"
+                  exit 0
+              fi
+
+              # Auth key: key file first, then local Vault fallback.
+              AUTHKEY=""
+              if [ -r "$KEY_FILE" ]; then
+                  AUTHKEY=$(head -1 "$KEY_FILE" | tr -d '[:space:]')
+              elif [ -r "$VAULT_TOKEN_FILE" ] && command -v vault >/dev/null 2>&1; then
+                  AUTHKEY=$(VAULT_ADDR="$VAULT_ADDR_LOCAL" \
+                            VAULT_TOKEN="$(cat "$VAULT_TOKEN_FILE")" \
+                            vault kv get -field=auth_key secret/vpn/tailscale 2>/dev/null || true)
+              fi
+
+              if [ -z "$AUTHKEY" ]; then
+                  log "no auth key ($KEY_FILE or Vault secret/vpn/tailscale) — skipping"
+                  exit 0
+              fi
+
+              log "enrolling with $HEADSCALE_URL as $(hostname)"
+              if tailscale up \
+                  --login-server="$HEADSCALE_URL" \
+                  --authkey="$AUTHKEY" \
+                  --hostname="$(hostname)" \
+                  --accept-routes; then
+                  log "enrolled successfully"
+                  exit 0
+              fi
+              log "enrollment failed — retrying on next timer tick"
+              exit 1
+
+        - name: Create tailscale-enroll service
+          ansible.builtin.copy:
+            dest: /etc/systemd/system/tailscale-enroll.service
+            content: |
+              [Unit]
+              Description=Tailscale enrollment (Headscale)
+              After=network-online.target tailscaled.service
+              Wants=network-online.target
+              Requires=tailscaled.service
+              [Service]
+              Type=oneshot
+              ExecStart=/usr/local/bin/tailscale-enroll.sh
+            mode: "0644"
+
+        - name: Create tailscale-enroll timer
+          ansible.builtin.copy:
+            dest: /etc/systemd/system/tailscale-enroll.timer
+            content: |
+              [Unit]
+              Description=Retry Tailscale enrollment until it succeeds
+              [Timer]
+              OnBootSec=2min
+              OnUnitActiveSec=1h
+              Persistent=true
+              [Install]
+              WantedBy=timers.target
+            mode: "0644"
+
+        - name: Enable tailscale-enroll timer
+          ansible.builtin.systemd:
+            name: tailscale-enroll.timer
+            enabled: yes
+            state: started
+            daemon_reload: yes
+
+        # AUDIT-KEEP: key file is deployed out-of-band (vault-store.sh or
+        # manual copy); stat-guard prevents "file absent" failures on
+        # fresh hosts (same pattern as the alertmanager telegram-token).
+        - name: Check headscale authkey exists
+          ansible.builtin.stat:
+            path: /etc/tailscale/headscale-authkey
+          register: headscale_key_stat
+
+        - name: Fix headscale authkey permissions
+          ansible.builtin.file:
+            path: /etc/tailscale/headscale-authkey
+            owner: root
+            group: root
+            mode: "0600"
+          when: headscale_key_stat.stat.exists
       when: not is_wsl
 
     # ================================================================

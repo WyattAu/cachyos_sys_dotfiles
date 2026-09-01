@@ -10,7 +10,8 @@ if [ ! -f ~/.vault-secrets/token ]; then
     exit 1
 fi
 
-export VAULT_TOKEN=$(cat ~/.vault-secrets/token)
+VAULT_TOKEN=$(cat ~/.vault-secrets/token)
+export VAULT_TOKEN
 
 echo ">> Storing SSH keys..."
 if [ -f ~/.ssh/id_ed25519 ]; then
@@ -55,8 +56,29 @@ echo "  Vault stores the config reference only"
 vault kv put secret/vpn/proton \
     protocol="wireguard" \
     split_tunneling="true" \
-    kill_switch="true" 2>/dev/null
+    killswitch="true" 2>/dev/null
 echo "  ✓ ProtonVPN config stored"
+
+echo ">> Storing Headscale pre-auth key..."
+# Mirrors /etc/tailscale/headscale-authkey (root 0600) into Vault so the
+# enrollment script can fetch it (tailscale-enroll.sh on this host).
+# sudo is only used to read the root-owned key file.
+if [ -r /etc/tailscale/headscale-authkey ] || sudo test -r /etc/tailscale/headscale-authkey; then
+    HS_KEY=$(sudo head -1 /etc/tailscale/headscale-authkey | tr -d '[:space:]')
+    if [ -n "$HS_KEY" ]; then
+        vault kv put secret/vpn/tailscale \
+            auth_key="$HS_KEY" 2>/dev/null
+        echo "  ✓ Headscale auth key stored (secret/vpn/tailscale)"
+    else
+        echo "  ⚠ headscale-authkey file is empty"
+    fi
+else
+    echo "  ⚠ /etc/tailscale/headscale-authkey not found"
+    echo "    Create it (as root):"
+    echo "      echo hskey-auth-... > /etc/tailscale/headscale-authkey"
+    echo "      chmod 600 /etc/tailscale/headscale-authkey"
+    echo "    then re-run vault-store.sh"
+fi
 
 echo ">> Storing Nix access tokens..."
 if [ -f ~/.config/nix/nix.conf ]; then

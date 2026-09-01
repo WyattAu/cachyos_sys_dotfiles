@@ -78,6 +78,27 @@ else
     ERRORS=$((ERRORS + 1))
 fi
 
+echo "Tailscale:"
+if command -v tailscale &>/dev/null; then
+    if systemctl is-active --quiet tailscaled 2>/dev/null; then
+        echo "  ✓ tailscaled running"
+        TS_STATE=$(tailscale status --json 2>/dev/null | grep -o '"BackendState"[^,]*' | head -1)
+        if echo "$TS_STATE" | grep -q 'Running'; then
+            TS_IP=$(tailscale ip -4 2>/dev/null | head -1)
+            echo "  ✓ enrolled (${TS_IP:-no ip})"
+        else
+            echo "  ✗ not enrolled (${TS_STATE:-no state})"
+            ERRORS=$((ERRORS + 1))
+        fi
+    else
+        echo "  ✗ tailscaled not running"
+        ERRORS=$((ERRORS + 1))
+    fi
+else
+    echo "  ✗ tailscale not installed"
+    ERRORS=$((ERRORS + 1))
+fi
+
 if [[ $ERRORS -eq 0 ]]; then
     echo ">> All checks passed."
 else
