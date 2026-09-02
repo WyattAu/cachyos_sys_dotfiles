@@ -8,5 +8,5 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9100']
         labels:
-          instance: '{{ inventory_hostname | default(ansible_hostname) }}'
+          instance: '{{ ansible_hostname | default(inventory_hostname) }}'
     scrape_interval: 120s
