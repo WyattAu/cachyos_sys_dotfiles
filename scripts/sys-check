@@ -1,8 +1,18 @@
 #!/bin/bash
 # sys-check — smoke tests to verify system matches declared state
 # Run after sys-sync or manually to validate system health
+#
+# Host profiles:
+#   MSI laptops (msi-ge66, msi-z16)  → mitigations + msi_ec checks
+#   Headless servers (no $DISPLAY)    → KDE checks skipped
+#   Everything else                   → core checks only
 
 ERRORS=0
+HOSTNAME_STR="$(hostname)"
+IS_MSI=false
+[[ "$HOSTNAME_STR" == msi-* ]] && IS_MSI=true
+IS_HEADLESS=true
+[[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]] || pgrep -x plasmashell >/dev/null 2>&1 && IS_HEADLESS=false
 
 check_service() {
     if systemctl is-active --quiet "$1" 2>/dev/null; then
@@ -13,29 +23,33 @@ check_service() {
     fi
 }
 
-echo ">> Running smoke tests..."
+echo ">> Running smoke tests on $HOSTNAME_STR (msi=$IS_MSI, headless=$IS_HEADLESS)..."
 
 echo "Services:"
 check_service docker
 check_service firewalld
 check_service NetworkManager
-check_service bluetooth
-check_service cups
-
-echo "Kernel:"
-if grep -q "mitigations=off" /proc/cmdline 2>/dev/null; then
-    echo "  ✓ mitigations=off"
-else
-    echo "  ✗ mitigations=off not active"
-    ERRORS=$((ERRORS + 1))
+if [[ "$IS_HEADLESS" == false ]]; then
+    check_service bluetooth
+    check_service cups
 fi
 
-echo "MSI EC:"
-if lsmod | grep -q msi_ec 2>/dev/null; then
-    echo "  ✓ msi_ec loaded"
-else
-    echo "  ✗ msi_ec not loaded"
-    ERRORS=$((ERRORS + 1))
+if [[ "$IS_MSI" == true ]]; then
+    echo "Kernel:"
+    if grep -q "mitigations=off" /proc/cmdline 2>/dev/null; then
+        echo "  ✓ mitigations=off"
+    else
+        echo "  ✗ mitigations=off not active"
+        ERRORS=$((ERRORS + 1))
+    fi
+
+    echo "MSI EC:"
+    if lsmod | grep -q msi_ec 2>/dev/null; then
+        echo "  ✓ msi_ec loaded"
+    else
+        echo "  ✗ msi_ec not loaded"
+        ERRORS=$((ERRORS + 1))
+    fi
 fi
 
 echo "Locale:"
@@ -62,14 +76,16 @@ else
     ERRORS=$((ERRORS + 1))
 fi
 
-echo "KDE theme:"
-# Plasma >= 6.3 stores ColorSchemeHash instead of the scheme name string.
-# BreezeDark = 9d38eb71ded8ff549da26d57d7cbab9164da243a (stable content hash).
-if grep -qE "ColorScheme=BreezeDark|ColorSchemeHash=9d38eb71ded8ff549da26d57d7cbab9164da243a" ~/.config/kdeglobals 2>/dev/null; then
-    echo "  ✓ Breeze Dark"
-else
-    echo "  ✗ theme not set"
-    ERRORS=$((ERRORS + 1))
+if [[ "$IS_HEADLESS" == false ]]; then
+    echo "KDE theme:"
+    # Plasma >= 6.3 stores ColorSchemeHash instead of the scheme name string.
+    # BreezeDark = 9d38eb71ded8ff549da26d57d7cbab9164da243a (stable content hash).
+    if grep -qE "ColorScheme=BreezeDark|ColorSchemeHash=9d38eb71ded8ff549da26d57d7cbab9164da243a" ~/.config/kdeglobals 2>/dev/null; then
+        echo "  ✓ Breeze Dark"
+    else
+        echo "  ✗ theme not set"
+        ERRORS=$((ERRORS + 1))
+    fi
 fi
 
 echo "Docker containers:"

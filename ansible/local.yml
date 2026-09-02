@@ -25,6 +25,11 @@
     host_packages: []
     host_aur_pkgs: []
     host_services: []
+    native_desktop_packages: []
+    native_desktop_aur_pkgs: []
+    native_gaming_packages: []
+    native_gaming_aur_pkgs: []
+    is_headless: false
     masked_services: []
     dev_structure: []
     personal_structure: []
@@ -248,6 +253,8 @@
         name: >-
           {{ common_packages
            + (native_packages | default([]))
+           + (native_desktop_packages | default([]) if not is_headless else [])
+           + (native_gaming_packages | default([]) if not is_headless else [])
            + (arch_only_packages | default([]))
            + (cachyos_packages | default([]))
            + (host_packages | default([])) }}
@@ -270,9 +277,11 @@
       loop: >-
         {{ common_aur_pkgs
          + (native_aur_pkgs | default([]))
-          + (arch_only_aur_pkgs | default([]))
-          + (cachyos_aur_pkgs | default([]))
-          + (host_aur_pkgs | default([])) }}
+         + (native_desktop_aur_pkgs | default([]) if not is_headless else [])
+         + (native_gaming_aur_pkgs | default([]) if not is_headless else [])
+         + (arch_only_aur_pkgs | default([]))
+         + (cachyos_aur_pkgs | default([]))
+         + (host_aur_pkgs | default([])) }}
 
     - name: Surface failed AUR builds
       ansible.builtin.debug:
@@ -595,6 +604,18 @@
             name: "{{ item }}"
             masked: yes
           loop: "{{ masked_services | default([]) }}"
+
+        - name: Wire NetworkManager to systemd-resolved (MagicDNS)
+          # Without this NM and resolved fight over /etc/resolv.conf and
+          # tailscaled reports "systemd-resolved and NetworkManager are wired
+          # together incorrectly; MagicDNS will probably not work".
+          ansible.builtin.copy:
+            dest: /etc/NetworkManager/conf.d/00-use-cached-resolved.conf
+            content: |
+              [main]
+              dns=systemd-resolved
+            mode: "0644"
+          notify: Restart NetworkManager
 
         - name: Optimize PipeWire for High-End Audio
           copy:
@@ -1151,6 +1172,7 @@
                   --login-server="$HEADSCALE_URL" \
                   --authkey="$AUTHKEY" \
                   --hostname="$(hostname)" \
+                  --ssh \
                   --accept-routes; then
                   log "enrolled successfully"
                   exit 0
@@ -1445,4 +1467,9 @@
     - name: Restart sshd
       ansible.builtin.systemd:
         name: sshd
+        state: restarted
+
+    - name: Restart NetworkManager
+      ansible.builtin.systemd:
+        name: NetworkManager
         state: restarted

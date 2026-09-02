@@ -10,6 +10,7 @@
 cachyos_packages:
   - irqbalance
   - nodejs-lts-krypton
+  - vault                   # HashiCorp Vault client (TODO in §10e resolved)
 
 # CachyOS-specific AUR packages
 cachyos_aur_pkgs: []

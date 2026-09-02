@@ -1,10 +1,49 @@
 # =========================================================================
 # LAYER 2: NATIVE LINUX — Installed on ALL bare-metal Linux (Arch + CachyOS)
 # Nothing here should conflict with CachyOS repos or defaults.
+#
+# Split into three profiles:
+#   native_packages           — server-safe core (all bare-metal hosts)
+#   native_desktop_packages   — desktop/GUI (skipped when is_headless=true)
+#   native_gaming_packages    — gaming stack (skipped when is_headless=true)
+# Same split applies to the AUR lists below.
 # =========================================================================
 
-# --- NATIVE SYSTEM PACKAGES ---
+# --- NATIVE SYSTEM PACKAGES (server-safe) ---
 native_packages:
+  # System Services & Networking
+  - networkmanager
+  - network-manager-applet
+  - networkmanager-openvpn
+  - systemd-resolvconf
+  - firewalld
+  - wireguard-tools
+  - openvpn
+  - bluez
+  - bluez-utils
+  - cups
+  - gnome-keyring            # Required by ProtonVPN for credential storage
+  - proton-vpn-cli          # Official ProtonVPN CLI (core VPN control)
+  - proton-vpn-daemon       # ProtonVPN system daemon (split tunneling service)
+
+  # Sound (base stack)
+  - pipewire
+
+  # Virtualization (KVM — unreliable inside WSL2, server-useful)
+  - qemu-full
+  - virt-manager
+  - virt-viewer
+  - dnsmasq
+  - vde2
+  - openbsd-netcat
+  - libguestfs
+
+  # System Info & Monitoring
+  - hardinfo2
+  - nvtop
+
+# --- DESKTOP PACKAGES (skipped on headless hosts) ---
+native_desktop_packages:
   # Desktop Environment
   - plasma-meta
   - dolphin
@@ -29,29 +68,21 @@ native_packages:
   - rnote
   - zotero                  # Academic paper management
 
-  # System Services & Networking (DO NOT RUN IN WSL)
-  - networkmanager
-  - network-manager-applet
-  - networkmanager-openvpn
-  - systemd-resolvconf
-  - firewalld
-  - wireguard-tools
-  - openvpn
-  - bluez
-  - bluez-utils
-  - cups
-  - gnome-keyring            # Required by ProtonVPN for credential storage
-  - proton-vpn-cli          # Official ProtonVPN CLI (core VPN control)
-  - proton-vpn-daemon       # ProtonVPN system daemon (split tunneling service)
-
-  # Sound
-  - pipewire
+  # Sound (GUI)
   - pavucontrol
   - easyeffects
   - lsp-plugins
   - calf
 
-  # Gaming
+  # Tools
+  - bleachbit
+  - kdeconnect
+  - filelight
+  - gparted
+  - element-desktop
+
+# --- GAMING PACKAGES (skipped on headless hosts) ---
+native_gaming_packages:
   - steam
   - lutris
   - heroic-games-launcher   # Epic + GOG in one app
@@ -64,28 +95,13 @@ native_packages:
   - winetricks
   - retroarch               # Unified emulation frontend
 
-  # Tools
-  - bleachbit
-  - kdeconnect
-  - filelight
-  - gparted
-  - element-desktop
-
-  # Virtualization (KVM — unreliable inside WSL2)
-  - qemu-full
-  - virt-manager
-  - virt-viewer
-  - dnsmasq
-  - vde2
-  - openbsd-netcat
-  - libguestfs
-
-  # System Info & Monitoring
-  - hardinfo2
-  - nvtop
-
-# --- NATIVE AUR PACKAGES (GUI / Heavy) ---
+# --- NATIVE AUR: CORE (server-safe) ---
 native_aur_pkgs:
+  # Android
+  - android-udev             # Android device udev rules
+
+# --- NATIVE AUR: DESKTOP (skipped on headless hosts) ---
+native_desktop_aur_pkgs:
   # KDE Integration
   - ksshaskpass
 
@@ -103,10 +119,6 @@ native_aur_pkgs:
   # Media
   - freetube-bin
 
-  # Gaming
-  - protonup-qt
-  - steam-rom-manager       # Manage ROMs for Steam
-
   # Sync & Safety
   - owncloud-client         # Desktop sync to OCIS (ocis.wyattau.com)
   - pika-backup
@@ -115,8 +127,10 @@ native_aur_pkgs:
   # VPN
   - proton-vpn-qt-app       # Qt GUI frontend for ProtonVPN CLI (KDE-native)
 
-  # Android
-  - android-udev             # Android device udev rules
+# --- NATIVE AUR: GAMING (skipped on headless hosts) ---
+native_gaming_aur_pkgs:
+  - protonup-qt
+  - steam-rom-manager       # Manage ROMs for Steam
 
 # --- NATIVE SERVICES (started on all bare-metal hosts) ---
 native_services:
