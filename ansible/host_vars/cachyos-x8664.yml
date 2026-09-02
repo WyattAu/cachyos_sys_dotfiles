@@ -8,6 +8,7 @@
 is_headless: true
 
 # Subnet router + backup exit node duties require forwarding
+tailscale_advertise_routes: true
 sysctl_tuning:
   net:
     net.ipv4.ip_forward: 1

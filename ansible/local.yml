@@ -1044,7 +1044,7 @@
               Wants=network-online.target
               [Service]
               Type=simple
-              ExecStart=/usr/bin/vmagent -promscrape.config=/etc/victoriametrics/vmagent.yml -remoteWrite.tmpDataPath=/var/lib/victoriametrics/vmagent-remote-write
+              ExecStart=/usr/bin/vmagent -promscrape.config=/etc/victoriametrics/vmagent.yml -remoteWrite.url={{ monitoring_remote_write_url }}{% if monitoring_remote_write_user is defined and monitoring_remote_write_user | length > 0 %} -remoteWrite.basicAuth.username={{ monitoring_remote_write_user }} -remoteWrite.basicAuth.password={{ monitoring_remote_write_pass }}{% endif %} -remoteWrite.tmpDataPath=/var/lib/victoriametrics/vmagent-remote-write
               Restart=always
               RestartSec=30
               [Install]
@@ -1222,6 +1222,27 @@
           ansible.builtin.stat:
             path: /etc/tailscale/headscale-authkey
           register: headscale_key_stat
+
+        # Subnet-router / exit-node hosts: firewalld must trust tailnet
+        # ingress and masquerade tailnet->LAN traffic (routes silently
+        # blackhole otherwise — ip_forward alone is not enough).
+        - name: Trust tailscale0 interface (subnet router)
+          ansible.posix.firewalld:
+            zone: trusted
+            interface: tailscale0
+            permanent: yes
+            immediate: yes
+            state: enabled
+          when: tailscale_advertise_routes | default(false) | bool
+
+        - name: Masquerade tailnet traffic to LAN (subnet router)
+          ansible.posix.firewalld:
+            zone: public
+            masquerade: yes
+            permanent: yes
+            immediate: yes
+            state: enabled
+          when: tailscale_advertise_routes | default(false) | bool
 
         - name: Fix headscale authkey permissions
           ansible.builtin.file:

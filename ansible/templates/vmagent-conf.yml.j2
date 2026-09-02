@@ -1,6 +1,8 @@
-# vmagent — scrapes local node_exporter and remote-writes to the central
+# vmagent — scrapes local node_exporter; remote-writes to the central
 # VictoriaMetrics instance (TrueNAS). Deployed when monitoring_remote_write_url
 # is set on the host; otherwise this file is not installed.
+# NOTE: remoteWrite is passed as -remoteWrite.* CLI flags in the systemd
+# unit (vmagent does not read remoteWrite from this file).
 scrape_configs:
   - job_name: node
     static_configs:
@@ -8,16 +10,3 @@ scrape_configs:
         labels:
           instance: '{{ inventory_hostname | default(ansible_hostname) }}'
     scrape_interval: 120s
-
-remoteWrite:
-  - url: '{{ monitoring_remote_write_url }}'
-{% if monitoring_remote_write_user is defined and monitoring_remote_write_user | length > 0 %}
-    basicAuth:
-      username: '{{ monitoring_remote_write_user }}'
-      password: '{{ monitoring_remote_write_pass | default("") }}'
-{% endif %}
-    # Remote write buffers locally when TrueNAS is unreachable, flushes on
-    # reconnect — safe for laptops that sleep.
-    queue:
-      maxBlockSize: 1MB
-      maxBackoff: 30s
