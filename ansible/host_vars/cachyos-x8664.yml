@@ -1,0 +1,21 @@
+# =========================================================================
+# LAYER 3: cachyos-x8664 — Headless CachyOS server (192.168.1.191)
+# Tailnet node 100.64.0.2 ("cachyos-server" in SSH config).
+# Enrolled 2026-09-01; backup exit node + LAN subnet router.
+# =========================================================================
+
+# Headless: skip desktop/gaming package profiles (see arch_native.yml split)
+is_headless: true
+
+# Subnet router + backup exit node duties require forwarding
+sysctl_tuning:
+  net:
+    net.ipv4.ip_forward: 1
+    net.ipv6.conf.all.forwarding: 1
+
+# Central monitoring (TrueNAS VictoriaMetrics via vm.wyattau.com tunnel).
+# NOTE: these basic-auth creds only protect the metrics WRITE endpoint
+# (low sensitivity). Migrate to per-host SOPS if that changes.
+monitoring_remote_write_url: "https://vm.wyattau.com/api/v1/write"
+monitoring_remote_write_user: "vmagent"
+monitoring_remote_write_pass: "DFNVooEZBsGhqy3tDoxX5yU"
