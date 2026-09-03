@@ -694,6 +694,11 @@
               org.freedesktop.impl.portal.Secret=kwallet
               org.freedesktop.impl.portal.Notification=plasmanotify
             mode: "0644"
+
+        - name: Remove legacy portal config (never-applied filename)
+          ansible.builtin.file:
+            path: /etc/xdg-desktop-portal/kde-portals.conf
+            state: absent
       when: not is_wsl
 
     # ================================================================
