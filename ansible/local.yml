@@ -682,8 +682,11 @@
             mode: "0644"
 
         - name: Set KDE portal preferences
+          # NOTE: the file MUST be named "portals.conf" — the portal ignores
+          # any other name (the previous "kde-portals.conf" never applied,
+          # which broke ScreenCast backend selection for Vesktop calls).
           ansible.builtin.copy:
-            dest: /etc/xdg-desktop-portal/kde-portals.conf
+            dest: /etc/xdg-desktop-portal/portals.conf
             content: |
               [preferred]
               default=kde
