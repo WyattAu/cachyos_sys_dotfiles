@@ -135,7 +135,7 @@ native_gaming_aur_pkgs:
   - steam-rom-manager-appimage  # Manage ROMs for Steam
   - theclicker              # Auto clicker (Wayland + X11, uinput/evdev)
   - prismlauncher           # Minecraft launcher
-  - jdk21-graalvm-bin       # GraalVM 21 — superior JIT for Minecraft (ZGC)
+  - jdk25-graalvm-bin       # GraalVM 25 — superior JIT for Minecraft (ZGC)
 
 # --- NATIVE SERVICES (started on all bare-metal hosts) ---
 native_services:

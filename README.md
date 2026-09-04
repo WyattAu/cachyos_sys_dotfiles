@@ -243,13 +243,13 @@ Global settings are **managed by chezmoi** — GUI edits to `prismlauncher.cfg` 
 | JVM flags | Generational ZGC + LargePages + AlwaysPreTouch | Near-zero GC pauses; THP `[always]` → 2MB pages cut TLB misses |
 | Wrapper | `PIPEWIRE_LATENCY="128/48000" gamemoderun mangohud` | CPU governor switch, FPS overlay, no audio crackling |
 | GLFW | Native Wayland (`/usr/lib/libglfw.so`) | Kills XWayland input lag |
-| Java | GraalVM 21 (`jdk21-graalvm-bin`) or OpenJDK 21 | GraalVM JIT = higher throughput |
+| Java | GraalVM 25 (`jdk25-graalvm-bin`) or OpenJDK 25 — MC 26.x; OpenJDK 21 for older instances | GraalVM JIT = higher throughput |
 
 **Fabric instance setup (one-time, via Prism GUI):**
 
 1. Add Instance → Vanilla (latest release) → Fabric loader
 2. Edit Instance → Mods → Download Mods → install from the table below
-3. Instance Settings → Java: select **GraalVM 21** if preferred over OpenJDK
+3. Instance Settings → Java: select **GraalVM 25** (MC 26.x) or OpenJDK 21 (older instances)
 
 **Performance mod stack:**
 

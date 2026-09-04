@@ -92,6 +92,7 @@ common_packages:
   - jdk8-openjdk
   - jdk17-openjdk
   - jdk21-openjdk
+  - jdk25-openjdk             # Java 25 — required by MC 26.x
 
   # Formatters & Linters (used by conform.nvim)
   - stylua                   # Lua
