@@ -132,6 +132,7 @@
   community.general.pacman:
     name:
       - heroic-games-launcher-bin
+      - librewolf-bin          # repos now ship `librewolf`
       # merged into python-proton-vpn-api-core 5.5.15+
       - python-proton-vpn-local-agent
     state: absent

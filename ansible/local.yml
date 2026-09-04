@@ -41,7 +41,6 @@
     native_desktop_aur_pkgs: []
     native_gaming_packages: []
     native_gaming_aur_pkgs: []
-    is_headless: false
     masked_services: []
     dev_structure: []
     personal_structure: []

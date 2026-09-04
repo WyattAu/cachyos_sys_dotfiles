@@ -148,4 +148,5 @@
         owner: root
         group: root
         mode: "0600"
+      when: headscale_key_stat.stat.exists
   when: not is_wsl

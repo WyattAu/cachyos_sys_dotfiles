@@ -140,13 +140,15 @@ common_packages:
   # Flatpak
   - flatpak
 
+  # Browser (community repo build — was librewolf-bin)
+  - librewolf
+
 # --- FLATPAK APPS (installed on all systems) ---
 flatpak_apps:
   - org.vinegarhq.Sober    # Roblox client
 
 # --- AUR PACKAGES (CLI only — safe on all platforms) ---
 common_aur_pkgs:
-  - librewolf-bin
   - github-desktop-bin
   - sublime-merge
   - localsend-bin
