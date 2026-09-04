@@ -12,7 +12,7 @@ return {
         'lua', 'vim', 'vimdoc', 'python', 'javascript', 'typescript',
         'rust', 'c', 'cpp', 'go', 'json', 'yaml', 'toml', 'markdown',
         'bash', 'fish', 'lean', 'make', 'cmake', 'dockerfile',
-        'regex', 'query',
+        'regex', 'query', 'latex',
       },
       highlight = { enable = true },
       indent = { enable = true },

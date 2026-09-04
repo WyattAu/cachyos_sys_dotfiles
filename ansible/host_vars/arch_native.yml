@@ -61,6 +61,9 @@ native_desktop_packages:
   - mpv
   - calibre
 
+  # Communication
+  - telegram-desktop
+
   # Productivity & Reference
   - libreoffice-fresh
   - hunspell
@@ -113,7 +116,6 @@ native_desktop_aur_pkgs:
   # Chat
   - vesktop-bin
   - signal-desktop
-  - telegram-desktop
   - betterbird-bin
 
   # Media
@@ -130,7 +132,10 @@ native_desktop_aur_pkgs:
 # --- NATIVE AUR: GAMING (skipped on headless hosts) ---
 native_gaming_aur_pkgs:
   - protonup-qt
-  - steam-rom-manager       # Manage ROMs for Steam
+  - steam-rom-manager-appimage  # Manage ROMs for Steam
+  - theclicker              # Auto clicker (Wayland + X11, uinput/evdev)
+  - prismlauncher           # Minecraft launcher
+  - jdk21-graalvm-bin       # GraalVM 21 — superior JIT for Minecraft (ZGC)
 
 # --- NATIVE SERVICES (started on all bare-metal hosts) ---
 native_services:

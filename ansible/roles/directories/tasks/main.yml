@@ -1,0 +1,45 @@
+---
+# Section 8: Deterministic Directory Management
+
+- name: Ensure Dev Directory Structure Exists
+  file:
+    path: "/home/{{ user }}/{{ item }}"
+    state: directory
+    mode: "0755"
+    owner: "{{ user }}"
+    group: "{{ user }}"
+  loop: "{{ dev_structure | default([]) }}"
+
+- name: Ensure Personal Directory Structure Exists
+  file:
+    path: "/home/{{ user }}/{{ item }}"
+    state: directory
+    mode: "0755"
+    owner: "{{ user }}"
+    group: "{{ user }}"
+  loop: "{{ personal_structure | default([]) }}"
+
+- name: Create SSH directories
+  file:
+    path: "/home/{{ user }}/{{ item }}"
+    state: directory
+    mode: "0700"
+    owner: "{{ user }}"
+    group: "{{ user }}"
+  loop: "{{ ssh_structure | default([]) }}"
+
+- name: Create Steam Symlink (Games/Steam -> ~/.local/share/Steam)
+  file:
+    src: "/home/{{ user }}/.local/share/Steam"
+    dest: "/home/{{ user }}/Games/Steam"
+    state: link
+    owner: "{{ user }}"
+    force: true
+
+- name: Configure GHQ Root Directory in Git
+  git_config:
+    name: ghq.root
+    scope: global
+    value: "{{ ghq_root | default('~/dev/src') }}"
+  become: true
+  become_user: "{{ user }}"

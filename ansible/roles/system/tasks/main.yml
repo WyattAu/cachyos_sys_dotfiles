@@ -1,0 +1,296 @@
+---
+# Section 10: Native System Configuration (groups, services, audio, KDE, fonts, security, snapper)
+
+- block:
+    - name: Ensure User Groups Exist
+      group:
+        name: "{{ item }}"
+        state: present
+      loop: [docker, libvirt, gamemode, input, video]
+
+    - name: Add User to Groups
+      user:
+        name: "{{ user }}"
+        groups: docker,libvirt,gamemode,input,video
+        append: yes
+
+    # AUDIT-KEEP (x5, service loops): layer lists are shared across hosts
+    # with different hardware — e.g. msi-audio only exists on MSI laptops.
+    # A missing unit on one host must not abort the whole sync.
+    - name: Enable Common Services (Layer 1)
+      systemd:
+        name: "{{ item }}"
+        enabled: yes
+        state: started
+      loop: "{{ common_services | default([]) }}"
+      ignore_errors: yes
+
+    - name: Enable Native Services (Layer 2)
+      systemd:
+        name: "{{ item }}"
+        enabled: yes
+        state: started
+      loop: "{{ native_services | default([]) }}"
+      ignore_errors: yes
+
+    - name: Enable Arch-Only Services (Layer 2b)
+      systemd:
+        name: "{{ item }}"
+        enabled: yes
+        state: started
+      loop: "{{ arch_only_services | default([]) }}"
+      ignore_errors: yes
+
+    - name: Enable CachyOS Services (Layer 2c)
+      systemd:
+        name: "{{ item }}"
+        enabled: yes
+        state: started
+      loop: "{{ cachyos_services | default([]) }}"
+      ignore_errors: yes
+
+    - name: Enable Host-Specific Services (Layer 3)
+      systemd:
+        name: "{{ item }}"
+        enabled: yes
+        state: started
+        daemon_reload: yes
+      loop: "{{ host_services | default([]) }}"
+      ignore_errors: yes
+
+    - name: Mask Unwanted Services
+      systemd:
+        name: "{{ item }}"
+        masked: yes
+      loop: "{{ masked_services | default([]) }}"
+
+    - name: Wire NetworkManager to systemd-resolved (MagicDNS)
+      # Without this NM and resolved fight over /etc/resolv.conf and
+      # tailscaled reports "systemd-resolved and NetworkManager are wired
+      # together incorrectly; MagicDNS will probably not work".
+      ansible.builtin.copy:
+        dest: /etc/NetworkManager/conf.d/00-use-cached-resolved.conf
+        content: |
+          [main]
+          dns=systemd-resolved
+        mode: "0644"
+      notify: Restart NetworkManager
+
+    - name: Optimize PipeWire for High-End Audio
+      copy:
+        dest: /etc/pipewire/pipewire.conf.d/99-custom-audio.conf
+        content: |
+          context.properties = {
+          # Force high-quality resampling
+          default.clock.rate = 48000
+          default.clock.allowed-rates = [ 44100, 48000, 88200, 96000 ]
+          # Increase buffer size to prevent distortion/crackling
+          default.clock.min-quantum = 1024
+          default.clock.max-quantum = 2048
+          }
+  when: not is_wsl
+
+# ================================================================
+# SECTION 10a: SYSTEM-LEVEL KDE CONFIGURATION (native only)
+# ================================================================
+- block:
+    - name: Create SDDM config directory
+      ansible.builtin.file:
+        path: /etc/sddm.conf.d
+        state: directory
+        mode: "0755"
+
+    - name: Set SDDM theme
+      ansible.builtin.copy:
+        dest: /etc/sddm.conf.d/theme.conf
+        content: |
+          [Theme]
+          Current=breeze
+        mode: "0644"
+        force: false
+
+    - name: Set system-wide cursor theme
+      ansible.builtin.copy:
+        dest: /usr/share/icons/default/index.theme
+        content: |
+          [Icon Theme]
+          Name=Default
+          Comment=Default Cursor Theme
+          Inherits=capitaine-cursors
+        mode: "0644"
+
+    - name: Create /etc/environment.d directory
+      ansible.builtin.file:
+        path: /etc/environment.d
+        state: directory
+        mode: "0755"
+
+    - name: Create /etc/xdg-desktop-portal directory
+      ansible.builtin.file:
+        path: /etc/xdg-desktop-portal
+        state: directory
+        mode: "0755"
+
+    - name: Create Qt/Wayland environment config
+      ansible.builtin.copy:
+        dest: /etc/environment.d/kde-wayland.conf
+        content: |
+          QT_QPA_PLATFORMTHEME=wayland
+          QT_AUTO_SCREEN_SCALE_FACTOR=1
+          XDG_CURRENT_DESKTOP=KDE
+        mode: "0644"
+
+    - name: Remove legacy portal config filename (never applied)
+      ansible.builtin.file:
+        path: /etc/xdg-desktop-portal/kde-portals.conf
+        state: absent
+
+    - name: Set KDE portal preferences
+      # NOTE: the file MUST be named "portals.conf" — the portal ignores
+      # any other name (the previous "kde-portals.conf" never applied).
+      ansible.builtin.copy:
+        dest: /etc/xdg-desktop-portal/portals.conf
+        content: |
+          [preferred]
+          default=kde
+          org.freedesktop.impl.portal.Settings=kde
+          org.freedesktop.impl.portal.Secret=kwallet
+          org.freedesktop.impl.portal.Notification=plasmanotify
+        mode: "0644"
+  when: not is_wsl
+
+# ================================================================
+# SECTION 10c: SECURITY, FONTS & MAINTENANCE (native only)
+# ================================================================
+- block:
+    - name: Install comprehensive font packages
+      community.general.pacman:
+        name:
+          - noto-fonts
+          - noto-fonts-cjk
+          - noto-fonts-emoji
+        state: present
+
+    - name: Install pika-backup
+      community.general.pacman:
+        name: pika-backup
+        state: present
+
+    - name: Install fail2ban
+      community.general.pacman:
+        name: fail2ban
+        state: present
+
+    - name: Enable fail2ban
+      systemd:
+        name: fail2ban
+        enabled: yes
+        state: started
+
+    - name: Disable SSH password authentication
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PasswordAuthentication'
+        line: 'PasswordAuthentication no'
+      notify: Restart sshd
+
+    - name: Disable SSH root login
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PermitRootLogin'
+        line: 'PermitRootLogin no'
+      notify: Restart sshd
+
+    # KEEP ignore-free: requires ansible.posix (installed via bootstrap + CI).
+    # If firewalld is not running the module fails fast — that's a real error.
+    - name: Open KDE Connect ports in firewalld
+      ansible.posix.firewalld:
+        port: "{{ item }}"
+        permanent: true
+        immediate: true
+        state: enabled
+      loop:
+        - "1714-1764/tcp"
+        - "1714-1764/udp"
+
+    - name: Enable paccache timer for pacman cache cleanup
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/paccache.service
+        content: |
+          [Unit]
+          Description=Clean pacman cache
+          [Service]
+          Type=oneshot
+          ExecStart=/usr/bin/paccache -r
+        mode: "0644"
+
+    - name: Create paccache timer
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/paccache.timer
+        content: |
+          [Unit]
+          Description=Clean pacman cache weekly
+          [Timer]
+          OnCalendar=weekly
+          Persistent=true
+          [Install]
+          WantedBy=timers.target
+        mode: "0644"
+
+    - name: Enable paccache timer
+      systemd:
+        name: paccache.timer
+        enabled: yes
+        state: started
+      # AUDIT-KEEP: paccache unit comes from pacman-contrib, absent on
+      # minimal fresh installs; the copy tasks above only create the
+      # override, not the base unit.
+      ignore_errors: yes
+  when: not is_wsl
+
+# ================================================================
+# SECTION 10d: SNAPPER (Btrfs snapshots for rollback)
+# ================================================================
+- block:
+    # AUDIT-KEEP (x3): snapper + its config only exist on btrfs hosts
+    # where snapper was set up at install time; absent elsewhere.
+    - name: Enable snapper timeline snapshots
+      ansible.builtin.lineinfile:
+        path: /etc/snapper/configs/root
+        regexp: '^TIMELINE_CREATE='
+        line: 'TIMELINE_CREATE="yes"'
+      ignore_errors: yes
+
+    - name: Enable snapper timeline timer
+      systemd:
+        name: snapper-timeline.timer
+        enabled: yes
+        state: started
+      ignore_errors: yes
+
+    - name: Enable snapper cleanup timer
+      systemd:
+        name: snapper-cleanup.timer
+        enabled: yes
+        state: started
+      ignore_errors: yes
+
+    - name: Make sys-check executable
+      ansible.builtin.file:
+        path: "/home/{{ user }}/.local/share/chezmoi/scripts/sys-check"
+        mode: "0755"
+        owner: "{{ user }}"
+        group: "{{ user }}"
+
+    - name: Symlink sys-check to PATH
+      ansible.builtin.file:
+        src: "/home/{{ user }}/.local/share/chezmoi/scripts/sys-check"
+        dest: "/home/{{ user }}/.local/bin/sys-check"
+        state: link
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        force: yes
+  when: not is_wsl
+
+# SECTION 10g: TAILSCALE (mesh VPN) — see tailscale.yml
+- include_tasks: tailscale.yml

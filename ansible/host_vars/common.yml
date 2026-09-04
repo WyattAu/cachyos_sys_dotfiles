@@ -88,12 +88,20 @@ common_packages:
   - libffi
   - rustup
 
+  # Java (multi-version for Minecraft + dev)
+  - jdk8-openjdk
+  - jdk17-openjdk
+  - jdk21-openjdk
+
   # Formatters & Linters (used by conform.nvim)
   - stylua                   # Lua
   - ruff                     # Python (linter + formatter)
   - shfmt                    # Shell
   - taplo-cli                # TOML
   - prettier                 # JS/TS/JSON/YAML/Markdown
+
+  # LaTeX editors
+  - texlab                   # LaTeX LSP server
 
   # Python
   - python-pip
@@ -109,6 +117,16 @@ common_packages:
   # Android
   - android-tools
 
+  # Graphics (baseline — works everywhere including WSLg)
+  - mesa
+  - mesa-utils
+  - vulkan-icd-loader
+  - vulkan-swrast
+  - libva
+  - gimp
+  - darktable
+  - inkscape
+
   # Docker
   - docker
   - docker-compose             # Docker Compose v2 (provides `docker compose` subcommand)
@@ -122,21 +140,17 @@ common_packages:
   # Flatpak
   - flatpak
 
-  # Graphics (baseline — works everywhere including WSLg)
-  - mesa
-  - mesa-utils
-  - vulkan-icd-loader
-  - vulkan-swrast
-  - libva
+# --- FLATPAK APPS (installed on all systems) ---
+flatpak_apps:
+  - org.vinegarhq.Sober    # Roblox client
 
 # --- AUR PACKAGES (CLI only — safe on all platforms) ---
 common_aur_pkgs:
-  - librewolf
+  - librewolf-bin
   - github-desktop-bin
   - sublime-merge
   - localsend-bin
   - elan-bin
-  - bitwarden-bin
   - ghq                     # Repository manager
 
 # --- DETERMINISTIC DIRECTORY STRUCTURE ---

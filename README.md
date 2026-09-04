@@ -227,8 +227,73 @@ The playbook creates two directory trees:
 | Lutris | `~/Games/lutris/` | `~/.config/lutris/system.yml.tmpl` |
 | RetroArch | `~/Games/Emulation/` | `~/.config/retroarch/retroarch.cfg` |
 | MangoHud | Overlay (all games) | `~/.config/MangoHud/MangoHud.conf.tmpl` |
+| Prism Launcher (Minecraft) | `prismlauncher` | `~/.config/PrismLauncher/prismlauncher.cfg` (managed) |
 
 **How to install a game:** Open the appropriate launcher → install. The game lands in the correct directory automatically. No manual path configuration needed.
+
+## Minecraft Optimization (Prism Launcher)
+
+Global settings are **managed by chezmoi** — GUI edits to `prismlauncher.cfg` are overwritten on every `sys-sync` (anti-drift, same as KDE configs). Per-instance settings remain free.
+
+**Declared in config:**
+
+| Setting | Value | Why |
+|---------|-------|-----|
+| Memory | 2048–8192 MiB | Modded sweet spot on 32GB host; >12GB slows ZGC |
+| JVM flags | Generational ZGC + LargePages + AlwaysPreTouch | Near-zero GC pauses; THP `[always]` → 2MB pages cut TLB misses |
+| Wrapper | `PIPEWIRE_LATENCY="128/48000" gamemoderun mangohud` | CPU governor switch, FPS overlay, no audio crackling |
+| GLFW | Native Wayland (`/usr/lib/libglfw.so`) | Kills XWayland input lag |
+| Java | GraalVM 21 (`jdk21-graalvm-bin`) or OpenJDK 21 | GraalVM JIT = higher throughput |
+
+**Fabric instance setup (one-time, via Prism GUI):**
+
+1. Add Instance → Vanilla (latest release) → Fabric loader
+2. Edit Instance → Mods → Download Mods → install from the table below
+3. Instance Settings → Java: select **GraalVM 21** if preferred over OpenJDK
+
+**Performance mod stack:**
+
+| Mod | Purpose |
+| :--- | :--- |
+| **Sodium** | Rendering engine overhaul (beats OptiFine) |
+| **Iris Shaders** | Shaders with near-zero overhead on Sodium |
+| **Nvidium** | *(RTX only)* Hardware mesh shaders → 500–1000+ FPS |
+| **Lithium** | Physics/tick/chunk-load optimizations |
+| **FerriteCore** | Halves RAM consumption |
+| **ModernFix** | Memory leak fixes, faster world loading |
+| **ImmediatelyFast** | HUD/text/entity UI batching |
+| **Entity Culling** | Skips entities hidden behind walls |
+| **C2ME** | Multi-core chunk generation |
+| **Krypton** | Network stack optimization |
+| **Dynamic FPS** | 1–5 FPS when window unfocused |
+
+**Visuals & server play:**
+
+| Mod | Purpose |
+| :--- | :--- |
+| **Bobby** | Renders beyond server render-distance lock (e.g. 32 chunks) |
+| **Sodium Extra + Reese's Sodium Options** | OptiFine-style toggles (animations, particles, clouds) |
+| **Enhanced Block Entities** | Chests/signs/bells as fast baked models |
+| **More Culling** | Extends culling to rain, block faces, dropped items |
+| **Sound Physics Remastered** | Realistic reverb + acoustic occlusion (client-side) |
+| **Dynamic Crosshair + 3D Skin Layers** | Aesthetic, zero perf cost |
+
+**Hybrid-GPU laptops only** (env vars in Prism → Settings → Environment; N/A on NVIDIA desktops):
+
+| Variable | Value | Purpose |
+|---|---|---|
+| `__GL_THREADED_OPTIMIZATIONS` | `1` | Multi-threaded OpenGL dispatch (NVIDIA) |
+| `MESA_VK_DEVICE_SELECT` | `pci:xxxx:xx` | Force dGPU on AMD/Intel hybrid |
+| `SDL_VIDEODRIVER` | `wayland,x11` | SDL tools default to Wayland |
+
+**Verify sched priority (while MC running):** `ananicy-cpp status` — `java` should be categorized under games with elevated CPU/IO priority.
+
+**Verify setup:**
+
+```bash
+pacman -Q prismlauncher jdk21-graalvm-bin jdk21-openjdk gamemode mangohud
+grep -E "MaxMemAlloc|JvmArgs" ~/.config/PrismLauncher/prismlauncher.cfg
+```
 
 ## Library & Reference Stack
 

@@ -1,0 +1,76 @@
+---
+# Section 7: Toolchains (Nix, Rust, Elan, direnv, pnpm)
+
+- name: Initialize Nix (multi-user install)
+  shell: >
+    curl -L https://nixos.org/nix/install 2>/dev/null |
+    sh -s -- --daemon --yes
+  args:
+    creates: "/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh"
+  when: not is_wsl
+
+- name: Configure Nix experimental features
+  ansible.builtin.lineinfile:
+    path: /etc/nix/nix.conf
+    regexp: '^experimental-features'
+    line: 'experimental-features = nix-command flakes'
+    create: yes
+    mode: "0644"
+  when: not is_wsl
+  notify: Restart nix-daemon
+
+- name: Configure Nix trusted users
+  ansible.builtin.lineinfile:
+    path: /etc/nix/nix.conf
+    regexp: '^trusted-users'
+    line: 'trusted-users = root {{ user }}'
+    create: yes
+    mode: "0644"
+  when: not is_wsl
+  notify: Restart nix-daemon
+
+- name: Enable nix-daemon service
+  systemd:
+    name: nix-daemon
+    enabled: yes
+    state: started
+    daemon_reload: yes
+  when: not is_wsl
+  # AUDIT-KEEP: nix may not be installed yet on first run (installer task
+  # above may have been skipped); enable succeeds on the next sys-sync.
+  ignore_errors: yes
+
+- name: Initialize Global Rust Toolchain
+  command: rustup default stable
+  args:
+    creates: "/home/{{ user }}/.cargo/bin/cargo"
+  become: true
+  become_user: "{{ user }}"
+
+- name: Initialize Elan (Lean 4)
+  shell: "curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y"
+  args:
+    creates: "/home/{{ user }}/.elan/bin/lean"
+  become: true
+  become_user: "{{ user }}"
+
+- name: Install nix-direnv (fast cached 'use flake')
+  command: /nix/var/nix/profiles/default/bin/nix profile install nixpkgs#nix-direnv
+  args:
+    creates: "/home/{{ user }}/.local/state/nix/profiles/profile-1-link"
+  become: true
+  become_user: "{{ user }}"
+  when: not is_wsl
+  ignore_errors: yes
+  environment:
+    XDG_STATE_HOME: "/home/{{ user }}/.local/state"
+
+- name: Install global npm packages (pnpm)
+  command: pnpm add -g {{ item }}
+  become: true
+  become_user: "{{ user }}"
+  changed_when: false
+  loop: "{{ pnpm_global_pkgs | default([]) }}"
+  environment:
+    PNPM_HOME: "/home/{{ user }}/.local/share/pnpm"
+    PATH: "/home/{{ user }}/.local/share/pnpm/bin:{{ ansible_env.PATH | default('/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl') }}"

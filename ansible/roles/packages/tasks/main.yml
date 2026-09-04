@@ -1,0 +1,209 @@
+---
+
+# Section 3+4: Privilege, Chaotic-AUR, Package Sync, AUR Upgrade/Install
+# Merged from all variable layers
+
+- include_tasks: scripts.yml
+
+- name: Allow 'pacman' to run without password
+  lineinfile:
+    path: /etc/sudoers.d/11-ansible-pacman
+    line: "{{ user }} ALL=(ALL) NOPASSWD: /usr/bin/pacman"
+    create: yes
+    mode: "0440"
+    validate: "visudo -cf %s"
+
+- name: "Setup Chaotic-AUR (atomic - clean, install, configure)"
+  ansible.builtin.shell: |
+    set -euo pipefail
+
+    # 1. Clean any existing broken block from pacman.conf
+    sed -i '/\[chaotic-aur\]/,/Include = \/etc\/pacman.d\/chaotic-mirrorlist/d' /etc/pacman.conf
+
+    # 2. Install keyring + mirrorlist from direct download
+    if ! pacman -Q chaotic-keyring >/dev/null 2>&1; then
+      TMPDIR=$(mktemp -d)
+      curl -fsSL -o "$TMPDIR/chaotic-keyring.pkg.tar.zst" \
+        https://builds.garudalinux.org/repos/chaotic-aur/chaotic-keyring.pkg.tar.zst
+      curl -fsSL -o "$TMPDIR/chaotic-mirrorlist.pkg.tar.zst" \
+        https://builds.garudalinux.org/repos/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst
+      pacman -U --noconfirm "$TMPDIR/chaotic-keyring.pkg.tar.zst" "$TMPDIR/chaotic-mirrorlist.pkg.tar.zst"
+      rm -rf "$TMPDIR"
+      echo "INSTALLED"
+    else
+      echo "ALREADY_INSTALLED"
+    fi
+
+    # 3. Verify mirrorlist was installed
+    if [ ! -f /etc/pacman.d/chaotic-mirrorlist ]; then
+      echo "ERROR: mirrorlist not installed" >&2
+      exit 1
+    fi
+
+    # 4. Import signing key
+    pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
+    pacman-key --lsign-key 3056513887B78AEB
+
+    # 5. Add repo to pacman.conf (idempotent)
+    if ! grep -q '\[chaotic-aur\]' /etc/pacman.conf; then
+      echo -e '\n[chaotic-aur]\nInclude = /etc/pacman.d/chaotic-mirrorlist' >> /etc/pacman.conf
+      echo "REPO_ADDED"
+    else
+      echo "REPO_EXISTS"
+    fi
+  register: chaotic_setup
+  changed_when: "'INSTALLED' in chaotic_setup.stdout or 'REPO_ADDED' in chaotic_setup.stdout"
+
+- name: Sync Package Databases
+  ansible.builtin.command: pacman -Sy
+  changed_when: false
+
+- name: Update System Repos (full upgrade)
+  community.general.pacman:
+    update_cache: yes
+    upgrade: yes
+  # AUDIT-KEEP: repo transitions declare replaces/conflicts (e.g.
+  # python-proton-vpn-api-core replacing python-proton-vpn-local-agent);
+  # the module's --noconfirm answers the default N to conflict prompts
+  # and aborts. The retry below accepts the repo's own conflict resolution.
+  ignore_errors: yes
+  register: sysupgrade
+
+- name: Resolve package conflicts and complete upgrade (repo transitions)
+  # Only runs when the module-based upgrade failed. `yes |` accepts the
+  # conflict prompts; if the upgrade still fails, the play fails here.
+  ansible.builtin.shell: set -o pipefail; yes | pacman -Syu
+  when: sysupgrade is failed
+  changed_when: true
+
+- name: Ensure /var/tmp/aur_build directory exists
+  ansible.builtin.file:
+    path: /var/tmp/aur_build
+    state: directory
+    mode: "0755"
+    owner: "{{ user }}"
+    group: "{{ user }}"
+
+- name: Create temporary swap via loop device (btrfs-compatible)
+  ansible.builtin.shell:
+    cmd: |
+      if ! swapon --show=NAME --noheadings | grep -q '/dev/loop'; then
+        swapoff /dev/loop0 2>/dev/null || true
+        losetup -d /dev/loop0 2>/dev/null || true
+        rm -f /var/tmp/aur_build_swap.img
+        truncate -s 8G /var/tmp/aur_build_swap.img
+        losetup /dev/loop0 /var/tmp/aur_build_swap.img
+        mkswap /dev/loop0
+        swapon /dev/loop0
+        echo "Loop swap active on /dev/loop0"
+      else
+        echo "Swap already active"
+      fi
+  changed_when: false
+
+- name: Upgrade Managed AUR Packages
+  kewlfft.aur.aur:
+    name: "{{ item }}"
+    use: paru
+    state: latest
+    extra_args: "--clonedir /var/tmp/aur_build --builddir /var/tmp/aur_build"
+  become: true
+  become_user: "{{ user }}"
+  # AUDIT-KEEP: AUR builds are flake-tolerant (network, upstream breakage).
+  # Failures are surfaced in the summary below instead of failing the run.
+  ignore_errors: true
+  register: aur_upgrade
+  environment:
+    MAKEFLAGS: "-j4"
+    NINJAFLAGS: "-j4"
+  loop: >-
+    {{ common_aur_pkgs
+     + (native_aur_pkgs | default([]))
+     + (native_desktop_aur_pkgs | default([]) if not is_headless else [])
+     + (native_gaming_aur_pkgs | default([]) if not is_headless else [])
+     + (arch_only_aur_pkgs | default([]))
+     + (cachyos_aur_pkgs | default([]))
+     + (host_aur_pkgs | default([])) }}
+
+# ================================================================
+# SECTION 5: PACKAGE INSTALLATION (merged from all layers)
+# ================================================================
+- name: Remove packages superseded by repo transitions or native repos
+  community.general.pacman:
+    name:
+      - heroic-games-launcher-bin
+      # merged into python-proton-vpn-api-core 5.5.15+
+      - python-proton-vpn-local-agent
+    state: absent
+  # AUDIT-KEEP: absent is idempotent, but package may be foreign/partial on fresh hosts
+  ignore_errors: true
+
+- name: Install System Packages
+  community.general.pacman:
+    name: >-
+      {{ common_packages
+       + (native_packages | default([]))
+       + (native_desktop_packages | default([]) if not is_headless else [])
+       + (native_gaming_packages | default([]) if not is_headless else [])
+       + (arch_only_packages | default([]))
+       + (cachyos_packages | default([]))
+       + (host_packages | default([])) }}
+    state: present
+
+- name: Install AUR Packages (one at a time to avoid OOM)
+  kewlfft.aur.aur:
+    name: "{{ item }}"
+    use: paru
+    extra_args: "--clonedir /var/tmp/aur_build --builddir /var/tmp/aur_build"
+  become: true
+  become_user: "{{ user }}"
+  # AUDIT-KEEP: individual AUR builds may fail upstream; rest must proceed.
+  # Failed items are listed in the summary task below.
+  ignore_errors: true
+  register: aur_install
+  environment:
+    MAKEFLAGS: "-j4"
+    NINJAFLAGS: "-j4"
+  loop: >-
+    {{ common_aur_pkgs
+     + (native_aur_pkgs | default([]))
+     + (native_desktop_aur_pkgs | default([]) if not is_headless else [])
+     + (native_gaming_aur_pkgs | default([]) if not is_headless else [])
+      + (arch_only_aur_pkgs | default([]))
+      + (cachyos_aur_pkgs | default([]))
+      + (host_aur_pkgs | default([])) }}
+
+- name: Surface failed AUR builds
+  ansible.builtin.debug:
+    msg: >-
+      {{ 'WARNING — failed AUR packages: '
+         ~ (aur_install.results
+            | selectattr('failed', 'equalto', true)
+            | map(attribute='item')
+            | list)
+         if (aur_install.results | selectattr('failed', 'equalto', true) | list | length > 0)
+         else 'All AUR packages built successfully.' }}
+
+- name: Remove temporary swap (loop device)
+  ansible.builtin.shell:
+    cmd: |
+      if swapon --show=NAME --noheadings | grep -q '/dev/loop'; then
+        swapoff /dev/loop0 2>/dev/null || true
+        losetup -d /dev/loop0 2>/dev/null || true
+        rm -f /var/tmp/aur_build_swap.img
+        echo "Swap removed"
+      fi
+  changed_when: false
+
+- name: Ensure Flathub remote is configured
+  ansible.builtin.shell: >
+    flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+  changed_when: false
+
+- name: Install Flatpak applications
+  community.general.flatpak:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ flatpak_apps | default([]) }}"
+  when: flatpak_apps is defined and flatpak_apps | length > 0
+  ignore_errors: true

@@ -1,0 +1,197 @@
+---
+# Section 10f: VictoriaMetrics (monitoring)
+
+- block:
+    - name: Create VictoriaMetrics data directory
+      ansible.builtin.file:
+        path: /var/lib/victoriametrics
+        state: directory
+        mode: "0755"
+
+    - name: Install VictoriaMetrics from AUR
+      kewlfft.aur.aur:
+        name: victoriametrics
+        use: paru
+        state: present
+      become: true
+      become_user: "{{ user }}"
+      ignore_errors: yes
+      environment:
+        MAKEFLAGS: "-j2"
+
+    - name: Install prometheus-node-exporter
+      community.general.pacman:
+        name: prometheus-node-exporter
+        state: present
+
+    - name: Install alertmanager
+      community.general.pacman:
+        name: alertmanager
+        state: present
+
+    - name: Create alertmanager config directory
+      ansible.builtin.file:
+        path: /etc/alertmanager
+        state: directory
+        mode: "0755"
+
+    - name: Deploy alertmanager config
+      ansible.builtin.template:
+        src: templates/alertmanager.yml.j2
+        dest: /etc/alertmanager/alertmanager.yml
+        mode: "0644"
+
+    # AUDIT-KEEP: token file only exists after vm-setup.sh runs;
+    # stat-guard prevents "file absent" failures on fresh hosts.
+    - name: Check telegram token exists
+      ansible.builtin.stat:
+        path: /etc/alertmanager/telegram-token
+      register: telegram_token_stat
+
+    - name: Fix telegram token permissions
+      ansible.builtin.file:
+        path: /etc/alertmanager/telegram-token
+        owner: root
+        group: alertmanager
+        mode: "0640"
+      when: telegram_token_stat.stat.exists
+
+    # TrueNAS is the always-on alert source; local alertmanager stays
+    # stopped by default (same on-demand pattern as VM/node-exporter).
+    # Start manually for offline testing: systemctl start alertmanager
+    - name: Ensure local alertmanager stopped by default
+      systemd:
+        name: alertmanager
+        enabled: no
+        state: stopped
+      # AUDIT-KEEP: unit absent until first install above on fresh hosts
+      ignore_errors: yes
+
+    - name: Create VictoriaMetrics config directory
+      ansible.builtin.file:
+        path: /etc/victoriametrics
+        state: directory
+        mode: "0755"
+
+    - name: Create VictoriaMetrics systemd service
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/victoriametrics.service
+        content: |
+          [Unit]
+          Description=VictoriaMetrics time series database
+          After=network.target
+          [Service]
+          Type=simple
+          ExecStart=/usr/bin/victoria-metrics -storageDataPath=/var/lib/victoriametrics -httpListenAddr=:8428 -promscrape.config=/etc/victoriametrics/prometheus.yml -retentionPeriod=30d -storage.minFreeDiskSpaceBytes=1GB -memory.allowedPercent=5
+          Restart=always
+          RestartSec=30
+          [Install]
+          WantedBy=multi-user.target
+        mode: "0644"
+
+    - name: Deploy VictoriaMetrics scrape config
+      ansible.builtin.copy:
+        src: files/vm-prometheus.yml
+        dest: /etc/victoriametrics/prometheus.yml
+        mode: "0644"
+
+    - name: Deploy alert rules
+      ansible.builtin.copy:
+        src: files/vm-alerts.yml
+        dest: /etc/victoriametrics/alerts.yml
+        mode: "0644"
+
+    # AUDIT-KEEP (x2): VM/node-exporter units only exist if the AUR/pacman
+    # installs above succeeded; intentional stopped+disabled by design
+    # (start on demand via sys-monitor).
+    - name: Enable VictoriaMetrics
+      systemd:
+        name: victoriametrics
+        enabled: no
+        state: stopped
+        daemon_reload: yes
+      ignore_errors: yes
+
+    - name: Enable node_exporter
+      systemd:
+        name: prometheus-node-exporter
+        enabled: no
+        state: stopped
+      ignore_errors: yes
+
+    # --- Central monitoring (TrueNAS remote-write) ---
+    # Active only when monitoring_remote_write_url is set on the host
+    # (host_vars override). vmagent buffers locally when the collector
+    # is unreachable — safe for sleeping laptops.
+    - name: Deploy vmagent config (central remote-write)
+      ansible.builtin.template:
+        src: templates/vmagent-conf.yml.j2
+        dest: /etc/victoriametrics/vmagent.yml
+        mode: "0644"
+      when: monitoring_remote_write_url is defined and monitoring_remote_write_url | length > 0
+
+    - name: Create vmagent systemd service
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/vmagent.service
+        content: |
+          [Unit]
+          Description=vmagent (remote-write to central VictoriaMetrics)
+          After=network-online.target
+          Wants=network-online.target
+          [Service]
+          Type=simple
+          ExecStart=/usr/bin/vmagent -promscrape.config=/etc/victoriametrics/vmagent.yml -remoteWrite.url={{ monitoring_remote_write_url }}{% if monitoring_remote_write_user is defined and monitoring_remote_write_user | length > 0 %} -remoteWrite.basicAuth.username={{ monitoring_remote_write_user }} -remoteWrite.basicAuth.password={{ monitoring_remote_write_pass }}{% endif %} -remoteWrite.tmpDataPath=/var/lib/victoriametrics/vmagent-remote-write
+          Restart=always
+          RestartSec=30
+          [Install]
+          WantedBy=multi-user.target
+        mode: "0644"
+      when: monitoring_remote_write_url is defined and monitoring_remote_write_url | length > 0
+
+    - name: Enable vmagent (central remote-write)
+      systemd:
+        name: vmagent
+        enabled: yes
+        state: started
+        daemon_reload: yes
+      when: monitoring_remote_write_url is defined and monitoring_remote_write_url | length > 0
+      # AUDIT-KEEP: vmagent binary comes from the victoriametrics AUR pkg
+      ignore_errors: yes
+
+    # --- sys-check periodic health monitoring ---
+    - name: Create sys-check systemd service
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/sys-check.service
+        content: |
+          [Unit]
+          Description=System health check (smoke tests)
+          After=network-online.target
+          [Service]
+          Type=oneshot
+          User={{ user }}
+          Environment=HOME=/home/{{ user }}
+          ExecStart=/home/{{ user }}/.local/bin/sys-check
+        mode: "0644"
+
+    - name: Create sys-check systemd timer (hourly)
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/sys-check.timer
+        content: |
+          [Unit]
+          Description=Run sys-check hourly for health monitoring
+          [Timer]
+          OnBootSec=5min
+          OnUnitActiveSec=1h
+          Persistent=true
+          [Install]
+          WantedBy=timers.target
+        mode: "0644"
+
+    - name: Enable sys-check timer
+      systemd:
+        name: sys-check.timer
+        enabled: yes
+        state: started
+        daemon_reload: yes
+      ignore_errors: yes
+  when: not is_wsl

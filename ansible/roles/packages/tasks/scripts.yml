@@ -1,0 +1,41 @@
+---
+# Section 6: Management Scripts + Symlinks
+
+- name: Ensure management scripts are executable
+  file:
+    path: "/home/{{ user }}/.local/share/chezmoi/scripts/{{ item }}"
+    mode: "0755"
+    owner: "{{ user }}"
+    group: "{{ user }}"
+  loop:
+    - sys-save
+    - sys-sync
+    - bootstrap.sh
+
+- name: Ensure ~/.local/bin directory exists
+  file:
+    path: "/home/{{ user }}/.local/bin"
+    state: directory
+    mode: "0755"
+    owner: "{{ user }}"
+    group: "{{ user }}"
+
+- name: Symlink scripts to ~/.local/bin for system-wide PATH access
+  file:
+    src: "/home/{{ user }}/.local/share/chezmoi/scripts/{{ item }}"
+    dest: "/home/{{ user }}/.local/bin/{{ item }}"
+    state: link
+    owner: "{{ user }}"
+    group: "{{ user }}"
+    force: true
+  loop:
+    - sys-save
+    - sys-sync
+    - sys-check
+    - sys-monitor.sh
+    - vault-init.sh
+    - vault-store.sh
+    - vault-unseal.sh
+    - vault-backup.sh
+    - vm-setup.sh
+    - mic-lock.sh

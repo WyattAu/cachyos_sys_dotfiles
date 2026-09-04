@@ -4,7 +4,8 @@
 
 set -e
 
-LOGFILE="/var/log/sys-sync.log"
+LOGFILE="$HOME/.local/state/sys-sync.log"
+mkdir -p "$(dirname "$LOGFILE")"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # Dry-run mode

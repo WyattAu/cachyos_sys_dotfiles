@@ -41,6 +41,8 @@ return {
       cmake = { 'cmake_format' },
       make = { 'checkmake' },
       sql = { 'sqlfmt' },
+      tex = { 'latexindent' },
+      bib = {},
     },
     formatters = {
       shfmt = {

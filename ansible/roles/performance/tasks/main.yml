@@ -1,0 +1,203 @@
+---
+# Sections 11-17: Performance Tuning (sysctl, CPU governor, SCX, NVMe, kernel params, huge pages, security limits)
+
+# Section 11: SYSCTL
+# Always deploy to ensure old overrides are cleared when removed from host_vars.
+- name: Deploy sysctl tuning
+  ansible.builtin.template:
+    src: templates/99-hft-tuning.conf.j2
+    dest: /etc/sysctl.d/99-hft-tuning.conf
+    mode: "0644"
+  when: not is_wsl
+  notify: Reload sysctl
+
+# Section 12: CPU GOVERNOR
+# cpupower conflicts with power-profiles-daemon. Remove our override
+# so power-profiles-daemon (balanced/performance/power-saver) controls it.
+- name: Remove cpupower governor override (managed by power-profiles-daemon)
+  ansible.builtin.file:
+    path: /etc/default/cpupower-service.conf
+    state: absent
+  when:
+    - not is_wsl
+    - cpu_governor is not defined
+
+- name: Configure CPU power governor (legacy, if explicitly set)
+  ansible.builtin.template:
+    src: templates/cpupower.conf.j2
+    dest: /etc/default/cpupower-service.conf
+    mode: "0644"
+  when:
+    - not is_wsl
+    - cpu_governor is defined
+
+- name: Enable cpupower service
+  systemd:
+    name: cpupower
+    enabled: yes
+    state: started
+    daemon_reload: yes
+  when:
+    - not is_wsl
+    - cpu_governor is defined
+  # AUDIT-KEEP: cpupower unit absent unless cpupower pkg provides it;
+  # legacy path only (power-profiles-daemon is the default now).
+  ignore_errors: yes
+
+# Section 13: SCX SCHEDULER
+# scx-scheds provides 'scx_loader.service' — a D-Bus on-demand loader.
+# Override to launch with --auto for automatic scheduler selection.
+- block:
+    - name: Clean up stale scx.service.d override (if exists)
+      file:
+        path: /etc/systemd/system/scx.service.d
+        state: absent
+
+    - name: Ensure SCX loader override directory exists
+      file:
+        path: /etc/systemd/system/scx_loader.service.d
+        state: directory
+        mode: "0755"
+
+    - name: Create SCX loader override
+      copy:
+        dest: /etc/systemd/system/scx_loader.service.d/override.conf
+        content: |
+          [Service]
+          ExecStart=
+          ExecStart=/usr/bin/scx_loader --auto
+        mode: "0644"
+
+    - name: Enable SCX scheduler loader
+      systemd:
+        name: scx_loader
+        enabled: yes
+        daemon_reload: yes
+        # state: started NOT used — scx_loader is Type=dbus (on-demand),
+        # systemctl start would hang waiting for the bus name.
+  when: not is_wsl
+
+# Section 14: NVMe I/O SCHEDULER
+- name: Install NVMe udev scheduler rule
+  copy:
+    src: templates/60-nvme-scheduler.rules
+    dest: /etc/udev/rules.d/60-nvme-scheduler.rules
+    mode: "0644"
+  when: not is_wsl
+  notify: Reload udev
+
+# Section 15: KERNEL BOOT PARAMETERS
+# CachyOS uses Limine (drop-in at /etc/limine-entry-tool.d/)
+# Vanilla Arch uses GRUB (/etc/default/grub)
+
+# --- CachyOS: Limine drop-in ---
+- name: Ensure Limine drop-in directory exists
+  ansible.builtin.file:
+    path: /etc/limine-entry-tool.d
+    state: directory
+    mode: "0755"
+  when:
+    - not is_wsl
+    - is_cachyos
+
+- name: Deploy kernel parameter drop-in (Limine / CachyOS)
+  ansible.builtin.template:
+    src: templates/99-hft-kernel.conf
+    dest: /etc/limine-entry-tool.d/99-hft-kernel.conf
+    mode: "0644"
+  when:
+    - not is_wsl
+    - is_cachyos
+
+- name: Rebuild Limine boot config
+  ansible.builtin.command: limine-update
+  when:
+    - not is_wsl
+    - is_cachyos
+    - kernel_params is defined
+  changed_when: false
+
+# --- Vanilla Arch: GRUB default cmdline ---
+# Idempotent: strips any existing instances of our params before re-appending.
+# Safe to run on every sys-sync without doubling params.
+- name: Ensure kernel parameters in GRUB config (Arch, idempotent)
+  ansible.builtin.shell: |
+    CURRENT=$(grep -oP '^GRUB_CMDLINE_LINUX_DEFAULT="\K[^"]+' /etc/default/grub 2>/dev/null || echo "")
+    # Remove any of our params that are already present (match by key before =)
+    for PARAM in {{ kernel_params | join(' ') }}; do
+      KEY="${PARAM%%=*}"
+      CURRENT=$(echo "$CURRENT" | sed "s/${KEY}=[^ ]*//g")
+    done
+    # Trim whitespace, append our params, trim again
+    CURRENT=$(echo "$CURRENT" | xargs)
+    FINAL="${CURRENT} {{ kernel_params | join(' ') }}"
+    FINAL=$(echo "$FINAL" | xargs)
+    # Only write if different (idempotent)
+    EXISTING=$(grep -oP '^GRUB_CMDLINE_LINUX_DEFAULT="\K[^"]+' /etc/default/grub 2>/dev/null || echo "")
+    if [ "$FINAL" != "$EXISTING" ]; then
+      sed -i "s|^GRUB_CMDLINE_LINUX_DEFAULT=.*|GRUB_CMDLINE_LINUX_DEFAULT=\"${FINAL}\"|" /etc/default/grub
+      echo "CHANGED"
+    fi
+  register: grub_updated
+  changed_when: "'CHANGED' in grub_updated.stdout"
+  when:
+    - not is_wsl
+    - not is_cachyos
+    - kernel_params is defined
+
+- name: Rebuild GRUB config
+  ansible.builtin.command: grub-mkconfig -o /boot/grub/grub.cfg
+  when:
+    - not is_wsl
+    - not is_cachyos
+    - kernel_params is defined
+    - grub_updated is changed
+  changed_when: false
+
+# Section 16: HUGE PAGES
+- name: Configure huge pages via sysctl
+  ansible.builtin.sysctl:
+    name: vm.nr_hugepages
+    value: "{{ (sysctl_tuning.vm['vm.nr_hugepages'] | default(0)) | string }}"
+    sysctl_set: yes
+    sysctl_file: /etc/sysctl.d/99-hft-tuning.conf
+  when:
+    - not is_wsl
+    - sysctl_tuning is defined
+    - sysctl_tuning.vm is defined
+    - sysctl_tuning.vm['vm.nr_hugepages'] is defined
+    - sysctl_tuning.vm['vm.nr_hugepages'] > 0
+  # AUDIT-KEEP (x3, sysctl/hugepages): some kernels/boot states reject
+  # hugepage reallocation at runtime; value applies on next boot instead.
+  ignore_errors: yes
+
+# Clear huge pages when not explicitly configured (frees reserved RAM)
+- name: Clear huge pages reservation
+  ansible.builtin.sysctl:
+    name: vm.nr_hugepages
+    value: "0"
+    sysctl_set: yes
+    sysctl_file: /etc/sysctl.d/99-hft-tuning.conf
+  when:
+    - not is_wsl
+    - sysctl_tuning is not defined
+  ignore_errors: yes
+
+# Section 17: SECURITY LIMITS
+- block:
+    - name: Set performance event paranoid for profiling
+      ansible.builtin.sysctl:
+        name: kernel.perf_event_paranoid
+        value: "{{ (sysctl_tuning.kernel['kernel.perf_event_paranoid'] | default(1)) | string }}"
+        sysctl_set: yes
+        sysctl_file: /etc/sysctl.d/99-hft-tuning.conf
+      when: sysctl_tuning is defined and sysctl_tuning.kernel is defined
+      # AUDIT-KEEP: perf_event_paranoid may be locked by lockdown/secure-boot kernels
+      ignore_errors: yes
+
+    - name: Set file descriptor limits
+      ansible.builtin.template:
+        src: templates/99-perf-limits.conf
+        dest: /etc/security/limits.d/99-perf-limits.conf
+        mode: "0644"
+  when: not is_wsl

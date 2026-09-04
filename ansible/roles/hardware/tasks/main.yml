@@ -1,0 +1,55 @@
+---
+# Section 9: Host-Specific Hardware Fixes (MSI)
+
+- block:
+    - name: Create MSI Audio Fix Script
+      copy:
+        dest: /usr/local/bin/msi-audio-fix.sh
+        mode: "0755"
+        content: |
+          #!/bin/bash
+          hda-verb /dev/snd/hwC0D0 0x17 SET_CONNECT_SEL 0x01
+          hda-verb /dev/snd/hwC0D0 0x17 SET_PIN_WIDGET_CONTROL 0x40
+          hda-verb /dev/snd/hwC0D0 0x1a SET_AMP_GAIN_MUTE 0xb000
+          hda-verb /dev/snd/hwC0D0 0x1a SET_PIN_WIDGET_CONTROL 0x40
+
+    - name: Create MSI Audio systemd Unit
+      copy:
+        dest: /etc/systemd/system/msi-audio.service
+        content: |
+          [Unit]
+          Description=Fix MSI Woofers
+          After=sound.target
+          [Service]
+          Type=oneshot
+          ExecStart=/usr/local/bin/msi-audio-fix.sh
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Reload systemd for new MSI units
+      systemd:
+        daemon_reload: yes
+
+    - name: Blacklist conflicting modules (msi_wmi vs msi-ec)
+      ansible.builtin.lineinfile:
+        path: "/etc/modprobe.d/{{ ansible_facts['hostname'] }}.conf"
+        line: "blacklist {{ item }}"
+        create: yes
+        mode: "0644"
+      loop: "{{ blacklisted_modules | default([]) }}"
+
+    - name: Load required modules at boot
+      ansible.builtin.lineinfile:
+        path: "/etc/modules-load.d/{{ ansible_facts['hostname'] }}.conf"
+        line: "{{ item }}"
+        create: yes
+        mode: "0644"
+      loop: "{{ loaded_modules | default([]) }}"
+
+    - name: Unload conflicting msi_wmi and load msi-ec
+      ansible.builtin.shell: |
+        modprobe -r msi_wmi_platform 2>/dev/null || true
+        modprobe -r msi_wmi 2>/dev/null || true
+        modprobe msi-ec 2>/dev/null || true
+      changed_when: false
+  when: blacklisted_modules is defined and blacklisted_modules | length > 0
