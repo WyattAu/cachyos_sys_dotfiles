@@ -1,6 +1,38 @@
 # SSH Configuration
 # Managed by chezmoi — edit the source, not this file
 
+# Forgejo Git SSH — direct LAN (CF tunnel SSH broken: websocket handshake).
+# Port 2222 = Forgejo builtin SSH server on TrueNAS (container 2522).
+# ControlMaster disabled: git push channels must not multiplex through a
+# long-lived master (stuck masters wedge pushes indefinitely).
+Host git.wyattau.com
+    HostName 192.168.1.3
+    Port 2222
+    User git
+    IdentityFile ~/.ssh/id_ed25519_forgejo
+    StrictHostKeyChecking no
+    ControlMaster no
+    ControlPath none
+
+Host ssh.wyattau.com
+    HostName 192.168.1.3
+    Port 2222
+    User git
+    IdentityFile ~/.ssh/id_ed25519_forgejo
+    ControlMaster no
+    ControlPath none
+    StrictHostKeyChecking no
+
+# Forgejo alias
+Host forgejo
+    HostName 192.168.1.3
+    Port 2222
+    User git
+    IdentityFile ~/.ssh/id_ed25519_forgejo
+    ControlMaster no
+    ControlPath none
+    StrictHostKeyChecking no
+
 # Global defaults
 Host *
     AddKeysToAgent yes
@@ -46,27 +78,6 @@ Host truenas-ts
     IdentityFile ~/.ssh/id_ed25519
 
 # ── Cloud / Git ──
-
-# Forgejo Git SSH via Cloudflare Tunnel
-Host git.wyattau.com
-    ProxyCommand {{ .cloudflared_path | default "~/.local/bin/cloudflared" }} access ssh --hostname %h
-    User git
-    Port 22
-    IdentityFile ~/.ssh/id_ed25519
-
-Host ssh.wyattau.com
-    ProxyCommand {{ .cloudflared_path | default "~/.local/bin/cloudflared" }} access ssh --hostname %h
-    User git
-    Port 22
-    IdentityFile ~/.ssh/id_ed25519
-
-# Forgejo alias
-Host forgejo
-    HostName git.wyattau.com
-    ProxyCommand {{ .cloudflared_path | default "~/.local/bin/cloudflared" }} access ssh --hostname git.wyattau.com
-    User git
-    Port 22
-    IdentityFile ~/.ssh/id_ed25519
 
 # ── GitHub ──
 Host github.com
