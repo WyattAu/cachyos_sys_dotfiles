@@ -201,6 +201,18 @@
         line: 'PermitRootLogin no'
       notify: Restart sshd
 
+    - name: Tame pam_faillock (single-user desktop)
+      # Arch default deny=3/unlock_time=600s lets a runaway agent/script
+      # lock the interactive user out for 10 minutes. Loosen for desktop:
+      # 10 strikes, 90s cooldown, strikes expire after 2 minutes of quiet.
+      ansible.builtin.copy:
+        dest: /etc/security/faillock.conf
+        content: |
+          deny = 10
+          unlock_time = 90
+          fail_interval = 120
+        mode: "0644"
+
     # KEEP ignore-free: requires ansible.posix (installed via bootstrap + CI).
     # If firewalld is not running the module fails fast — that's a real error.
     - name: Open KDE Connect ports in firewalld
