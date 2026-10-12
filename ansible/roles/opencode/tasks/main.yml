@@ -27,10 +27,13 @@
     HOME: "/home/{{ user }}"
 
 # --- r2mcp: official radare2 MCP server (r2pm package) ---
+# NOTE: r2pm -l exits 1 when nothing is installed yet — that's the
+# "empty list" case, not an error, hence failed_when: false.
 - name: List installed r2pm packages
   command: r2pm -l
   register: r2pm_list
   changed_when: false
+  failed_when: false
   become: true
   become_user: "{{ user }}"
   environment:
