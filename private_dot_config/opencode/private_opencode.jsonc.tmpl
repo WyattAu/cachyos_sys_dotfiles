@@ -65,19 +65,12 @@
         "type": "local",
         "command": ["r2pm", "-r", "r2mcp"]
       },
-      // GhidraMCP bridge: only answers while Ghidra is running with a
-      // program open (GhidraMCPPlugin HTTP server on 127.0.0.1:8080).
+      // GhidraMCP v2: GUI mode — tools answer while Ghidra runs with a
+      // program open (loopback HTTP backend). Headless alternative:
+      //   ghidra-mcp --headless --binary <path>
       "ghidra": {
         "type": "local",
-        "command": [
-          "uv",
-          "run",
-          "--with",
-          "mcp",
-          "--with",
-          "requests",
-          "{{ .chezmoi.homeDir }}/.local/share/ghidra-mcp/bridge_mcp_ghidra.py"
-        ]
+        "command": ["ghidra-mcp"]
       }
     }
   },

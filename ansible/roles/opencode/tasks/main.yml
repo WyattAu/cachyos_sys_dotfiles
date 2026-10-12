@@ -47,22 +47,15 @@
   environment:
     HOME: "/home/{{ user }}"
 
-# --- GhidraMCP: bridge + Ghidra extension ---
+# --- GhidraMCP v2: Ghidra extension + ghidra-mcp CLI (uv tool) ---
+# Release 2.0 restructured the bundle: the outer zip now contains a
+# NESTED Ghidra extension zip (ghidra_<ver>_PUBLIC_*_GhidraMCP.zip) and
+# a ghidra_mcp Python wheel. Both are consumed from a staging extract.
 - name: Create ghidra-mcp data directory
   file:
     path: "/home/{{ user }}/.local/share/ghidra-mcp"
     state: directory
     mode: "0755"
-    owner: "{{ user }}"
-    group: "{{ user }}"
-  become: true
-  become_user: "{{ user }}"
-
-- name: Download GhidraMCP bridge script
-  get_url:
-    url: "{{ ghidramcp_bridge_url }}"
-    dest: "/home/{{ user }}/.local/share/ghidra-mcp/bridge_mcp_ghidra.py"
-    mode: "0644"
     owner: "{{ user }}"
     group: "{{ user }}"
   become: true
@@ -103,8 +96,28 @@
   become: true
   become_user: "{{ user }}"
 
+- name: Unpack GhidraMCP release bundle
+  ansible.builtin.shell: |
+    set -euo pipefail
+    DATA="$HOME/.local/share/ghidra-mcp"
+    STAGING="$DATA/staging"
+    rm -rf "$STAGING"
+    mkdir -p "$STAGING"
+    unzip -oq "$DATA/GhidraMCP-plugin.zip" -d "$STAGING"
+    echo "unpacked to $STAGING"
+  args:
+    executable: /bin/bash
+  register: ghidramcp_unpack
+  changed_when: "'unpacked' in ghidramcp_unpack.stdout"
+  become: true
+  become_user: "{{ user }}"
+  environment:
+    HOME: "/home/{{ user }}"
+
 - name: Read Ghidra version from install root
-  command: "grep -E '^APPLICATION_VERSION=' {{ ghidra_install_root }}/Ghidra/application.properties"
+  # Case-insensitive: Ghidra <=11 used APPLICATION_VERSION=, 12.x uses
+  # application.version=.
+  command: "grep -iE '^application\\.version=' {{ ghidra_install_root }}/Ghidra/application.properties"
   register: ghidra_props
   failed_when: false
   changed_when: false
@@ -123,41 +136,65 @@
       {{ (ghidra_user_dirs.files | map(attribute='path') | sort | last)
          if (ghidra_user_dirs.files | default([])) | length > 0
          else ('/home/' ~ user ~ '/.ghidra/.ghidra_'
-               ~ (ghidra_props.stdout | regex_replace('^APPLICATION_VERSION=', '') | trim)
+               ~ (ghidra_props.stdout | regex_replace('^[^=]*=', '') | trim)
                ~ '_PUBLIC') }}
   when: (ghidra_user_dirs.files | default([])) | length > 0
-        or 'APPLICATION_VERSION=' in (ghidra_props.stdout | default(''))
+        or (ghidra_props.stdout | default('')) | length > 0
 
 - name: Install GhidraMCP extension into Ghidra
   ansible.builtin.shell: |
     set -euo pipefail
     STAGING="$HOME/.local/share/ghidra-mcp/staging"
-    rm -rf "$STAGING"
-    mkdir -p "$STAGING"
-    unzip -oq "$HOME/.local/share/ghidra-mcp/GhidraMCP-plugin.zip" -d "$STAGING"
-    ROOT="$(dirname "$(find "$STAGING" -name extension.properties | head -n1)")"
-    DEST="{{ ghidra_user_dir }}/Extensions/GhidraMCP"
-    rm -rf "$DEST"
-    mkdir -p "$(dirname "$DEST")"
-    cp -a "$ROOT" "$DEST"
-    echo "Installed extension from $ROOT to $DEST"
+    INNER="$(find "$STAGING" -maxdepth 3 -name 'ghidra_*_GhidraMCP*.zip' | head -n1)"
+    if [ -z "$INNER" ]; then
+      echo "ERROR: no nested Ghidra extension zip found in release bundle" >&2
+      exit 1
+    fi
+    DEST="{{ ghidra_user_dir }}/Extensions"
+    rm -rf "$DEST/GhidraMCP"
+    mkdir -p "$DEST"
+    unzip -oq "$INNER" -d "$DEST"
+    if [ ! -f "$DEST/GhidraMCP/extension.properties" ]; then
+      echo "ERROR: extracted extension has no extension.properties" >&2
+      exit 1
+    fi
+    echo "Installed $(basename "$INNER") -> $DEST/GhidraMCP"
   args:
     executable: /bin/bash
   register: ghidramcp_install
-  changed_when: "'Installed extension' in ghidramcp_install.stdout"
+  changed_when: "'Installed' in ghidramcp_install.stdout"
   when: ghidra_user_dir is defined
   become: true
   become_user: "{{ user }}"
   environment:
     HOME: "/home/{{ user }}"
 
+- name: Install ghidra-mcp CLI (uv tool from release wheel)
+  ansible.builtin.shell: |
+    set -euo pipefail
+    WHEEL="$(find "$HOME/.local/share/ghidra-mcp/staging" -name 'ghidra_mcp-*-py3-none-any.whl' | head -n1)"
+    if [ -z "$WHEEL" ]; then
+      echo "ERROR: ghidra_mcp wheel not found in release bundle" >&2
+      exit 1
+    fi
+    uv tool install --force "$WHEEL"
+  args:
+    executable: /bin/bash
+  changed_when: false
+  become: true
+  become_user: "{{ user }}"
+  environment:
+    HOME: "/home/{{ user }}"
+    PATH: "/home/{{ user }}/.local/bin:{{ ansible_env.PATH | default('/usr/local/bin:/usr/bin') }}"
+
 - name: GhidraMCP manual step
   debug:
     msg: >-
       GhidraMCP extension installed. One-time GUI step on this host:
       open Ghidra -> File -> Configure -> Developer -> enable GhidraMCPPlugin.
-      The 'ghidra' MCP server only answers while Ghidra is running with a
-      program open (plugin HTTP server on 127.0.0.1:8080).
+      In default (GUI) mode the 'ghidra' MCP server only answers while
+      Ghidra is running with a program open (loopback HTTP backend).
+      Headless alternative: ghidra-mcp --headless --binary <path>.
   when: ghidramcp_install is changed
 
 # --- Playwright: Chromium for @playwright/mcp ---

@@ -56,9 +56,14 @@ Tool names are prefixed `radare2_` and `ghidra_` (under Code Mode:
 ## Environment notes
 
 - Backends live on PATH: `radare2`, `rizin` (pacman), `r2mcp` via
-  `r2pm -r r2mcp`.
-- The GhidraMCP plugin HTTP server binds `127.0.0.1:8080`; the bridge
-  script runs at `~/.local/share/ghidra-mcp/bridge_mcp_ghidra.py`.
+  `r2pm -r r2mcp`, `ghidra-mcp` (uv tool, v2 CLI from the GhidraMCP
+  release wheel).
+- The Ghidra extension sits in
+  `~/.ghidra/.ghidra_<ver>_PUBLIC/Extensions/GhidraMCP/`; its backend
+  binds `127.0.0.1:8080` in GUI mode.
+- Headless escape hatch: `ghidra-mcp --headless --binary <path>` runs
+  Ghidra in-process (needs the pyghidra extra + `GHIDRA_INSTALL_DIR`).
+  Prefer this only when the user asks for fully non-GUI analysis.
 - r2mcp honors `ALLOWED_DIRS` (comma-separated) if the user wants to
   sandbox which binaries it may open; unset means unrestricted.
 - Firmware/other-arch targets: check r2's arch list (`-a ?`) before
