@@ -1,0 +1,168 @@
+---
+# =========================================================================
+# OpenCode + MCP TOOLCHAIN
+# =========================================================================
+# Installs the OpenCode binary and the local MCP server backends. The
+# OpenCode config itself (~/.config/opencode/) is managed by chezmoi.
+#
+# Layout produced for the MCP stack:
+#   ~/.opencode/bin/opencode                  binary (official installer)
+#   ~/.local/share/ghidra-mcp/                GhidraMCP bridge + plugin zip
+#   ~/.ghidra/.ghidra_*_PUBLIC/Extensions/    GhidraMCP Ghidra extension
+#   ~/.local/share/radare2/r2pm/              r2pm-installed r2mcp
+#   ~/.cache/ms-playwright/                   Chromium for @playwright/mcp
+#
+# pacman/AUR deps (radare2, rizin, ghidra) are installed by the packages
+# role from host_vars lists — this role assumes they are present.
+# =========================================================================
+
+# --- OpenCode binary (official installer, self-contained at ~/.opencode) ---
+- name: Install OpenCode binary
+  shell: curl -fsSL https://opencode.ai/install | bash
+  args:
+    creates: "/home/{{ user }}/.opencode/bin/opencode"
+  become: true
+  become_user: "{{ user }}"
+  environment:
+    HOME: "/home/{{ user }}"
+
+# --- r2mcp: official radare2 MCP server (r2pm package) ---
+- name: List installed r2pm packages
+  command: r2pm -l
+  register: r2pm_list
+  changed_when: false
+  become: true
+  become_user: "{{ user }}"
+  environment:
+    HOME: "/home/{{ user }}"
+
+- name: Install r2mcp (radare2 MCP server)
+  command: r2pm -Uci r2mcp
+  when: "'r2mcp' not in r2pm_list.stdout"
+  become: true
+  become_user: "{{ user }}"
+  environment:
+    HOME: "/home/{{ user }}"
+
+# --- GhidraMCP: bridge + Ghidra extension ---
+- name: Create ghidra-mcp data directory
+  file:
+    path: "/home/{{ user }}/.local/share/ghidra-mcp"
+    state: directory
+    mode: "0755"
+    owner: "{{ user }}"
+    group: "{{ user }}"
+  become: true
+  become_user: "{{ user }}"
+
+- name: Download GhidraMCP bridge script
+  get_url:
+    url: "{{ ghidramcp_bridge_url }}"
+    dest: "/home/{{ user }}/.local/share/ghidra-mcp/bridge_mcp_ghidra.py"
+    mode: "0644"
+    owner: "{{ user }}"
+    group: "{{ user }}"
+  become: true
+  become_user: "{{ user }}"
+
+- name: Resolve latest GhidraMCP release tag (redirect — no API, rate-limit proof)
+  ansible.builtin.shell: |
+    set -o pipefail
+    curl -fsSL -o /dev/null -w '%{url_effective}' \
+      https://github.com/LaurieWired/GhidraMCP/releases/latest | sed 's|.*/tag/||'
+  args:
+    executable: /bin/bash
+  register: ghidramcp_tag
+  changed_when: false
+  when: ghidramcp_plugin_url | length == 0
+
+- name: Resolve GhidraMCP plugin asset URL (expanded assets page)
+  ansible.builtin.shell: |
+    set -o pipefail
+    curl -fsSL "https://github.com/LaurieWired/GhidraMCP/releases/expanded_assets/{{ ghidramcp_tag.stdout }}" \
+      | grep -oE 'href="[^"]*GhidraMCP-[^"]*\.zip"' | head -n1 \
+      | sed -E 's|^href="||; s|"$||; s|^/|https://github.com/|'
+  args:
+    executable: /bin/bash
+  register: ghidramcp_asset
+  changed_when: false
+  when: ghidramcp_plugin_url | length == 0
+
+- name: Download GhidraMCP plugin zip
+  get_url:
+    url: >-
+      {{ ghidramcp_plugin_url if ghidramcp_plugin_url | length > 0
+         else ghidramcp_asset.stdout }}
+    dest: "/home/{{ user }}/.local/share/ghidra-mcp/GhidraMCP-plugin.zip"
+    mode: "0644"
+    owner: "{{ user }}"
+    group: "{{ user }}"
+  become: true
+  become_user: "{{ user }}"
+
+- name: Read Ghidra version from install root
+  command: "grep -E '^APPLICATION_VERSION=' {{ ghidra_install_root }}/Ghidra/application.properties"
+  register: ghidra_props
+  failed_when: false
+  changed_when: false
+
+- name: Detect existing Ghidra user directories
+  find:
+    paths: "/home/{{ user }}/.ghidra"
+    patterns: ".ghidra_*_PUBLIC"
+    file_type: directory
+  register: ghidra_user_dirs
+  failed_when: false
+
+- name: Determine Ghidra user directory
+  set_fact:
+    ghidra_user_dir: >-
+      {{ (ghidra_user_dirs.files | map(attribute='path') | sort | last)
+         if (ghidra_user_dirs.files | default([])) | length > 0
+         else ('/home/' ~ user ~ '/.ghidra/.ghidra_'
+               ~ (ghidra_props.stdout | regex_replace('^APPLICATION_VERSION=', '') | trim)
+               ~ '_PUBLIC') }}
+  when: (ghidra_user_dirs.files | default([])) | length > 0
+        or 'APPLICATION_VERSION=' in (ghidra_props.stdout | default(''))
+
+- name: Install GhidraMCP extension into Ghidra
+  ansible.builtin.shell: |
+    set -euo pipefail
+    STAGING="$HOME/.local/share/ghidra-mcp/staging"
+    rm -rf "$STAGING"
+    mkdir -p "$STAGING"
+    unzip -oq "$HOME/.local/share/ghidra-mcp/GhidraMCP-plugin.zip" -d "$STAGING"
+    ROOT="$(dirname "$(find "$STAGING" -name extension.properties | head -n1)")"
+    DEST="{{ ghidra_user_dir }}/Extensions/GhidraMCP"
+    rm -rf "$DEST"
+    mkdir -p "$(dirname "$DEST")"
+    cp -a "$ROOT" "$DEST"
+    echo "Installed extension from $ROOT to $DEST"
+  args:
+    executable: /bin/bash
+  register: ghidramcp_install
+  changed_when: "'Installed extension' in ghidramcp_install.stdout"
+  when: ghidra_user_dir is defined
+  become: true
+  become_user: "{{ user }}"
+  environment:
+    HOME: "/home/{{ user }}"
+
+- name: GhidraMCP manual step
+  debug:
+    msg: >-
+      GhidraMCP extension installed. One-time GUI step on this host:
+      open Ghidra -> File -> Configure -> Developer -> enable GhidraMCPPlugin.
+      The 'ghidra' MCP server only answers while Ghidra is running with a
+      program open (plugin HTTP server on 127.0.0.1:8080).
+  when: ghidramcp_install is changed
+
+# --- Playwright: Chromium for @playwright/mcp ---
+- name: Install Playwright Chromium (cached in ~/.cache/ms-playwright)
+  command: npx -y playwright@latest install chromium
+  args:
+    creates: "/home/{{ user }}/.cache/ms-playwright"
+  become: true
+  become_user: "{{ user }}"
+  environment:
+    HOME: "/home/{{ user }}"

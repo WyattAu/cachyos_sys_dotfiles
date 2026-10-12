@@ -1,0 +1,91 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  // Managed by chezmoi — edit the source repo, not this file.
+  //
+  // Model/provider auth is deliberately NOT set here: run `opencode auth login`
+  // per machine and pick the default model in the TUI. Add a "model" field here
+  // only if you want one pinned fleet-wide.
+  //
+  // One-time per machine after first apply:
+  //   /mcps -> github -> sign in           (OAuth, credentials stay out of config)
+  //   Ghidra: File -> Configure -> Developer -> enable GhidraMCPPlugin
+
+  "mcp": {
+    // Cold npx/uvx downloads on first launch exceed the 30s default startup.
+    "timeout": {
+      "startup": 90000
+    },
+    "servers": {
+      // ---- Docs & research ------------------------------------------
+      "context7": {
+        "type": "remote",
+        "url": "https://mcp.context7.com/mcp"
+      },
+
+      // ---- GitHub (OAuth via /mcps; no token stored in this file) ----
+      "github": {
+        "type": "remote",
+        "url": "https://api.githubcopilot.com/mcp/"
+      },
+
+      // ---- Web & reasoning -------------------------------------------
+      "fetch": {
+        "type": "local",
+        "command": ["uvx", "mcp-server-fetch"]
+      },
+      "sequential-thinking": {
+        "type": "local",
+        "command": ["npx", "-y", "@modelcontextprotocol/server-sequential-thinking"]
+      },
+
+      // ---- Dev workflow ----------------------------------------------
+      "git": {
+        "type": "local",
+        "command": ["uvx", "mcp-server-git"]
+      },
+      // Disabled globally: DBs are project-specific. In a project's
+      // opencode.jsonc, redefine "sqlite" (same shape) with your db path —
+      // project config replaces this object wholesale.
+      "sqlite": {
+        "type": "local",
+        "command": ["uvx", "mcp-server-sqlite", "--db-path", "./local.db"],
+        "disabled": true
+      },
+
+      // ---- Browser automation ----------------------------------------
+      "playwright": {
+        "type": "local",
+        "command": ["npx", "-y", "@playwright/mcp@latest"]
+      },
+
+      // ---- Reverse engineering ---------------------------------------
+      // r2mcp: static analysis, decompile, ESIL emulation, live debug.
+      // Backends installed by the ansible 'opencode' role (radare2, rizin).
+      "radare2": {
+        "type": "local",
+        "command": ["r2pm", "-r", "r2mcp"]
+      },
+      // GhidraMCP bridge: only answers while Ghidra is running with a
+      // program open (GhidraMCPPlugin HTTP server on 127.0.0.1:8080).
+      "ghidra": {
+        "type": "local",
+        "command": [
+          "uv",
+          "run",
+          "--with",
+          "mcp",
+          "--with",
+          "requests",
+          "{{ .chezmoi.homeDir }}/.local/share/ghidra-mcp/bridge_mcp_ghidra.py"
+        ]
+      }
+    }
+  },
+
+  // Ordered rules; last match wins. Complements the TUI's autoaccept setting.
+  "permissions": [
+    { "action": "shell", "resource": "sudo *", "effect": "deny" },
+    { "action": "shell", "resource": "git push *", "effect": "ask" },
+    { "action": "shell", "resource": "rm -rf /", "effect": "deny" }
+  ]
+}

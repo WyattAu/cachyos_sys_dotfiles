@@ -115,6 +115,11 @@ common_packages:
   - msr-tools
   - cpupower
 
+  # Reverse Engineering (MCP backends — see opencode role + opencode.jsonc)
+  - radare2                   # Binary analysis framework (r2mcp MCP server)
+  - rizin                     # r2 fork — RzIL emulation backend for r2mcp
+  - ghidra                    # RE platform; GhidraMCP extension deployed by opencode role
+
   # Android
   - android-tools
 

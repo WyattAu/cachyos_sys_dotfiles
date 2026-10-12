@@ -12,6 +12,7 @@
 # Roles:
 #   packages    — Chaotic-AUR, pacman sync, AUR upgrade/install, flatpak
 #   toolchains  — Nix, Rust, Elan, direnv, pnpm
+#   opencode    — OpenCode binary + MCP backends (r2mcp, GhidraMCP, playwright)
 #   directories — Dev/personal/SSH dirs, Steam symlink, GHQ config
 #   hardware    — MSI audio, msi-ec module blacklisting
 #   system      — Groups, services, PipeWire, SDDM, KDE, fonts, security, snapper
@@ -149,6 +150,9 @@
 
     - include_role:
         name: toolchains
+
+    - include_role:
+        name: opencode
 
     - include_role:
         name: directories
