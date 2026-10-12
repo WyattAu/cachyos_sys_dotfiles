@@ -198,8 +198,9 @@
   when: ghidramcp_install is changed
 
 # --- Playwright: Chromium for @playwright/mcp ---
+# bunx, not npx: the fleet has bun (common_packages) but no npm/npx.
 - name: Install Playwright Chromium (cached in ~/.cache/ms-playwright)
-  command: npx -y playwright@latest install chromium
+  command: bunx playwright@latest install chromium
   args:
     creates: "/home/{{ user }}/.cache/ms-playwright"
   become: true
