@@ -1,6 +1,6 @@
 services:
   portainer:
-    image: portainer/portainer-ce:2.21.5  # Pinned 2026-08-18
+    image: portainer/portainer-ce:2.45.2  # Upgraded from 2.21.5 2026-10-13 — old binary couldn't load its own DB schema (crash loop)
     container_name: portainer
     restart: unless-stopped
     ports:
