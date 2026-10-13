@@ -58,14 +58,17 @@ Tool names are prefixed `radare2_` and `ghidra_` (under Code Mode:
 - Backends live on PATH: `radare2`, `rizin` (pacman), `r2mcp` via
   `r2pm -r r2mcp`, `ghidra-mcp` (uv tool, v2 CLI from the GhidraMCP
   release wheel).
+- The fleet r2mcp config runs sandboxed (`-s`): files may only be opened
+  under `~/dev`, `~/downloads`, `~/Games/Emulation`, or `/tmp`. If a
+  caller points at a binary elsewhere, say so and ask them to copy it
+  into `~/dev/sandbox` — do not suggest removing the sandbox. The
+  dangerous `run_*` tools are disabled; treat that as permanent.
 - The Ghidra extension sits in
   `~/.ghidra/.ghidra_<ver>_PUBLIC/Extensions/GhidraMCP/`; its backend
   binds `127.0.0.1:8080` in GUI mode.
 - Headless escape hatch: `ghidra-mcp --headless --binary <path>` runs
   Ghidra in-process (needs the pyghidra extra + `GHIDRA_INSTALL_DIR`).
   Prefer this only when the user asks for fully non-GUI analysis.
-- r2mcp honors `ALLOWED_DIRS` (comma-separated) if the user wants to
-  sandbox which binaries it may open; unset means unrestricted.
 - Firmware/other-arch targets: check r2's arch list (`-a ?`) before
   assuming x86; use Ghidra for exotic loaders it supports that r2
   mishandles.

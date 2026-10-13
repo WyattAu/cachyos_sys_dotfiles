@@ -13,6 +13,7 @@
       checks.${system} = {
         system = pkgs.testers.runNixOSTest (import ./system.nix { inherit pkgs; });
         roles = pkgs.testers.runNixOSTest (import ./roles.nix { inherit pkgs; });
+        config = import ./config.nix { inherit pkgs self; };
       };
     };
 }

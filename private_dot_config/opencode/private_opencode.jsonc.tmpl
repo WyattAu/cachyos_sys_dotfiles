@@ -93,10 +93,14 @@
 {{- if $mcp.radare2 }}
       // ---- Reverse engineering ---------------------------------------
       // r2mcp: static analysis, decompile, ESIL emulation, live debug.
-      // Backends installed by the ansible 'opencode' role (radare2, rizin).
+      // Sandboxed: binaries may only be opened under the dirs below —
+      // loosen per host by editing this list, never by removing -s.
       "radare2": {
         "type": "local",
-        "command": ["r2pm", "-r", "r2mcp"]
+        "command": [
+          "r2pm", "-r", "r2mcp",
+          "-s", "{{ .chezmoi.homeDir }}/dev:{{ .chezmoi.homeDir }}/downloads:{{ .chezmoi.homeDir }}/Games/Emulation:/tmp"
+        ]
       },
 {{- end }}
 {{- if $mcp.ghidra }}

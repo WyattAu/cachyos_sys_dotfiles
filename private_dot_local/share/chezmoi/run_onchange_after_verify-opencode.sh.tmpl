@@ -1,0 +1,28 @@
+#!/bin/bash
+# Apply-time verification of the rendered OpenCode config.
+# Re-runs whenever the config template changes (hash trigger below);
+# fails `chezmoi apply` loudly instead of leaving a broken config for
+# the next session to discover.
+# trigger: {{ include "private_dot_config/opencode/private_opencode.jsonc.tmpl" . | sha256sum }}
+set -e
+CFG="$HOME/.config/opencode/opencode.jsonc"
+if [ ! -f "$CFG" ]; then
+    echo "ERROR: $CFG missing after apply" >&2
+    exit 1
+fi
+node -e '
+const fs = require("fs");
+let s = fs.readFileSync(process.argv[1], "utf8"), o = "", inStr = false, inCmt = false;
+for (let i = 0; i < s.length; i++) {
+  const c = s[i], n = s[i + 1];
+  if (inCmt) { if (c === "\n") { inCmt = false; o += c; } continue; }
+  if (inStr) { o += c; if (c === "\"" && s[i - 1] !== "\\") inStr = false; continue; }
+  if (c === "\"") { inStr = true; o += c; continue; }
+  if (c === "/" && n === "/") { inCmt = true; continue; }
+  o += c;
+}
+const cfg = JSON.parse(o);
+const n = Object.keys(cfg.mcp.servers).length;
+if (n < 5) throw new Error("only " + n + " MCP servers rendered");
+console.log("opencode config verified (" + n + " servers)");
+' "$CFG"
