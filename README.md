@@ -380,6 +380,9 @@ The role ends with an `assert` verification block, and `sys-check` validates the
 
 1. `/mcps` → `github` → sign in (OAuth).
 2. Ghidra → File → Configure → Developer → enable `GhidraMCPPlugin`.
+   (Extension compatibility with the Arch Ghidra package is verified
+   headlessly: the 12.1.4-built extension imports and analyzes cleanly
+   under Ghidra 12.1.2 with zero load errors.)
 
 ## VPN (ProtonVPN)
 

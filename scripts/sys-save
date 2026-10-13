@@ -35,6 +35,21 @@ if [[ -n $(git status -s) ]]; then
     MSG="${1:-Auto-save $(date +'%Y-%m-%d %H:%M')}"
     git add -u
     git commit -m "$MSG"
+
+    # Push gate: hermetic OpenCode config check when config-relevant files
+    # changed. Skipped when nix is unavailable (WSL has no Nix). A failure
+    # blocks the push — the committed state is what the check evaluates.
+    if command -v nix >/dev/null 2>&1; then
+        if git diff --name-only HEAD~1 2>/dev/null | grep -qE '^(\.chezmoidata/|private_dot_config/opencode/|flake\.nix$|tests/config\.nix$)'; then
+            echo ">> Config files changed — running hermetic config check..."
+            if ! nix build .#checks.x86_64-linux.opencode-config -L; then
+                echo ">> ✗ Config check FAILED — push blocked."
+                echo "   Fix or revert, recommit, then re-run sys-save."
+                exit 1
+            fi
+        fi
+    fi
+
     echo ">> Pushing to GitHub..."
     git push origin master
     echo ">> Done."
