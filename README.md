@@ -346,7 +346,7 @@ Portable AI-coding setup: the OpenCode binary plus 11 MCP servers, identical on 
 | `sqlite` | local | `uvx` | **Disabled globally** — redefine per project with your db path |
 | `terraform` | local | docker (`hashicorp/terraform-mcp-server:1.3.0`) | Registry lookups: providers, modules, policies |
 | `playwright` | local | `bunx` | Browser automation (Chromium in `~/.cache/ms-playwright`) |
-| `radare2` | local | `r2pm -r r2mcp` | Binary analysis, decompile, ESIL emulation |
+| `radare2` | local | `r2pm -r r2mcp` | Binary analysis, decompile, ESIL emulation — sandboxed to `~/dev` (`-s`, single dir) |
 | `ghidra` | local | `ghidra-mcp` (uv tool) | Deep RE — requires Ghidra running with the program open |
 
 Servers are gated by `[opencode.mcp]` flags in `.chezmoidata/defaults.toml`; disable per host in `~/.config/chezmoi/chezmoi.toml`:

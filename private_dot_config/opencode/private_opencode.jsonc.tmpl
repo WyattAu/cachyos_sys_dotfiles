@@ -93,13 +93,14 @@
 {{- if $mcp.radare2 }}
       // ---- Reverse engineering ---------------------------------------
       // r2mcp: static analysis, decompile, ESIL emulation, live debug.
-      // Sandboxed: binaries may only be opened under the dirs below —
-      // loosen per host by editing this list, never by removing -s.
+      // Sandboxed to ~/dev (-s takes ONE dir: repeated flags replace and
+      // colon lists break opening entirely — verified empirically).
+      // Samples elsewhere must be copied into ~/dev/sandbox first.
       "radare2": {
         "type": "local",
         "command": [
           "r2pm", "-r", "r2mcp",
-          "-s", "{{ .chezmoi.homeDir }}/dev:{{ .chezmoi.homeDir }}/downloads:{{ .chezmoi.homeDir }}/Games/Emulation:/tmp"
+          "-s", "{{ .chezmoi.homeDir }}/dev"
         ]
       },
 {{- end }}

@@ -7,6 +7,8 @@ on:
       - 'ansible/**'
       - 'tests/**'
       - 'flake.nix'
+      - '.chezmoidata/**'
+      - 'private_dot_config/opencode/**'
   pull_request:
     branches: [master]
 
@@ -29,6 +31,10 @@ jobs:
       - name: Run role tests
         run: |
           nix build ./tests#checks.x86_64-linux.roles --print-build-logs
+
+      - name: Run OpenCode config check (root flake)
+        run: |
+          nix build .#checks.x86_64-linux.opencode-config --print-build-logs
 
   ansible-lint:
     name: Ansible Lint
