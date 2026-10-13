@@ -7,20 +7,32 @@
 #
 # Layout produced for the MCP stack:
 #   ~/.opencode/bin/opencode                  binary (official installer)
-#   ~/.local/share/ghidra-mcp/                GhidraMCP bridge + plugin zip
+#   ~/.local/share/ghidra-mcp/                GhidraMCP bundle + staging
 #   ~/.ghidra/.ghidra_*_PUBLIC/Extensions/    GhidraMCP Ghidra extension
 #   ~/.local/share/radare2/r2pm/              r2pm-installed r2mcp
 #   ~/.cache/ms-playwright/                   Chromium for @playwright/mcp
+#   docker: hashicorp/terraform-mcp-server    pre-pulled for the terraform MCP
 #
-# pacman/AUR deps (radare2, rizin, ghidra) are installed by the packages
-# role from host_vars lists — this role assumes they are present.
+# Update policy (per-host overrides in host_vars/<hostname>.yml):
+#   opencode_self_update   re-run the official installer each sync
+#   opencode_r2mcp_update  force r2pm rebuild of r2mcp each sync (slow)
+#   GhidraMCP              auto-updates: re-downloads when upstream tag changes
+#
+# pacman deps (radare2, rizin, ghidra) are installed by the packages role
+# from host_vars lists — this role assumes they are present.
 # =========================================================================
 
 # --- OpenCode binary (official installer, self-contained at ~/.opencode) ---
+- name: Check OpenCode binary
+  stat:
+    path: "/home/{{ user }}/.opencode/bin/opencode"
+  register: opencode_bin
+  become: true
+  become_user: "{{ user }}"
+
 - name: Install OpenCode binary
   shell: curl -fsSL https://opencode.ai/install | bash
-  args:
-    creates: "/home/{{ user }}/.opencode/bin/opencode"
+  when: not opencode_bin.stat.exists or opencode_self_update
   become: true
   become_user: "{{ user }}"
   environment:
@@ -41,16 +53,27 @@
 
 - name: Install r2mcp (radare2 MCP server)
   command: r2pm -Uci r2mcp
-  when: "'r2mcp' not in r2pm_list.stdout"
+  when: ("r2mcp" not in r2pm_list.stdout) or opencode_r2mcp_update
   become: true
   become_user: "{{ user }}"
   environment:
     HOME: "/home/{{ user }}"
 
+# --- Terraform MCP: pre-pull pinned image (registry lookups, read-only) ---
+- name: Pre-pull Terraform MCP server image
+  command: docker image pull {{ opencode_terraform_mcp_image }}
+  changed_when: false
+  failed_when: false
+  become: true
+  become_user: "{{ user }}"
+
 # --- GhidraMCP v2: Ghidra extension + ghidra-mcp CLI (uv tool) ---
 # Release 2.0 restructured the bundle: the outer zip now contains a
 # NESTED Ghidra extension zip (ghidra_<ver>_PUBLIC_*_GhidraMCP.zip) and
 # a ghidra_mcp Python wheel. Both are consumed from a staging extract.
+# A .resolved-tag marker re-downloads the bundle when upstream ships a
+# new release; delete the marker to pin nothing (auto), or pin a URL
+# via ghidramcp_plugin_url.
 - name: Create ghidra-mcp data directory
   file:
     path: "/home/{{ user }}/.local/share/ghidra-mcp"
@@ -60,6 +83,13 @@
     group: "{{ user }}"
   become: true
   become_user: "{{ user }}"
+
+- name: Read previously resolved GhidraMCP tag
+  set_fact:
+    ghidramcp_prev_tag: >-
+      {{ lookup('ansible.builtin.file',
+                '/home/' ~ user ~ '/.local/share/ghidra-mcp/.resolved-tag',
+                errors='ignore') | default('', true) | trim }}
 
 - name: Resolve latest GhidraMCP release tag (redirect — no API, rate-limit proof)
   ansible.builtin.shell: |
@@ -75,7 +105,7 @@
 - name: Resolve GhidraMCP plugin asset URL (expanded assets page)
   ansible.builtin.shell: |
     set -o pipefail
-    curl -fsSL "https://github.com/LaurieWired/GhidraMCP/releases/expanded_assets/{{ ghidramcp_tag.stdout }}" \
+    curl -fsSL "https://github.com/LaurieWired/GhidraMCP/releases/expanded_assets/{{ ghidramcp_tag.stdout | trim }}" \
       | grep -oE 'href="[^"]*GhidraMCP-[^"]*\.zip"' | head -n1 \
       | sed -E 's|^href="||; s|"$||; s|^/|https://github.com/|'
   args:
@@ -84,12 +114,20 @@
   changed_when: false
   when: ghidramcp_plugin_url | length == 0
 
+- name: Determine whether GhidraMCP bundle must be re-downloaded
+  set_fact:
+    ghidramcp_force: >-
+      {{ (ghidramcp_plugin_url | length > 0)
+         or ((ghidramcp_prev_tag | trim)
+             != (ghidramcp_tag.stdout | default('') | trim)) }}
+
 - name: Download GhidraMCP plugin zip
   get_url:
     url: >-
       {{ ghidramcp_plugin_url if ghidramcp_plugin_url | length > 0
          else ghidramcp_asset.stdout }}
     dest: "/home/{{ user }}/.local/share/ghidra-mcp/GhidraMCP-plugin.zip"
+    force: "{{ ghidramcp_force | bool }}"
     mode: "0644"
     owner: "{{ user }}"
     group: "{{ user }}"
@@ -169,6 +207,38 @@
   environment:
     HOME: "/home/{{ user }}"
 
+- name: Check GhidraMCP extension version against installed Ghidra
+  ansible.builtin.shell: |
+    set -o pipefail
+    EXT_VER="$(grep -iE '^version=' '{{ ghidra_user_dir }}/Extensions/GhidraMCP/extension.properties' | cut -d= -f2)"
+    GHIDRA_VER="$(grep -iE '^application\.version=' {{ ghidra_install_root }}/Ghidra/application.properties | cut -d= -f2)"
+    if [ "$EXT_VER" != "$GHIDRA_VER" ]; then
+      echo "MISMATCH extension=$EXT_VER ghidra=$GHIDRA_VER"
+    else
+      echo "OK $EXT_VER"
+    fi
+  args:
+    executable: /bin/bash
+  register: ghidramcp_version_check
+  changed_when: false
+  failed_when: false
+  when: ghidra_user_dir is defined
+  become: true
+  become_user: "{{ user }}"
+
+- name: Warn on GhidraMCP/Ghidra version mismatch
+  debug:
+    msg: >-
+      GhidraMCP extension and Ghidra versions differ
+      ({{ ghidramcp_version_check.stdout }}). Ghidra usually accepts minor
+      mismatches with a warning; if the extension fails to load, wait for
+      the Arch ghidra package to catch up or pin a matching GhidraMCP
+      release via ghidramcp_plugin_url.
+  when:
+    - ghidra_user_dir is defined
+    - ghidramcp_version_check.stdout is defined
+    - "'MISMATCH' in ghidramcp_version_check.stdout"
+
 - name: Install ghidra-mcp CLI (uv tool from release wheel)
   ansible.builtin.shell: |
     set -euo pipefail
@@ -187,15 +257,16 @@
     HOME: "/home/{{ user }}"
     PATH: "/home/{{ user }}/.local/bin:{{ ansible_env.PATH | default('/usr/local/bin:/usr/bin') }}"
 
-- name: GhidraMCP manual step
-  debug:
-    msg: >-
-      GhidraMCP extension installed. One-time GUI step on this host:
-      open Ghidra -> File -> Configure -> Developer -> enable GhidraMCPPlugin.
-      In default (GUI) mode the 'ghidra' MCP server only answers while
-      Ghidra is running with a program open (loopback HTTP backend).
-      Headless alternative: ghidra-mcp --headless --binary <path>.
-  when: ghidramcp_install is changed
+- name: Record resolved GhidraMCP tag
+  copy:
+    content: "{{ ghidramcp_tag.stdout | trim }}\n"
+    dest: "/home/{{ user }}/.local/share/ghidra-mcp/.resolved-tag"
+    mode: "0644"
+    owner: "{{ user }}"
+    group: "{{ user }}"
+  when: ghidramcp_plugin_url | length == 0
+  become: true
+  become_user: "{{ user }}"
 
 # --- Playwright: Chromium for @playwright/mcp ---
 # bunx, not npx: the fleet has bun (common_packages) but no npm/npx.
@@ -207,3 +278,27 @@
   become_user: "{{ user }}"
   environment:
     HOME: "/home/{{ user }}"
+
+# --- Post-install verification -------------------------------------------
+- name: Re-stat OpenCode binary
+  stat:
+    path: "/home/{{ user }}/.opencode/bin/opencode"
+  register: opencode_bin_post
+  become: true
+  become_user: "{{ user }}"
+
+- name: Verify OpenCode toolchain
+  vars:
+    r2mcp_ok: "{{ ('r2mcp' in r2pm_list.stdout) or opencode_r2mcp_update }}"
+  ansible.builtin.assert:
+    that:
+      - opencode_bin_post.stat.exists
+      - r2mcp_ok
+      - ghidra_user_dir is not defined or not ghidramcp_install is skipped
+    fail_msg: >-
+      OpenCode toolchain incomplete — check the failed tasks above.
+      Common causes: radare2/rizin/ghidra missing from the packages role,
+      no network to github.com, or docker not running on this host.
+    success_msg: "OpenCode toolchain verified: binary, r2mcp, GhidraMCP extension."
+  become: true
+  become_user: "{{ user }}"

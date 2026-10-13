@@ -117,13 +117,100 @@ else
     ERRORS=$((ERRORS + 1))
 fi
 
+echo "OpenCode toolchain:"
+# Binary
+if [[ -x "$HOME/.opencode/bin/opencode" ]]; then
+    echo "  ✓ opencode binary"
+else
+    echo "  ✗ opencode binary missing (~/.opencode/bin/opencode)"
+    ERRORS=$((ERRORS + 1))
+fi
+# Global config parses as JSONC (strip // comments, then parse).
+# Catches chezmoi template regressions at smoke-test time, not session time.
+if [[ -f "$HOME/.config/opencode/opencode.jsonc" ]]; then
+    if node -e '
+const fs = require("fs");
+let s = fs.readFileSync(process.argv[1], "utf8"), o = "", inStr = false, inCmt = false;
+for (let i = 0; i < s.length; i++) {
+  const c = s[i], n = s[i + 1];
+  if (inCmt) { if (c === "\n") { inCmt = false; o += c; } continue; }
+  if (inStr) { o += c; if (c === "\"" && s[i - 1] !== "\\") inStr = false; continue; }
+  if (c === "\"") { inStr = true; o += c; continue; }
+  if (c === "/" && n === "/") { inCmt = true; continue; }
+  o += c;
+}
+JSON.parse(o);' "$HOME/.config/opencode/opencode.jsonc" >/dev/null 2>&1; then
+        echo "  ✓ opencode.jsonc valid"
+    else
+        echo "  ✗ opencode.jsonc does not parse — fix private_dot_config/opencode template"
+        ERRORS=$((ERRORS + 1))
+    fi
+else
+    echo "  ✗ opencode.jsonc missing (run: chezmoi apply)"
+    ERRORS=$((ERRORS + 1))
+fi
+# MCP backends — ghidra-mcp may only be at ~/.local/bin (systemd PATH is minimal)
+for tool in r2pm bunx; do
+    if command -v "$tool" >/dev/null 2>&1; then
+        echo "  ✓ $tool"
+    else
+        echo "  ✗ $tool not on PATH"
+        ERRORS=$((ERRORS + 1))
+    fi
+done
+if command -v ghidra-mcp >/dev/null 2>&1 || [[ -x "$HOME/.local/bin/ghidra-mcp" ]]; then
+    echo "  ✓ ghidra-mcp"
+else
+    echo "  ✗ ghidra-mcp missing (opencode ansible role / uv tool)"
+    ERRORS=$((ERRORS + 1))
+fi
+# r2mcp installed (r2pm -l exits 1 when the package db is empty)
+if r2pm -l 2>/dev/null | grep -q r2mcp; then
+    echo "  ✓ r2mcp installed"
+else
+    echo "  ✗ r2mcp not installed (r2pm -Uci r2mcp)"
+    ERRORS=$((ERRORS + 1))
+fi
+# GhidraMCP extension in any Ghidra user dir
+EXT_FOUND=false
+for d in "$HOME"/.ghidra/.ghidra_*_PUBLIC; do
+    [[ -f "$d/Extensions/GhidraMCP/extension.properties" ]] && EXT_FOUND=true
+done
+if [[ "$EXT_FOUND" == true ]]; then
+    echo "  ✓ GhidraMCP extension"
+else
+    echo "  ✗ GhidraMCP extension missing (opencode ansible role)"
+    ERRORS=$((ERRORS + 1))
+fi
+# Playwright chromium cache
+if ls -d "$HOME"/.cache/ms-playwright/chromium-* >/dev/null 2>&1; then
+    echo "  ✓ playwright chromium"
+else
+    echo "  ✗ playwright chromium missing (bunx playwright install chromium)"
+    ERRORS=$((ERRORS + 1))
+fi
+# Terraform MCP image — only fails when docker works but the image is absent
+if docker info >/dev/null 2>&1; then
+    if docker image inspect hashicorp/terraform-mcp-server:1.3.0 >/dev/null 2>&1; then
+        echo "  ✓ terraform MCP image"
+    else
+        echo "  ✗ terraform MCP image not pulled (opencode ansible role)"
+        ERRORS=$((ERRORS + 1))
+    fi
+else
+    echo "  ⚠ terraform MCP image check skipped (docker down)"
+fi
+
 if [[ $ERRORS -eq 0 ]]; then
     echo ">> All checks passed."
 else
     echo ">> $ERRORS check(s) failed."
     # Send Telegram alert on failure
     TELEGRAM_TOKEN_FILE="/etc/alertmanager/telegram-token"
-    CHAT_ID="{{ telegram_chat_id | default(0) }}"
+    # NOTE: this file is NOT a chezmoi template (symlinked straight from the
+    # source repo), so chat_id is hardcoded — it is already plaintext in
+    # host_vars/common.yml. Only the token lives outside the repo.
+    CHAT_ID="8905506473"
     if [[ -f "$TELEGRAM_TOKEN_FILE" && "$CHAT_ID" != "0" ]]; then
         TOKEN=$(cat "$TELEGRAM_TOKEN_FILE")
         HOSTNAME=$(hostname)

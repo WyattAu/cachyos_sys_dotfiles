@@ -329,6 +329,58 @@ grep -E "MaxMemAlloc|JvmArgs" ~/.config/PrismLauncher/prismlauncher.cfg
 
 All three are installed by the playbook as the actual user (not root), with idempotency guards — they only install once.
 
+## OpenCode Toolchain
+
+Portable AI-coding setup: the OpenCode binary plus 11 MCP servers, identical on every host (WSL included). The binary and MCP backends are installed by the `opencode` ansible role; all config lives in chezmoi.
+
+### MCP Servers (`~/.config/opencode/opencode.jsonc`)
+
+| Server | Type | Backing | Purpose |
+|--------|------|---------|---------|
+| `context7` | remote | — | Library/framework docs lookup |
+| `github` | remote | OAuth (`/mcps`) | Repos, PRs, issues |
+| `fetch` | local | `uvx` | Web page → markdown |
+| `sequential-thinking` | local | `bunx` | Structured multi-step reasoning |
+| `memory` | local | `bunx` | Persistent cross-session knowledge graph (`~/.local/share/opencode/memory.json`) |
+| `git` | local | `uvx` | Git operations |
+| `sqlite` | local | `uvx` | **Disabled globally** — redefine per project with your db path |
+| `terraform` | local | docker (`hashicorp/terraform-mcp-server:1.3.0`) | Registry lookups: providers, modules, policies |
+| `playwright` | local | `bunx` | Browser automation (Chromium in `~/.cache/ms-playwright`) |
+| `radare2` | local | `r2pm -r r2mcp` | Binary analysis, decompile, ESIL emulation |
+| `ghidra` | local | `ghidra-mcp` (uv tool) | Deep RE — requires Ghidra running with the program open |
+
+Servers are gated by `[opencode.mcp]` flags in `.chezmoidata/defaults.toml`; disable per host in `~/.config/chezmoi/chezmoi.toml`:
+
+```toml
+[data.opencode.mcp]
+playwright = false   # example: skip browser automation on a small VM
+```
+
+### Skills, Agents, Commands
+
+| Path (global) | ID | Purpose |
+|---------------|----|---------|
+| `skills/re-toolchain/SKILL.md` | `re-toolchain` | Auto-discovered RE workflow: triage with r2 → escalate to Ghidra, emulate-don't-execute rules |
+| `agents/re.md` | `re` | Sandboxed RE subagent — MCP tools only; shell/edit/web denied |
+| `commands/re-triage.md` | `/re-triage <path> [theme]` | Background static triage of a binary, report in fixed format |
+
+### Update Policy (`ansible/roles/opencode`)
+
+| Component | Mechanism |
+|-----------|-----------|
+| OpenCode binary | installs once; set `opencode_self_update: true` (host_vars) to re-run installer every sync |
+| r2mcp | installs once (source build); `opencode_r2mcp_update: true` forces rebuild |
+| GhidraMCP | **auto** — re-downloads + reinstalls when the upstream release tag changes (`.resolved-tag` marker); pin with `ghidramcp_plugin_url` |
+| Playwright Chromium | installs once (`~/.cache/ms-playwright` guard) |
+| Terraform MCP image | pinned tag in role defaults; bump `opencode_terraform_mcp_image` |
+
+The role ends with an `assert` verification block, and `sys-check` validates the whole stack hourly (binary, JSONC config parse, backends, extension, browser cache, docker image) with Telegram alerting on failure.
+
+### One-Time Manual Steps (per machine)
+
+1. `/mcps` → `github` → sign in (OAuth).
+2. Ghidra → File → Configure → Developer → enable `GhidraMCPPlugin`.
+
 ## VPN (ProtonVPN)
 
 ProtonVPN is installed on all native Linux hosts (excluded on WSL). The stack includes:

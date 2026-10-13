@@ -12,3 +12,13 @@ ghidramcp_plugin_url: ""
 
 # Ghidra install root used by the Arch/CachyOS package.
 ghidra_install_root: "/opt/ghidra"
+
+# Update toggles (per-host overrides in host_vars/<hostname>.yml):
+# re-run the official OpenCode installer on every sync (self-update).
+opencode_self_update: false
+# force r2pm source rebuild of r2mcp on every sync (slow — r2pm -Uci).
+opencode_r2mcp_update: false
+
+# HashiCorp Terraform MCP server image (pre-pulled; stdio transport).
+# Bump to a newer tag after checking https://github.com/hashicorp/terraform-mcp-server/releases
+opencode_terraform_mcp_image: "hashicorp/terraform-mcp-server:1.3.0"
