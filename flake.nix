@@ -1,8 +1,14 @@
 {
-  # Minimal root flake — exists so tests/flake.nix can reference the repo
-  # root as a `path:..` input (Nix requires flake.nix at any input root).
-  # Real checks live in tests/: `nix flake check` from tests/ or here via
-  # `nix build ./tests#checks.x86_64-linux.config`.
-  description = "CachyOS/Arch multi-device dotfiles";
-  outputs = { self }: { };
+  # Repo root flake — hosts repo-wide static checks (the NixOS VM tests
+  # live in tests/, which is its own flake: `nix flake check` there).
+  # Run: `nix build .#checks.x86_64-linux.opencode-config -L`
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+
+  outputs = { self, nixpkgs }:
+    let
+      system = "x86_64-linux";
+      pkgs = import nixpkgs { inherit system; };
+    in {
+      checks.${system}.opencode-config = import tests/config.nix { inherit pkgs self; };
+    };
 }

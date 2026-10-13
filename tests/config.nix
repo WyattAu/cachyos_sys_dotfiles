@@ -4,7 +4,7 @@
 #
 # This is the fast, hermetic sibling of `sys-check`'s config check —
 # it runs in `nix flake check` without booting a VM.
-{ pkgs, repo }:
+{ pkgs, self }:
 
 pkgs.runCommand "opencode-config-check"
   {
@@ -13,8 +13,8 @@ pkgs.runCommand "opencode-config-check"
   ''
     export HOME=$TMPDIR/home
     mkdir -p "$HOME" "$out" src/.chezmoidata src/opencode
-    install -m644 ${repo}/.chezmoidata/defaults.toml src/.chezmoidata/defaults.toml
-    install -m644 ${repo}/private_dot_config/opencode/private_opencode.jsonc.tmpl src/opencode/config.tmpl
+    install -m644 ${self}/.chezmoidata/defaults.toml src/.chezmoidata/defaults.toml
+    install -m644 ${self}/private_dot_config/opencode/private_opencode.jsonc.tmpl src/opencode/config.tmpl
 
     chezmoi execute-template --source "$PWD/src" < src/opencode/config.tmpl > rendered.jsonc
 
