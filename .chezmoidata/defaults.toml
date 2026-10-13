@@ -30,24 +30,6 @@ user_dirs_locale = "en_GB"
 # Backup
 backup_mount_point = "/mnt/truebackup"
 
-# OpenCode MCP servers — per-host overrides in ~/.config/chezmoi/chezmoi.toml:
-#   [data.opencode.mcp]
-#   playwright = false    # e.g. skip browser automation on a tiny VM
-#   terraform = false     # skip docker-based Terraform registry lookups
-# Config template (private_dot_config/opencode) renders only enabled servers.
-[opencode.mcp]
-context7 = true
-github = true
-fetch = true
-sequential_thinking = true
-git = true
-sqlite = false                    # project-specific DBs — enable per project
-playwright = true
-memory = true
-radare2 = true
-ghidra = true
-terraform = true
-
 # KDE Plasma Defaults
 is_laptop = false                    # Override per-host in ~/.config/chezmoi/chezmoi.toml [data] section
 kde_color_scheme = "BreezeDark"
@@ -65,3 +47,23 @@ kde_night_color_temp = 4500
 kde_compositor_backend = "wayland"
 kde_font = "Noto Sans"
 kde_font_size = 10
+
+# OpenCode MCP servers — per-host overrides in ~/.config/chezmoi/chezmoi.toml:
+#   [data.opencode.mcp]
+#   playwright = false    # e.g. skip browser automation on a tiny VM
+#   terraform = false     # skip docker-based Terraform registry lookups
+# Config template (private_dot_config/opencode) renders only enabled servers.
+# NOTE: this MUST stay at the end of the file — in TOML, every key after a
+# [table] header belongs to that table, so scalars below it would vanish.
+[opencode.mcp]
+context7 = true
+github = true
+fetch = true
+sequential_thinking = true
+git = true
+sqlite = false                    # project-specific DBs — enable per project
+playwright = true
+memory = true
+radare2 = true
+ghidra = true
+terraform = true

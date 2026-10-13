@@ -3,7 +3,7 @@
 # Re-runs whenever the config template changes (hash trigger below);
 # fails `chezmoi apply` loudly instead of leaving a broken config for
 # the next session to discover.
-# trigger: {{ include "private_dot_config/opencode/private_opencode.jsonc.tmpl" . | sha256sum }}
+# trigger: {{ include "private_dot_config/opencode/private_opencode.jsonc.tmpl" | sha256sum }}
 set -e
 CFG="$HOME/.config/opencode/opencode.jsonc"
 if [ ! -f "$CFG" ]; then
