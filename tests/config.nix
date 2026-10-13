@@ -20,7 +20,7 @@ pkgs.runCommand "opencode-config-check"
 
     cat > strip.js <<'EOF'
 const fs = require("fs");
-let s = fs.readFileSync(process.argv[1], "utf8"), o = "", inStr = false, inCmt = false;
+let s = fs.readFileSync(process.argv[2], "utf8"), o = "", inStr = false, inCmt = false;
 for (let i = 0; i < s.length; i++) {
   const c = s[i], n = s[i + 1];
   if (inCmt) { if (c === "\n") { inCmt = false; o += c; } continue; }
