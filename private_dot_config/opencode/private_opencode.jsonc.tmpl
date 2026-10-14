@@ -121,5 +121,14 @@
     { "action": "shell", "resource": "sudo *", "effect": "deny" },
     { "action": "shell", "resource": "git push *", "effect": "ask" },
     { "action": "shell", "resource": "rm -rf /", "effect": "deny" }
-  ]
+  ],
+
+  // Fleet IaC repo as opt-in supporting context — the agent can pull host
+  // inventory, workflows, and service topology from its README on demand.
+  "references": {
+    "dotfiles": {
+      "path": "{{ .chezmoi.homeDir }}/.local/share/chezmoi",
+      "description": "Fleet infrastructure-as-code (chezmoi + ansible): hosts, sys-* workflows, service topology — start at README.md"
+    }
+  }
 }
