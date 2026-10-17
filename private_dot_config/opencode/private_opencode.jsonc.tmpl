@@ -241,7 +241,7 @@
         "type": "local",
         "command": [
           "/bin/bash", "-c",
-          "for k in shodan virustotal securitytrails censys; do test -s \"{{ .chezmoi.homeDir }}/.config/opencode/keys/$k\" && export \"$(echo $k | tr '[:lower:]' '[:upper:]')_API_KEY=\"$(cat \"{{ .chezmoi.homeDir }}/.config/opencode/keys/$k\")\"; done; exec bunx -y osint-mcp-server"
+          "for k in shodan virustotal securitytrails censys; do f=\"$HOME/.config/opencode/keys/$k\"; if [ -s \"$f\" ]; then v=$(cat \"$f\"); export \"$(printf '%s' \"$k\" | tr '[:lower:]' '[:upper:]')_API_KEY=$v\"; fi; done; exec bunx -y osint-mcp-server"
         ]
       },
 {{- end }}
