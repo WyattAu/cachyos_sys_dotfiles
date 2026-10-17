@@ -331,7 +331,7 @@ All three are installed by the playbook as the actual user (not root), with idem
 
 ## OpenCode Toolchain
 
-Portable AI-coding setup: the OpenCode binary plus 13 MCP servers, identical on every host (WSL included). The binary and MCP backends are installed by the `opencode` ansible role; all config lives in chezmoi.
+Portable AI-coding setup: the OpenCode binary plus 18 MCP servers, identical on every host (WSL included). The binary and MCP backends are installed by the `opencode` ansible role; all config lives in chezmoi.
 
 ### MCP Servers (`~/.config/opencode/opencode.jsonc`)
 
@@ -350,6 +350,11 @@ Portable AI-coding setup: the OpenCode binary plus 13 MCP servers, identical on 
 | `ghidra` | local | `ghidra-mcp` (uv tool) | Deep RE — requires Ghidra running with the program open |
 | `codebase-memory` | local | `codebase-memory-mcp` (AUR) | Tree-sitter knowledge graph: search_graph/get_architecture replace grep/read cycles |
 | `reversecore` | local | `reversecore-mcp` (uv tool, py3.12) | RE/malware toolkit — r2 sessions, YARA, CAPA, LIEF, IOC extraction; sandboxed to `~/dev/sandbox` |
+| `time` | local | `uvx` (reference) | Current/converted time, timezones |
+| `sentry` | remote | `mcp.sentry.dev/mcp` (OAuth `/mcps`) | Error tracking, issue triage |
+| `linear` | remote | `mcp.linear.app/mcp` (OAuth `/mcps`) | Issues, projects, cycles |
+| `firecrawl` | local | `bunx` | Web crawl/extract/JS render — needs `FIRECRAWL_API_KEY` in shell env |
+| `exa` | local | `bunx` | Neural web search — needs `EXA_API_KEY` in shell env |
 | `filesystem` | local | `bunx` | Read/write/search files — sandboxed to `~/dev` |
 
 Servers are gated by `[opencode.mcp]` flags in `.chezmoidata/defaults.toml`; disable per host in `~/.config/chezmoi/chezmoi.toml`:

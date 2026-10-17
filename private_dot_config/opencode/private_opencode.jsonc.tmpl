@@ -143,6 +143,52 @@
         ]
       },
 {{- end }}
+{{- if $mcp.time }}
+      // ---- Reference servers (modelcontextprotocol/servers) ----------
+      "time": {
+        "type": "local",
+        "command": ["uvx", "mcp-server-time"]
+      },
+{{- end }}
+{{- if $mcp.sentry }}
+      // ---- Error tracking ---------------------------------------------
+      // Official Sentry MCP. Remote + OAuth: authenticate once via
+      // /mcps -> sentry -> authenticate. The 401 without auth is the
+      // endpoint working as designed.
+      "sentry": {
+        "type": "remote",
+        "url": "https://mcp.sentry.dev/mcp"
+      },
+{{- end }}
+{{- if $mcp.linear }}
+      // ---- Project tracking -------------------------------------------
+      // Official Linear MCP (streamable HTTP). OAuth via /mcps -> linear.
+      "linear": {
+        "type": "remote",
+        "url": "https://mcp.linear.app/mcp"
+      },
+{{- end }}
+{{- if $mcp.firecrawl }}
+      // ---- Web crawl / extract ----------------------------------------
+      // JS rendering, crawling, structured extraction — beyond fetch's
+      // single-page markdown. Needs FIRECRAWL_API_KEY exported in your
+      // shell (the MCP process inherits it) — without it the server
+      // exits with a message naming the variable.
+      "firecrawl": {
+        "type": "local",
+        "command": ["bunx", "-y", "firecrawl-mcp"]
+      },
+{{- end }}
+{{- if $mcp.exa }}
+      // ---- Neural web search ------------------------------------------
+      // Complements the built-in websearch: Exa's neural ranking for
+      // "find me papers/code like X" queries. Needs EXA_API_KEY exported
+      // in your shell.
+      "exa": {
+        "type": "local",
+        "command": ["bunx", "-y", "exa-mcp-server"]
+      },
+{{- end }}
 {{- if $mcp.terraform }}
       // ---- Infrastructure as Code ------------------------------------
       // HashiCorp Terraform Registry lookups (providers, modules, policies).

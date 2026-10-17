@@ -1,0 +1,22 @@
+# Cloudflare Tunnel ingress for the TrueNAS Matrix stack.
+#
+# Merge this rule into your EXISTING cloudflared config.yml on the NAS
+# (the one already tunneling vm.wyattau.com etc.) — do not run a second
+# tunnel. Then create the DNS record:
+#
+#   cloudflared tunnel route dns <tunnel> matrix.wyattau.com
+#
+# In your existing ingress list, add ABOVE the catch-all:
+#
+#   - hostname: matrix.wyattau.com
+#     service: http://localhost:8008
+#     originRequest:
+#       # Plain HTTP to the local container; both on the same box.
+#       noTLSVerify: true
+#
+# IMPORTANT — do NOT create a Cloudflare Access application for
+# matrix.wyattau.com (unlike vm.wyattau.com). Matrix clients and remote
+# homeservers cannot complete email-OTP, so an Access policy in front of
+# this hostname breaks both client traffic and federation. The homeserver
+# authenticates users itself (access tokens), which is the entire point.
+# Keep the hostname out of any wildcard Access app covering *.wyattau.com.

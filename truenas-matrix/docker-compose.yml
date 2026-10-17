@@ -1,0 +1,53 @@
+# Matrix homeserver (continuwuity) for TrueNAS SCALE.
+# Phase 0 of the Rust-ecosystem dogfooding plan: run stock upstream first,
+# fork work happens later in ~/dev/src/github.com/continuwuity/continuwuity.
+#
+# Deploy: see truenas-matrix/README.md in the dotfiles repo.
+# Version pinned to upstream v26.9.1 (current release). Primary registry is
+# forgejo.ellis.link; this docker.io mirror is NAS-friendly and carries the
+# same tags (ghcr + gitlab mirrors exist too). Bump by tag, never :latest.
+
+services:
+  homeserver:
+    image: docker.io/jadedblueeyes/continuwuity:v26.9.1
+    container_name: continuwuity
+    restart: unless-stopped
+    command: /sbin/conduwuit
+    volumes:
+      - matrix-db:/var/lib/continuwuity
+      # Docker's default DNS resolver is known to break Matrix federation
+      # (upstream docs: troubleshooting#dns-issues) — use real resolvers.
+      - ./continuwuity-resolv.conf:/etc/resolv.conf:ro
+    environment:
+      # PERMANENT CHOICE: changing SERVER_NAME later wipes every account and
+      # room. matrix.wyattau.com keeps this self-contained; see README
+      # "Server name" for the @user:wyattau.com apex-delegation alternative.
+      CONTINUWUITY_SERVER_NAME: matrix.wyattau.com
+      CONTINUWUITY_DATABASE_PATH: /var/lib/continuwuity
+      CONTINUWUITY_ADDRESS: 0.0.0.0
+      CONTINUWUITY_PORT: 8008
+      # Advertise client + federation on :443 via the Cloudflare tunnel, so
+      # nothing anywhere listens on 8448. Pairs with cloudflared-ingress.yml.
+      CONTINUWUITY_WELL_KNOWN: |
+          {
+          client=https://matrix.wyattau.com,
+          server=matrix.wyattau.com:443
+          }
+      # CLOSED by default. First-run bootstrap only (README step 3): flip to
+      # "true", register your one account, flip back to "false". Never leave
+      # open — this is reachable from the public internet via the tunnel.
+      CONTINUWUITY_ALLOW_REGISTRATION: "false"
+    ports:
+      # Host-local only: the NAS cloudflared (host networking, same pattern
+      # as vm.wyattau.com -> localhost:8428) is the single public entry.
+      - "127.0.0.1:8008:8008"
+    # No healthcheck: the image is FROM scratch — no shell, wget, or curl.
+    # Verify from the NAS host instead (README "Verify").
+    networks:
+      - matrix
+
+networks:
+  matrix:
+
+volumes:
+  matrix-db:
