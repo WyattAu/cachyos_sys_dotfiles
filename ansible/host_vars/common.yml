@@ -51,6 +51,8 @@ common_packages:
   - git
   - github-cli                # token source for the GitHub MCP server
   - codebase-memory-mcp-bin   # tree-sitter code-graph MCP server (AUR)
+  - gitleaks                  # secret scanning (estate-audit + repo hygiene)
+  - trivy                     # container/IaC CVE scanning (docker stacks)
   - ansible
   - chezmoi
   - bat
