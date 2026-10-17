@@ -170,20 +170,13 @@
 {{- end }}
 {{- if $mcp.firecrawl }}
       // ---- Web crawl / extract ----------------------------------------
-      // JS rendering, crawling, structured extraction — beyond fetch's
-      // single-page markdown. Runs KEYLESS with 2 free tools (scrape +
-      // search, rate-limited per IP); full toolset with a key.
-      // Key: ~/.config/opencode/keys/firecrawl (0600, read at spawn —
-      //   printf 'fc-...' > ~/.config/opencode/keys/firecrawl
-      //   chmod 600 ~/.config/opencode/keys/firecrawl
-      // ). The key file survives any launch context (desktop launchers
-      // do not inherit shell exports).
+      // Official Firecrawl remote MCP (v2, OAuth). Chosen over the local
+      // bunx server: keyless use is blocked from this estate's egress IP
+      // (VPN/proxy-flagged by Firecrawl), and OAuth needs no key file.
+      // Authenticate once via /mcps -> firecrawl -> authenticate.
       "firecrawl": {
-        "type": "local",
-        "command": [
-          "/bin/bash", "-c",
-          "test -s \"{{ .chezmoi.homeDir }}/.config/opencode/keys/firecrawl\" && export FIRECRAWL_API_KEY=\"$(cat \"{{ .chezmoi.homeDir }}/.config/opencode/keys/firecrawl\")\"; exec bunx -y firecrawl-mcp"
-        ]
+        "type": "remote",
+        "url": "https://mcp.firecrawl.dev/v2/mcp-oauth"
       },
 {{- end }}
 {{- if $mcp.exa }}
