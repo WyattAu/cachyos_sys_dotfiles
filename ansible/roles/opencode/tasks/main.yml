@@ -165,6 +165,79 @@
   environment:
     HOME: "/home/{{ user }}"
 
+# --- mcp-doctor: MCP fleet diagnostics (used advisory by sys-check) ---
+- name: Resolve mcp-doctor release tag (redirect — no API)
+  shell: |
+    set -euo pipefail
+    curl -fsSLI -o /dev/null -w '%{url_effective}' \
+      https://github.com/WyattAu/mcp-doctor/releases/latest | sed 's|.*/tag/||'
+  register: mcp_doctor_latest_tag
+  changed_when: false
+  failed_when: false
+  become: true
+  become_user: "{{ user }}"
+  environment:
+    HOME: "/home/{{ user }}"
+
+- name: Resolve mcp-doctor asset URL (expanded assets page)
+  shell: |
+    set -euo pipefail
+    TAG="{{ opencode_mcp_doctor_tag | default(mcp_doctor_latest_tag.stdout | trim, true) }}"
+    curl -fsSL "https://github.com/WyattAu/mcp-doctor/releases/expanded_assets/$TAG" \
+      | grep -oE 'href="[^"]*mcp-doctor_v[^"]*_linux_x86_64\.tar\.gz"' \
+      | head -n1 | sed 's|href="|https://github.com|; s|"$||'
+  register: mcp_doctor_asset
+  changed_when: false
+  failed_when: false
+  become: true
+  become_user: "{{ user }}"
+  environment:
+    HOME: "/home/{{ user }}"
+
+- name: Determine mcp-doctor asset name
+  set_fact:
+    mcp_doctor_asset_name: "{{ (mcp_doctor_asset.stdout | trim).split('/') | last }}"
+  when: mcp_doctor_asset.stdout | trim | length > 0
+
+- name: Read previously installed mcp-doctor asset name
+  slurp:
+    src: "/home/{{ user }}/.local/share/mcp-doctor/.resolved-asset"
+  register: mcp_doctor_installed_file
+  failed_when: false
+  become: true
+  become_user: "{{ user }}"
+
+- name: Expose installed mcp-doctor asset name to later tasks
+  set_fact:
+    mcp_doctor_installed_key: "{{ mcp_doctor_installed_file.content | b64decode | trim }}"
+  when: mcp_doctor_installed_file.content is defined
+
+- name: Install mcp-doctor binary (skipped when already current)
+  unarchive:
+    src: "{{ mcp_doctor_asset.stdout | trim }}"
+    dest: "/home/{{ user }}/.local/share/mcp-doctor"
+    remote_src: true
+  when:
+    - mcp_doctor_asset_name is defined
+    - mcp_doctor_asset_name != mcp_doctor_installed_key | default('', true)
+
+- name: Record installed mcp-doctor asset name
+  copy:
+    dest: "/home/{{ user }}/.local/share/mcp-doctor/.resolved-asset"
+    content: "{{ mcp_doctor_asset_name }}\n"
+    mode: "0644"
+  when: mcp_doctor_asset_name is defined
+  become: true
+  become_user: "{{ user }}"
+
+- name: Link mcp-doctor into PATH
+  file:
+    src: "/home/{{ user }}/.local/share/mcp-doctor/mcp-doctor"
+    dest: "/home/{{ user }}/.local/bin/mcp-doctor"
+    state: link
+  become: true
+  become_user: "{{ user }}"
+
 - name: Prewarm filesystem MCP package (bunx cache)
   shell: bunx -y @modelcontextprotocol/server-filesystem --help < /dev/null || true
   changed_when: false

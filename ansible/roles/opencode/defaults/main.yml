@@ -31,3 +31,7 @@ opencode_github_mcp_tag: ""
 # Toolsets exposed by the github server. "repos,issues,pull_requests,
 # actions,code_security" covers review, CI, and Dependabot/code scanning.
 opencode_github_mcp_toolsets: "repos,issues,pull_requests,actions,code_security"
+
+# mcp-doctor (WyattAu/mcp-doctor): MCP fleet diagnostics used by sys-check
+# as an ADVISORY check. Empty tag = latest release via redirect.
+opencode_mcp_doctor_tag: ""

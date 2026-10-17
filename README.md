@@ -331,7 +331,7 @@ All three are installed by the playbook as the actual user (not root), with idem
 
 ## OpenCode Toolchain
 
-Portable AI-coding setup: the OpenCode binary plus 11 MCP servers, identical on every host (WSL included). The binary and MCP backends are installed by the `opencode` ansible role; all config lives in chezmoi.
+Portable AI-coding setup: the OpenCode binary plus 13 MCP servers, identical on every host (WSL included). The binary and MCP backends are installed by the `opencode` ansible role; all config lives in chezmoi.
 
 ### MCP Servers (`~/.config/opencode/opencode.jsonc`)
 
@@ -348,6 +348,8 @@ Portable AI-coding setup: the OpenCode binary plus 11 MCP servers, identical on 
 | `playwright` | local | `bunx` | Browser automation (Chromium in `~/.cache/ms-playwright`) |
 | `radare2` | local | `r2pm -r r2mcp` | Binary analysis, decompile, ESIL emulation — sandboxed to `~/dev` (`-s`, single dir) |
 | `ghidra` | local | `ghidra-mcp` (uv tool) | Deep RE — requires Ghidra running with the program open |
+| `codebase-memory` | local | `codebase-memory-mcp` (AUR) | Tree-sitter knowledge graph: search_graph/get_architecture replace grep/read cycles |
+| `reversecore` | local | `reversecore-mcp` (uv tool, py3.12) | RE/malware toolkit — r2 sessions, YARA, CAPA, LIEF, IOC extraction; sandboxed to `~/dev/sandbox` |
 | `filesystem` | local | `bunx` | Read/write/search files — sandboxed to `~/dev` |
 
 Servers are gated by `[opencode.mcp]` flags in `.chezmoidata/defaults.toml`; disable per host in `~/.config/chezmoi/chezmoi.toml`:
