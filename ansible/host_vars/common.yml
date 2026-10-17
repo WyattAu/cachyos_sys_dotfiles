@@ -53,6 +53,22 @@ common_packages:
   - codebase-memory-mcp-bin   # tree-sitter code-graph MCP server (AUR)
   - gitleaks                  # secret scanning (estate-audit + repo hygiene)
   - trivy                     # container/IaC CVE scanning (docker stacks)
+
+  # --- Security / pentest toolkit (native, not containerized) ---
+  # All from official repos. The agent drives these via shell directly —
+  # one-shot CLIs don't need MCP wrappers. A Kali container was evaluated
+  # and deferred: single-operator box, no multi-tenant isolation need;
+  # revisit only for malware detonation (dynamic analysis of unknowns).
+  - nmap                      # network/port scanning
+  - sqlmap                    # SQL injection testing
+  - nikto                     # web server scanner
+  - hydra                     # login brute-force
+  - john                      # password cracking (jumbo)
+  - hashcat                   # GPU password cracking
+  - binwalk                   # firmware/binary analysis
+  - masscan                   # high-speed port scanning
+  - gobuster                  # directory/DNS brute-force
+  - aircrack-ng               # wireless security
   - ansible
   - chezmoi
   - bat
