@@ -87,7 +87,7 @@
       // ---- Browser automation ----------------------------------------
       "playwright": {
         "type": "local",
-        "command": ["bunx", "@playwright/mcp@latest"]
+        "command": ["node", "{{ .chezmoi.homeDir }}/.local/share/opencode/mcp-playwright/node_modules/@playwright/mcp/cli.js", "--browser", "chromium"]
       },
 {{- end }}
 {{- if $mcp.radare2 }}
