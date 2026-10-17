@@ -268,6 +268,23 @@
   become: true
   become_user: "{{ user }}"
 
+# --- Playwright: persistent @playwright/mcp install (MCP server) ---
+# A REAL node_modules (not the bunx temp cache) so playwright-core
+# module resolution works; the OpenCode MCP config points node at this
+# package's cli.js with --browser chromium.
+- name: Persistent @playwright/mcp install
+  shell: |
+    mkdir -p /home/{{ user }}/.local/share/opencode/mcp-playwright
+    cd /home/{{ user }}/.local/share/opencode/mcp-playwright
+    bun add @playwright/mcp@latest
+  args:
+    executable: /bin/bash
+    creates: "/home/{{ user }}/.local/share/opencode/mcp-playwright/node_modules/@playwright/mcp/package.json"
+  become: true
+  become_user: "{{ user }}"
+  environment:
+    HOME: "/home/{{ user }}"
+
 # --- Playwright: Chromium for @playwright/mcp ---
 # bunx, not npx: the fleet has bun (common_packages) but no npm/npx.
 - name: Install Playwright Chromium (cached in ~/.cache/ms-playwright)
