@@ -114,6 +114,26 @@
         "command": ["codebase-memory-mcp"]
       },
 {{- end }}
+{{- if $mcp.reversecore }}
+      // ---- RE / malware analysis toolkit -----------------------------
+      // Reversecore_MCP v3.4.4 (151 tools): radare2 sessions + r2ghidra
+      // decompilation + YARA + CAPA + LIEF + IOC extraction. Installed by
+      // the ansible role via:
+      //   uv tool install --python 3.12 reversecore-mcp \
+      //     --with lief --with r2pipe
+      // (the 3.12 pin is load-bearing: numpy has no wheel for 3.14 and
+      // the meson build fails on this GCC).
+      // Runs with CWD = ~/dev/sandbox — the same sample convention as the
+      // r2mcp sandbox: drop samples there, open them by name. The agent
+      // cannot ingest arbitrary system binaries without placing them.
+      "reversecore": {
+        "type": "local",
+        "command": [
+          "/bin/bash", "-c",
+          "cd \"{{ .chezmoi.homeDir }}/dev/sandbox\" && exec reversecore-mcp"
+        ]
+      },
+{{- end }}
 {{- if $mcp.terraform }}
       // ---- Infrastructure as Code ------------------------------------
       // HashiCorp Terraform Registry lookups (providers, modules, policies).

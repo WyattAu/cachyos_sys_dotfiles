@@ -148,6 +148,23 @@
   become: true
   become_user: "{{ user }}"
 
+# --- Reversecore_MCP: RE/malware analysis toolkit (uv tool) ---
+# 151 tools over radare2 + r2ghidra + YARA + CAPA + LIEF + angr. The
+# --python 3.12 pin is load-bearing (numpy has no wheel for this distro's
+# default Python 3.14 and the meson build fails); lief + r2pipe are the
+# two extras the server needs beyond the package (LIEF parsing, r2 IPC).
+- name: Install Reversecore_MCP (uv tool, python 3.12)
+  command: >
+    uv tool install --python 3.12 reversecore-mcp
+    --with lief --with r2pipe --force
+  register: reversecore_install
+  changed_when: false
+  failed_when: false
+  become: true
+  become_user: "{{ user }}"
+  environment:
+    HOME: "/home/{{ user }}"
+
 - name: Prewarm filesystem MCP package (bunx cache)
   shell: bunx -y @modelcontextprotocol/server-filesystem --help < /dev/null || true
   changed_when: false
@@ -403,6 +420,7 @@
       - r2mcp_ok
       - ghidra_user_dir is not defined or not ghidramcp_install is skipped
       - github_mcp_asset_name is not defined or github_mcp_asset.stdout | trim | length > 0
+      - reversecore_install is not skipped
     fail_msg: >-
       OpenCode toolchain incomplete — check the failed tasks above.
       Common causes: radare2/rizin/ghidra missing from the packages role,

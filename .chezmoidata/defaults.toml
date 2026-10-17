@@ -69,3 +69,4 @@ ghidra = true
 terraform = true
 filesystem = true                 # ~/dev sandbox — matches the r2mcp sandbox root
 codebase_memory = true            # tree-sitter knowledge graph (AUR: codebase-memory-mcp-bin)
+reversecore = true                # RE/malware toolkit: r2 + YARA + CAPA + LIEF + angr (151 tools)

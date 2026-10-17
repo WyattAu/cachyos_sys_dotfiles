@@ -191,6 +191,13 @@ else
     echo "  ✗ github-mcp-server missing (opencode ansible role)"
     ERRORS=$((ERRORS + 1))
 fi
+# RE/malware analysis toolkit (Reversecore_MCP via uv)
+if command -v reversecore-mcp >/dev/null 2>&1; then
+    echo "  ✓ reversecore-mcp"
+else
+    echo "  ✗ reversecore-mcp missing (ansible opencode role: uv tool install)"
+    ERRORS=$((ERRORS + 1))
+fi
 # Code knowledge graph server
 if command -v codebase-memory-mcp >/dev/null 2>&1; then
     echo "  ✓ codebase-memory-mcp"
