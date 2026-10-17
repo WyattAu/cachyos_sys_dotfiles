@@ -238,8 +238,10 @@
   become: true
   become_user: "{{ user }}"
 
-- name: Prewarm filesystem MCP package (bunx cache)
-  shell: bunx -y @modelcontextprotocol/server-filesystem --help < /dev/null || true
+- name: Prewarm bunx MCP packages (filesystem + dbhub)
+  shell: |
+    bunx -y @modelcontextprotocol/server-filesystem --help < /dev/null || true
+    bunx -y @bytebase/dbhub@latest --help < /dev/null || true
   changed_when: false
   failed_when: false
   become: true

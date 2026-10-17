@@ -75,13 +75,22 @@
         "command": ["uvx", "mcp-server-git"]
       },
 {{- end }}
-{{- if $mcp.sqlite }}
+{{- if $mcp.dbhub }}
       // Disabled globally: DBs are project-specific. In a project's
-      // opencode.jsonc, redefine "sqlite" (same shape) with your db path —
+      // opencode.jsonc, redefine "dbhub" (same shape) with your DSN —
       // project config replaces this object wholesale.
-      "sqlite": {
+      // DBHub (bytebase; the official MCP-registry database example):
+      // SQLite/Postgres/MySQL/MariaDB/SQL Server/Oracle behind TWO tools
+      // (execute_sql, search_objects) at ~1.4k tokens — 13x lighter than
+      // per-database alternatives. Read-only mode + row limits + query
+      // timeouts are built in; flip read-only off per project if needed.
+      "dbhub": {
         "type": "local",
-        "command": ["uvx", "mcp-server-sqlite", "--db-path", "./local.db"],
+        "command": [
+          "bunx", "@bytebase/dbhub@latest",
+          "--transport", "stdio",
+          "--dsn", "sqlite://./local.db"
+        ],
         "disabled": true
       },
 {{- end }}
