@@ -182,6 +182,21 @@ else
     echo "  ✗ GhidraMCP extension missing (opencode ansible role)"
     ERRORS=$((ERRORS + 1))
 fi
+# GitHub MCP server binary + its token source. The MCP config spawns the
+# server through `gh auth token`, so a missing token means the github
+# MCP fails at handshake even though the binary is fine.
+if [[ -x "$HOME/.local/bin/github-mcp-server" ]] || command -v github-mcp-server >/dev/null 2>&1; then
+    echo "  ✓ github-mcp-server"
+else
+    echo "  ✗ github-mcp-server missing (opencode ansible role)"
+    ERRORS=$((ERRORS + 1))
+fi
+if gh auth token >/dev/null 2>&1; then
+    echo "  ✓ gh token available (github MCP auth)"
+else
+    echo "  ✗ gh not authenticated — github MCP cannot start (gh auth login)"
+    ERRORS=$((ERRORS + 1))
+fi
 # Playwright chromium cache
 if ls -d "$HOME"/.cache/ms-playwright/chromium-* >/dev/null 2>&1; then
     echo "  ✓ playwright chromium"

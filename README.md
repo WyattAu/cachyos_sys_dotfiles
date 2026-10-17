@@ -338,7 +338,7 @@ Portable AI-coding setup: the OpenCode binary plus 11 MCP servers, identical on 
 | Server | Type | Backing | Purpose |
 |--------|------|---------|---------|
 | `context7` | remote | — | Library/framework docs lookup |
-| `github` | remote | OAuth (`/mcps`) | Repos, PRs, issues |
+| `github` | local | `github-mcp-server stdio` (official binary, role-installed) | Repos, PRs, issues, Actions, code scanning — token from `gh auth token` at spawn time |
 | `fetch` | local | `uvx` | Web page → markdown |
 | `sequential-thinking` | local | `bunx` | Structured multi-step reasoning |
 | `memory` | local | `bunx` | Persistent cross-session knowledge graph (`~/.local/share/opencode/memory.json`) |
@@ -348,6 +348,7 @@ Portable AI-coding setup: the OpenCode binary plus 11 MCP servers, identical on 
 | `playwright` | local | `bunx` | Browser automation (Chromium in `~/.cache/ms-playwright`) |
 | `radare2` | local | `r2pm -r r2mcp` | Binary analysis, decompile, ESIL emulation — sandboxed to `~/dev` (`-s`, single dir) |
 | `ghidra` | local | `ghidra-mcp` (uv tool) | Deep RE — requires Ghidra running with the program open |
+| `filesystem` | local | `bunx` | Read/write/search files — sandboxed to `~/dev` |
 
 Servers are gated by `[opencode.mcp]` flags in `.chezmoidata/defaults.toml`; disable per host in `~/.config/chezmoi/chezmoi.toml`:
 
@@ -378,7 +379,10 @@ The role ends with an `assert` verification block, and `sys-check` validates the
 
 ### One-Time Manual Steps (per machine)
 
-1. `/mcps` → `github` → sign in (OAuth).
+1. `gh auth login` — the GitHub MCP server reads its token from the gh
+   keyring at spawn time (`gh auth token`), so no secret lives in dotfiles
+   and gh's own rotation rules apply. Needs scopes `repo`, `workflow`,
+   `read:org` (`gh auth refresh -s workflow,read:org`).
 2. Ghidra → File → Configure → Developer → enable `GhidraMCPPlugin`.
    (Extension compatibility with the Arch Ghidra package is verified
    headlessly: the 12.1.4-built extension imports and analyzes cleanly

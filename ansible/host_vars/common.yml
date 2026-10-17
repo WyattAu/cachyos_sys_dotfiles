@@ -49,6 +49,7 @@ common_packages:
   # CLI Essentials
   - base-devel
   - git
+  - github-cli                # token source for the GitHub MCP server
   - ansible
   - chezmoi
   - bat

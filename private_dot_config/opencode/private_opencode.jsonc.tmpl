@@ -10,7 +10,7 @@
   // only if you want one pinned fleet-wide.
   //
   // One-time per machine after first apply:
-  //   /mcps -> github -> sign in           (OAuth, credentials stay out of config)
+  //   gh auth login                       (GitHub MCP token source — see below)
   //   Ghidra: File -> Configure -> Developer -> enable GhidraMCPPlugin
 
   "mcp": {
@@ -28,10 +28,21 @@
       },
 {{- end }}
 {{- if $mcp.github }}
-      // ---- GitHub (OAuth via /mcps; no token stored in this file) ----
+      // ---- GitHub -----------------------------------------------------
+      // Official server (github-mcp-server, installed by the 'opencode'
+      // role) in local stdio mode. NOT the api.githubcopilot.com
+      // remote: that endpoint needs a Copilot entitlement and fails to
+      // authenticate without one. The token comes from the gh keyring
+      // at spawn time (gh auth token), so no secret lives in this file
+      // and gh's own expiry/rotation rules apply. `exec` replaces the
+      // shell so signals/stdio pass through untouched.
+      // Needs: repo, workflow, read:org (gh auth refresh -s ...).
       "github": {
-        "type": "remote",
-        "url": "https://api.githubcopilot.com/mcp/"
+        "type": "local",
+        "command": [
+          "/bin/bash", "-c",
+          "export GITHUB_PERSONAL_ACCESS_TOKEN=\"$(gh auth token 2>/dev/null)\"; [ -n \"$GITHUB_PERSONAL_ACCESS_TOKEN\" ] || { echo 'github-mcp: no gh token — run: gh auth login' >&2; exit 1; }; exec github-mcp-server stdio --toolsets repos,issues,pull_requests,actions,code_security"
+        ]
       },
 {{- end }}
 {{- if $mcp.fetch }}
@@ -72,6 +83,23 @@
         "type": "local",
         "command": ["uvx", "mcp-server-sqlite", "--db-path", "./local.db"],
         "disabled": true
+      },
+{{- end }}
+{{- if $mcp.filesystem }}
+      // ---- Filesystem -------------------------------------------------
+      // Sandboxed to ~/dev (same root as the r2mcp sandbox): every
+      // read/write tool refuses paths outside it. bunx caches after the
+      // first launch (the 'opencode' role prewarms it).
+      // NOTE: in code mode (tools.* routed through the execute runtime)
+      // filesystem.* can be a workspace-rooted shim instead of this
+      // server — a "path outside allowed directories" error naming the
+      // project root means the shim, not a broken sandbox root here.
+      "filesystem": {
+        "type": "local",
+        "command": [
+          "bunx", "-y", "@modelcontextprotocol/server-filesystem",
+          "{{ .chezmoi.homeDir }}/dev"
+        ]
       },
 {{- end }}
 {{- if $mcp.terraform }}

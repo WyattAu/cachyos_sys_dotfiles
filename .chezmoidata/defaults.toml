@@ -67,3 +67,4 @@ memory = true
 radare2 = true
 ghidra = true
 terraform = true
+filesystem = true                 # ~/dev sandbox — matches the r2mcp sandbox root

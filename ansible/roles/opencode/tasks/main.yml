@@ -10,7 +10,9 @@
 #   ~/.local/share/ghidra-mcp/                GhidraMCP bundle + staging
 #   ~/.ghidra/.ghidra_*_PUBLIC/Extensions/    GhidraMCP Ghidra extension
 #   ~/.local/share/radare2/r2pm/              r2pm-installed r2mcp
+#   ~/.local/share/github-mcp/                github-mcp-server binary
 #   ~/.cache/ms-playwright/                   Chromium for @playwright/mcp
+#   bun cache                                 @playwright/mcp + filesystem MCP
 #   docker: hashicorp/terraform-mcp-server    pre-pulled for the terraform MCP
 #
 # Update policy (per-host overrides in host_vars/<hostname>.yml):
@@ -66,6 +68,94 @@
   failed_when: false
   become: true
   become_user: "{{ user }}"
+
+# --- github-mcp-server: official GitHub MCP server (stdio) ---
+# Replaces the api.githubcopilot.com remote, which needs a Copilot
+# entitlement and otherwise fails to authenticate. The token is read
+# from the gh keyring at spawn time, so no secret is stored in dotfiles.
+# Release resolution mirrors GhidraMCP: redirect + expanded-assets page
+# (never the GitHub API — rate limits took the role down once).
+- name: Read previously installed github-mcp-server asset name
+  slurp:
+    src: "/home/{{ user }}/.local/share/github-mcp/.resolved-asset"
+  register: github_mcp_installed_file
+  failed_when: false
+  become: true
+  become_user: "{{ user }}"
+
+- name: Expose installed github-mcp-server asset name to later tasks
+  set_fact:
+    github_mcp_installed_key: "{{ github_mcp_installed_file.content | b64decode | trim }}"
+  when: github_mcp_installed_file.content is defined
+
+- name: Resolve github-mcp-server release tag (redirect - no API)
+  shell: |
+    set -euo pipefail
+    curl -fsSLI -o /dev/null -w '%{url_effective}' \
+      https://github.com/github/github-mcp-server/releases/latest | sed 's|.*/tag/||'
+  register: github_mcp_latest_tag
+  changed_when: false
+  failed_when: false
+  become: true
+  become_user: "{{ user }}"
+  environment:
+    HOME: "/home/{{ user }}"
+
+- name: Resolve github-mcp-server asset URL (expanded assets page)
+  shell: |
+    set -euo pipefail
+    TAG="{{ opencode_github_mcp_tag | default(github_mcp_latest_tag.stdout | trim, true) }}"
+    curl -fsSL "https://github.com/github/github-mcp-server/releases/expanded_assets/$TAG" \
+      | grep -oE 'href="[^"]*github-mcp-server_Linux_x86_64\.tar\.gz"' \
+      | head -n1 | sed 's|href="|https://github.com|; s|"$||'
+  register: github_mcp_asset
+  changed_when: false
+  failed_when: false
+  become: true
+  become_user: "{{ user }}"
+  environment:
+    HOME: "/home/{{ user }}"
+
+- name: Determine github-mcp-server asset name
+  set_fact:
+    github_mcp_asset_name: "{{ (github_mcp_asset.stdout | trim).split('/') | last }}"
+  when: github_mcp_asset.stdout | trim | length > 0
+
+- name: Install github-mcp-server binary (skipped when already current)
+  unarchive:
+    src: "{{ github_mcp_asset.stdout | trim }}"
+    dest: "/home/{{ user }}/.local/share/github-mcp"
+    remote_src: true
+  when:
+    - github_mcp_asset_name is defined
+    - github_mcp_asset_name != github_mcp_installed_key | default('', true)
+  register: github_mcp_installed
+
+- name: Record installed github-mcp-server asset name
+  copy:
+    dest: "/home/{{ user }}/.local/share/github-mcp/.resolved-asset"
+    content: "{{ github_mcp_asset_name }}\n"
+    mode: "0644"
+  when: github_mcp_asset_name is defined
+  become: true
+  become_user: "{{ user }}"
+
+- name: Link github-mcp-server into PATH
+  file:
+    src: "/home/{{ user }}/.local/share/github-mcp/github-mcp-server"
+    dest: "/home/{{ user }}/.local/bin/github-mcp-server"
+    state: link
+  become: true
+  become_user: "{{ user }}"
+
+- name: Prewarm filesystem MCP package (bunx cache)
+  shell: bunx -y @modelcontextprotocol/server-filesystem --help < /dev/null || true
+  changed_when: false
+  failed_when: false
+  become: true
+  become_user: "{{ user }}"
+  environment:
+    HOME: "/home/{{ user }}"
 
 # --- GhidraMCP v2: Ghidra extension + ghidra-mcp CLI (uv tool) ---
 # Release 2.0 restructured the bundle: the outer zip now contains a
@@ -312,10 +402,11 @@
       - opencode_bin_post.stat.exists
       - r2mcp_ok
       - ghidra_user_dir is not defined or not ghidramcp_install is skipped
+      - github_mcp_asset_name is not defined or github_mcp_asset.stdout | trim | length > 0
     fail_msg: >-
       OpenCode toolchain incomplete — check the failed tasks above.
       Common causes: radare2/rizin/ghidra missing from the packages role,
       no network to github.com, or docker not running on this host.
-    success_msg: "OpenCode toolchain verified: binary, r2mcp, GhidraMCP extension."
+    success_msg: "OpenCode toolchain verified: binary, r2mcp, GhidraMCP extension, github-mcp-server."
   become: true
   become_user: "{{ user }}"
