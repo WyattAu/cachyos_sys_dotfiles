@@ -352,9 +352,9 @@ Portable AI-coding setup: the OpenCode binary plus 18 MCP servers, identical on 
 | `reversecore` | local | `reversecore-mcp` (uv tool, py3.12) | RE/malware toolkit — r2 sessions, YARA, CAPA, LIEF, IOC extraction; sandboxed to `~/dev/sandbox` |
 | `time` | local | `uvx` (reference) | Current/converted time, timezones |
 | `sentry` | remote | `mcp.sentry.dev/mcp` (OAuth `/mcps`) | Error tracking, issue triage |
-| `linear` | remote | `mcp.linear.app/mcp` (OAuth `/mcps`) | Issues, projects, cycles |
-| `firecrawl` | local | `bunx` | Web crawl/extract/JS render — needs `FIRECRAWL_API_KEY` in shell env |
-| `exa` | local | `bunx` | Neural web search — needs `EXA_API_KEY` in shell env |
+| `linear` | remote | `mcp.linear.app/mcp` (OAuth `/mcps`) | Issues, projects, cycles — note: `/sse` path is dead, use `/mcp` |
+| `firecrawl` | local | `bunx` | Web crawl/extract/JS render — key: `~/.config/opencode/keys/firecrawl` |
+| `exa` | local | `bunx` | Neural web search — key: `~/.config/opencode/keys/exa` |
 | `filesystem` | local | `bunx` | Read/write/search files — sandboxed to `~/dev` |
 
 Servers are gated by `[opencode.mcp]` flags in `.chezmoidata/defaults.toml`; disable per host in `~/.config/chezmoi/chezmoi.toml`:

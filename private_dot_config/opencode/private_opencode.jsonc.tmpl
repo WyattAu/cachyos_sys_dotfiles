@@ -171,22 +171,37 @@
 {{- if $mcp.firecrawl }}
       // ---- Web crawl / extract ----------------------------------------
       // JS rendering, crawling, structured extraction — beyond fetch's
-      // single-page markdown. Needs FIRECRAWL_API_KEY exported in your
-      // shell (the MCP process inherits it) — without it the server
-      // exits with a message naming the variable.
+      // single-page markdown. Runs KEYLESS with 2 free tools (scrape +
+      // search, rate-limited per IP); full toolset with a key.
+      // Key: ~/.config/opencode/keys/firecrawl (0600, read at spawn —
+      //   printf 'fc-...' > ~/.config/opencode/keys/firecrawl
+      //   chmod 600 ~/.config/opencode/keys/firecrawl
+      // ). The key file survives any launch context (desktop launchers
+      // do not inherit shell exports).
       "firecrawl": {
         "type": "local",
-        "command": ["bunx", "-y", "firecrawl-mcp"]
+        "command": [
+          "/bin/bash", "-c",
+          "test -s \"{{ .chezmoi.homeDir }}/.config/opencode/keys/firecrawl\" && export FIRECRAWL_API_KEY=\"$(cat \"{{ .chezmoi.homeDir }}/.config/opencode/keys/firecrawl\")\"; exec bunx -y firecrawl-mcp"
+        ]
       },
 {{- end }}
 {{- if $mcp.exa }}
       // ---- Neural web search ------------------------------------------
       // Complements the built-in websearch: Exa's neural ranking for
-      // "find me papers/code like X" queries. Needs EXA_API_KEY exported
-      // in your shell.
+      // "find me papers/code like X" queries. The server connects
+      // keyless, but every search 401s until a key exists.
+      // Key: ~/.config/opencode/keys/exa (0600, read at spawn —
+      //   printf 'exa-...' > ~/.config/opencode/keys/exa
+      //   chmod 600 ~/.config/opencode/keys/exa
+      // ). Key file over shell export: it works no matter how OpenCode
+      // was launched (desktop launchers skip shell rc files).
       "exa": {
         "type": "local",
-        "command": ["bunx", "-y", "exa-mcp-server"]
+        "command": [
+          "/bin/bash", "-c",
+          "test -s \"{{ .chezmoi.homeDir }}/.config/opencode/keys/exa\" && export EXA_API_KEY=\"$(cat \"{{ .chezmoi.homeDir }}/.config/opencode/keys/exa\")\"; exec bunx -y exa-mcp-server"
+        ]
       },
 {{- end }}
 {{- if $mcp.terraform }}
