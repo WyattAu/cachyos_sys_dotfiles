@@ -265,6 +265,21 @@
         ]
       },
 {{- end }}
+{{- if $mcp.lean_lsp }}
+      // ---- Lean 4 theorem proving (clawdius proofs) --------------------
+      // lean-lsp-mcp (MIT): wraps the Lean LSP — 22 tools: goal states,
+      // per-line diagnostics (no full lake builds), multi-attempt tactics,
+      // loogle/leansearch mathlib lookup, proof profiling. Auto-detects
+      // the Lean project from CWD. Requires elan (already fleet-wide).
+      // CWD here points at clawdius; per-project entries would cd elsewhere.
+      "lean-lsp": {
+        "type": "local",
+        "command": [
+          "/bin/bash", "-c",
+          "cd \"{{ .chezmoi.homeDir }}/dev/src/github.com/WyttAu/clawdius\" 2>/dev/null || cd \"{{ .chezmoi.homeDir }}/dev/src/github.com/WyattAu/clawdius\"; exec uvx lean-lsp-mcp"
+        ]
+      },
+{{- end }}
 {{- if $mcp.terraform }}
       // ---- Infrastructure as Code ------------------------------------
       // HashiCorp Terraform Registry lookups (providers, modules, policies).

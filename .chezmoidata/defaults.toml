@@ -71,6 +71,7 @@ terraform = true
 filesystem = true                 # ~/dev sandbox — matches the r2mcp sandbox root
 codebase_memory = true            # tree-sitter knowledge graph (AUR: codebase-memory-mcp-bin)
 reversecore = true                # RE/malware toolkit: r2 + YARA + CAPA + LIEF + angr (151 tools)
+lean_lsp = true                    # Lean 4 LSP bridge: goal states, diagnostics, mathlib search (clawdius proofs)
 time = true                        # reference server: current/converted time + timezones
 sentry = true                      # error tracking (remote, OAuth via /mcps)
 linear = true                      # project tracking (remote, OAuth via /mcps)

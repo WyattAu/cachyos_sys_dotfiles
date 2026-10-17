@@ -351,6 +351,7 @@ Portable AI-coding setup: the OpenCode binary plus 22 MCP servers (18 enabled + 
 | `ghidra` | local | `ghidra-mcp` (uv tool) | Deep RE — requires Ghidra running with the program open |
 | `codebase-memory` | local | `codebase-memory-mcp` (AUR) | Tree-sitter knowledge graph: search_graph/get_architecture replace grep/read cycles |
 | `reversecore` | local | `reversecore-mcp` (uv tool, py3.12) | RE/malware toolkit — r2 sessions, YARA, CAPA, LIEF, IOC extraction; sandboxed to `~/dev/sandbox` |
+| `lean-lsp` | local | `uvx` (lean-lsp-mcp) | Lean 4 LSP bridge for clawdius proofs: goal states, live diagnostics, multi-attempt tactics, loogle/leansearch |
 | `time` | local | `uvx` (reference) | Current/converted time, timezones |
 | `sentry` | remote | `mcp.sentry.dev/mcp` (OAuth `/mcps`) | Error tracking, issue triage |
 | `linear` | remote | `mcp.linear.app/mcp` (OAuth `/mcps`) | Issues, projects, cycles — note: `/sse` path is dead, use `/mcp` |
