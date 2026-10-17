@@ -191,6 +191,13 @@ else
     echo "  ✗ github-mcp-server missing (opencode ansible role)"
     ERRORS=$((ERRORS + 1))
 fi
+# Code knowledge graph server
+if command -v codebase-memory-mcp >/dev/null 2>&1; then
+    echo "  ✓ codebase-memory-mcp"
+else
+    echo "  ✗ codebase-memory-mcp missing (AUR: codebase-memory-mcp-bin)"
+    ERRORS=$((ERRORS + 1))
+fi
 if gh auth token >/dev/null 2>&1; then
     echo "  ✓ gh token available (github MCP auth)"
 else

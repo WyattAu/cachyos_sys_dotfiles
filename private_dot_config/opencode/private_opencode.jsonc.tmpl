@@ -102,6 +102,18 @@
         ]
       },
 {{- end }}
+{{- if $mcp.codebase_memory }}
+      // ---- Code knowledge graph --------------------------------------
+      // codebase-memory-mcp (AUR: codebase-memory-mcp-bin): indexes a repo
+      // into a persistent tree-sitter graph (clawdius: ~30k nodes / 105k
+      // edges); search_graph/get_architecture replace grep/read cycles.
+      // Indexes on demand: the agent calls index_repository once per repo,
+      // the graph persists across sessions (project name = mangled path).
+      "codebase-memory": {
+        "type": "local",
+        "command": ["codebase-memory-mcp"]
+      },
+{{- end }}
 {{- if $mcp.terraform }}
       // ---- Infrastructure as Code ------------------------------------
       // HashiCorp Terraform Registry lookups (providers, modules, policies).

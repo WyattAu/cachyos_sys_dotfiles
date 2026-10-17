@@ -50,6 +50,7 @@ common_packages:
   - base-devel
   - git
   - github-cli                # token source for the GitHub MCP server
+  - codebase-memory-mcp-bin   # tree-sitter code-graph MCP server (AUR)
   - ansible
   - chezmoi
   - bat

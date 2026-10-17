@@ -68,3 +68,4 @@ radare2 = true
 ghidra = true
 terraform = true
 filesystem = true                 # ~/dev sandbox — matches the r2mcp sandbox root
+codebase_memory = true            # tree-sitter knowledge graph (AUR: codebase-memory-mcp-bin)
