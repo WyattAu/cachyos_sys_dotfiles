@@ -204,6 +204,21 @@
         ]
       },
 {{- end }}
+{{- if $mcp.redis }}
+      // ---- Redis (official, project-specific) -------------------------
+      // redis/mcp-redis: 53 tools — data ops, JSON, vector search, server
+      // management. Disabled globally: point --url at the project's Redis
+      // (localhost for a dev container, or the remote host) by redefining
+      // "redis" in the project's opencode.jsonc.
+      "redis": {
+        "type": "local",
+        "command": [
+          "uvx", "--from", "redis-mcp-server@latest", "redis-mcp-server",
+          "--url", "redis://localhost:6379/0"
+        ],
+        "disabled": true
+      },
+{{- end }}
 {{- if $mcp.terraform }}
       // ---- Infrastructure as Code ------------------------------------
       // HashiCorp Terraform Registry lookups (providers, modules, policies).

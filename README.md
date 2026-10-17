@@ -344,6 +344,7 @@ Portable AI-coding setup: the OpenCode binary plus 18 MCP servers, identical on 
 | `memory` | local | `bunx` | Persistent cross-session knowledge graph (`~/.local/share/opencode/memory.json`) |
 | `git` | local | `uvx` | Git operations |
 | `dbhub` | local | `bunx` (bytebase) | **Disabled globally** — per-project DB gateway: SQLite/PG/MySQL/Oracle, read-only guardrails, 2 tools |
+| `redis` | local | `uvx` (official redis/mcp-redis) | **Disabled globally** — per-project Redis: 53 tools (data ops, JSON, vector search); point `--url` at the project's Redis |
 | `terraform` | local | docker (`hashicorp/terraform-mcp-server:1.3.0`) | Registry lookups: providers, modules, policies |
 | `playwright` | local | `bunx` | Browser automation (Chromium in `~/.cache/ms-playwright`) |
 | `radare2` | local | `r2pm -r r2mcp` | Binary analysis, decompile, ESIL emulation — sandboxed to `~/dev` (`-s`, single dir) |

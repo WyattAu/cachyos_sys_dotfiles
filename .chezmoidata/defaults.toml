@@ -62,6 +62,7 @@ fetch = true
 sequential_thinking = true
 git = true
 dbhub = false                     # DBs are project-specific — enable per project (SQLite/PG/MySQL/Oracle…)
+redis = false                     # official Redis MCP (53 tools) — enable per project; --url at your Redis
 playwright = true
 memory = true
 radare2 = true
