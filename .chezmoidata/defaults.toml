@@ -76,3 +76,7 @@ sentry = true                      # error tracking (remote, OAuth via /mcps)
 linear = true                      # project tracking (remote, OAuth via /mcps)
 firecrawl = true                   # web crawl/extract (needs FIRECRAWL_API_KEY in shell env)
 exa = true                         # neural web search (needs EXA_API_KEY in shell env)
+forgejo = true                     # self-hosted forge: git.wyattau.com repos/issues/PRs (54 tools)
+virustotal = true                  # official VT threat intel (remote, OAuth via /mcps)
+osint = true                       # 37 OSINT tools, 21 free keyless (DNS/WHOIS/CT/Wayback/BGP)
+shodan = false                     # needs SHODAN_API_KEY — enable when a key exists

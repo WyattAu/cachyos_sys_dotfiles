@@ -331,7 +331,7 @@ All three are installed by the playbook as the actual user (not root), with idem
 
 ## OpenCode Toolchain
 
-Portable AI-coding setup: the OpenCode binary plus 18 MCP servers, identical on every host (WSL included). The binary and MCP backends are installed by the `opencode` ansible role; all config lives in chezmoi.
+Portable AI-coding setup: the OpenCode binary plus 22 MCP servers (18 enabled + 4 project-gated), identical on every host (WSL included). The binary and MCP backends are installed by the `opencode` ansible role; all config lives in chezmoi.
 
 ### MCP Servers (`~/.config/opencode/opencode.jsonc`)
 
@@ -356,6 +356,10 @@ Portable AI-coding setup: the OpenCode binary plus 18 MCP servers, identical on 
 | `linear` | remote | `mcp.linear.app/mcp` (OAuth `/mcps`) | Issues, projects, cycles — note: `/sse` path is dead, use `/mcp` |
 | `firecrawl` | local | `bunx` | Web crawl/extract/JS render — key: `~/.config/opencode/keys/firecrawl` |
 | `exa` | local | `bunx` | Neural web search — key: `~/.config/opencode/keys/exa` |
+| `forgejo` | local | `bunx` | Self-hosted forge (git.wyattau.com): repos/issues/PRs/files/CI — 54 tools, safe-write surface; token: `~/.config/opencode/keys/forgejo` |
+| `osint` | local | `bunx` | 37 OSINT tools / 12 sources (DNS, WHOIS, crt.sh, Wayback, BGP, Shodan*, VT*) — 21 keyless; *need key files |
+| `virustotal` | remote | `ai.virustotal.com/mcp` (OAuth `/mcps`) | Official VT threat intel: files, URLs, domains, IPs |
+| `shodan` | local | `bunx` | **Disabled** — needs `SHODAN_API_KEY` (`~/.config/opencode/keys/shodan`) |
 | `filesystem` | local | `bunx` | Read/write/search files — sandboxed to `~/dev` |
 
 Servers are gated by `[opencode.mcp]` flags in `.chezmoidata/defaults.toml`; disable per host in `~/.config/chezmoi/chezmoi.toml`:

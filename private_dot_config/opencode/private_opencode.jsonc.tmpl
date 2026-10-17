@@ -212,6 +212,59 @@
         "disabled": true
       },
 {{- end }}
+{{- if $mcp.forgejo }}
+      // ---- Self-hosted forge: git.wyattau.com --------------------------
+      // rubicon/forgejo-mcp (Apache-2.0): 54 tools — repos, issues, PRs,
+      // files, CI status. Security-first surface: safe additive writes
+      // only; no merge/delete/admin (elevated destructive tier exists but
+      // is OFF by default in the server itself).
+      // Token: create at git.wyattau.com/user/settings/applications ->
+      //   printf 'TOKEN' > ~/.config/opencode/keys/forgejo && chmod 600 ...
+      // Until then the server starts but every call 401s.
+      "forgejo": {
+        "type": "local",
+        "command": [
+          "/bin/bash", "-c",
+          "test -s \"{{ .chezmoi.homeDir }}/.config/opencode/keys/forgejo\" && export FORGEJO_TOKEN=\"$(cat \"{{ .chezmoi.homeDir }}/.config/opencode/keys/forgejo\")\"; export FORGEJO_BASE_URL=\"https://git.wyattau.com\"; exec bunx -y @rubicontv/forgejo-mcp"
+        ]
+      },
+{{- end }}
+{{- if $mcp.osint }}
+      // ---- OSINT (12 sources, 37 tools) --------------------------------
+      // badchars/osint-mcp-server: 21 tools work KEYLESS (DNS, WHOIS,
+      // crt.sh certs, Wayback, BGP, GeoIP, HackerTarget); Shodan/VT/
+      // Censys/SecurityTrails tools light up per key file:
+      //   shodan  -> ~/.config/opencode/keys/shodan
+      //   virustotal -> ~/.config/opencode/keys/virustotal
+      //   (etc.) — exported at spawn by the wrapper.
+      "osint": {
+        "type": "local",
+        "command": [
+          "/bin/bash", "-c",
+          "for k in shodan virustotal securitytrails censys; do test -s \"{{ .chezmoi.homeDir }}/.config/opencode/keys/$k\" && export \"$(echo $k | tr '[:lower:]' '[:upper:]')_API_KEY=\"$(cat \"{{ .chezmoi.homeDir }}/.config/opencode/keys/$k\")\"; done; exec bunx -y osint-mcp-server"
+        ]
+      },
+{{- end }}
+{{- if $mcp.virustotal }}
+      // ---- Threat intelligence (official VirusTotal) -------------------
+      // Remote OAuth: /mcps -> virustotal -> authenticate (VTAI account).
+      // Files, URLs, domains, IPs, submissions — malware triage before
+      // opening anything.
+      "virustotal": {
+        "type": "remote",
+        "url": "https://ai.virustotal.com/mcp"
+      },
+{{- end }}
+{{- if $mcp.shodan }}
+      // ---- Shodan recon (needs a paid API key) -------------------------
+      "shodan": {
+        "type": "local",
+        "command": [
+          "/bin/bash", "-c",
+          "test -s \"{{ .chezmoi.homeDir }}/.config/opencode/keys/shodan\" && export SHODAN_API_KEY=\"$(cat \"{{ .chezmoi.homeDir }}/.config/opencode/keys/shodan\")\"; exec bunx -y @burtthecoder/mcp-shodan"
+        ]
+      },
+{{- end }}
 {{- if $mcp.terraform }}
       // ---- Infrastructure as Code ------------------------------------
       // HashiCorp Terraform Registry lookups (providers, modules, policies).
