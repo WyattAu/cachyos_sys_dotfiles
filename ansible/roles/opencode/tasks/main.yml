@@ -243,10 +243,23 @@
   become: true
   become_user: "{{ user }}"
 
-- name: Prewarm bunx MCP packages (filesystem + dbhub)
-  shell: |
-    bunx -y @modelcontextprotocol/server-filesystem --help < /dev/null || true
-    bunx -y @bytebase/dbhub@latest --help < /dev/null || true
+# --- Persistent global bun packages (replaces bunx cold starts) ---
+# The flapping /home fs corrupted bunx's cache and broke module
+# resolution for every bunx-spawned MCP server fleet-wide. Persistent
+# global installs are immune: the binaries live in ~/.bun/bin.
+- name: Install global bun MCP packages
+  command: >
+    bun add -g
+    @modelcontextprotocol/server-sequential-thinking
+    @modelcontextprotocol/server-filesystem
+    @modelcontextprotocol/server-memory
+    osint-mcp-server
+    firecrawl-mcp
+    exa-mcp-server
+    @bytebase/dbhub
+    @rubicontv/forgejo-mcp
+    @burtthecoder/mcp-shodan
+  register: bun_global_install
   changed_when: false
   failed_when: false
   become: true

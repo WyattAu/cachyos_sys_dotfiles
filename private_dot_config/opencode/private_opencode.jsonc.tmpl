@@ -14,7 +14,10 @@
   //   Ghidra: File -> Configure -> Developer -> enable GhidraMCPPlugin
 
   "mcp": {
-    // Cold bunx/uvx downloads on first launch exceed the 30s default startup.
+    // Cold package downloads on first launch exceed the 30s default startup.
+    // All bunx-based servers were converted to persistent global installs
+    // (bun add -g) after the flapping /home fs corrupted bunx's cache and
+    // broke module resolution fleet-wide.
     "timeout": {
       "startup": 90000
     },
@@ -55,14 +58,14 @@
 {{- if $mcp.sequential_thinking }}
       "sequential-thinking": {
         "type": "local",
-        "command": ["bunx", "@modelcontextprotocol/server-sequential-thinking"]
+        "command": ["mcp-server-sequential-thinking"]
       },
 {{- end }}
 {{- if $mcp.memory }}
       // Persistent cross-session memory (knowledge graph JSON below).
       "memory": {
         "type": "local",
-        "command": ["bunx", "@modelcontextprotocol/server-memory"],
+        "command": ["mcp-server-memory"],
         "environment": {
           "MEMORY_FILE_PATH": "{{ .chezmoi.homeDir }}/.local/share/opencode/memory.json"
         }
@@ -87,7 +90,7 @@
       "dbhub": {
         "type": "local",
         "command": [
-          "bunx", "@bytebase/dbhub@latest",
+          "dbhub",
           "--transport", "stdio",
           "--dsn", "sqlite://./local.db"
         ],
@@ -97,7 +100,7 @@
 {{- if $mcp.filesystem }}
       // ---- Filesystem -------------------------------------------------
       // Sandboxed to ~/dev (same root as the r2mcp sandbox): every
-      // read/write tool refuses paths outside it. bunx caches after the
+      // read/write tool refuses paths outside it. Persistent global installs
       // first launch (the 'opencode' role prewarms it).
       // NOTE: in code mode (tools.* routed through the execute runtime)
       // filesystem.* can be a workspace-rooted shim instead of this
@@ -106,7 +109,7 @@
       "filesystem": {
         "type": "local",
         "command": [
-          "bunx", "-y", "@modelcontextprotocol/server-filesystem",
+          "mcp-server-filesystem",
           "{{ .chezmoi.homeDir }}/dev"
         ]
       },
@@ -171,7 +174,7 @@
 {{- if $mcp.firecrawl }}
       // ---- Web crawl / extract ----------------------------------------
       // Official Firecrawl remote MCP (v2, OAuth). Chosen over the local
-      // bunx server: keyless use is blocked from this estate's egress IP
+      // local server: keyless use is blocked from this estate's egress IP
       // (VPN/proxy-flagged by Firecrawl), and OAuth needs no key file.
       // Authenticate once via /mcps -> firecrawl -> authenticate.
       "firecrawl": {
@@ -193,7 +196,7 @@
         "type": "local",
         "command": [
           "/bin/bash", "-c",
-          "test -s \"{{ .chezmoi.homeDir }}/.config/opencode/keys/exa\" && export EXA_API_KEY=\"$(cat \"{{ .chezmoi.homeDir }}/.config/opencode/keys/exa\")\"; exec bunx -y exa-mcp-server"
+          "test -s \"{{ .chezmoi.homeDir }}/.config/opencode/keys/exa\" && export EXA_API_KEY=\"$(cat \"{{ .chezmoi.homeDir }}/.config/opencode/keys/exa\")\"; exec exa-mcp-server"
         ]
       },
 {{- end }}
@@ -225,7 +228,7 @@
         "type": "local",
         "command": [
           "/bin/bash", "-c",
-          "test -s \"{{ .chezmoi.homeDir }}/.config/opencode/keys/forgejo\" && export FORGEJO_TOKEN=\"$(cat \"{{ .chezmoi.homeDir }}/.config/opencode/keys/forgejo\")\"; export FORGEJO_BASE_URL=\"https://git.wyattau.com\"; exec bunx -y @rubicontv/forgejo-mcp"
+          "test -s \"{{ .chezmoi.homeDir }}/.config/opencode/keys/forgejo\" && export FORGEJO_TOKEN=\"$(cat \"{{ .chezmoi.homeDir }}/.config/opencode/keys/forgejo\")\"; export FORGEJO_BASE_URL=\"https://git.wyattau.com\"; exec forgejo-mcp"
         ]
       },
 {{- end }}
@@ -241,7 +244,7 @@
         "type": "local",
         "command": [
           "/bin/bash", "-c",
-          "for k in shodan virustotal securitytrails censys; do f=\"$HOME/.config/opencode/keys/$k\"; if [ -s \"$f\" ]; then v=$(cat \"$f\"); export \"$(printf '%s' \"$k\" | tr '[:lower:]' '[:upper:]')_API_KEY=$v\"; fi; done; exec bunx -y osint-mcp-server"
+          "for k in shodan virustotal securitytrails censys; do f=\"$HOME/.config/opencode/keys/$k\"; if [ -s \"$f\" ]; then v=$(cat \"$f\"); export \"$(printf '%s' \"$k\" | tr '[:lower:]' '[:upper:]')_API_KEY=$v\"; fi; done; exec osint-mcp-server"
         ]
       },
 {{- end }}
@@ -261,7 +264,7 @@
         "type": "local",
         "command": [
           "/bin/bash", "-c",
-          "test -s \"{{ .chezmoi.homeDir }}/.config/opencode/keys/shodan\" && export SHODAN_API_KEY=\"$(cat \"{{ .chezmoi.homeDir }}/.config/opencode/keys/shodan\")\"; exec bunx -y @burtthecoder/mcp-shodan"
+          "test -s \"{{ .chezmoi.homeDir }}/.config/opencode/keys/shodan\" && export SHODAN_API_KEY=\"$(cat \"{{ .chezmoi.homeDir }}/.config/opencode/keys/shodan\")\"; exec mcp-shodan"
         ]
       },
 {{- end }}
