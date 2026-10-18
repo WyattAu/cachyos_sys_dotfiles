@@ -217,6 +217,17 @@
     mcp_doctor_installed_key: "{{ mcp_doctor_installed_file.content | b64decode | trim }}"
   when: mcp_doctor_installed_file.content is defined
 
+- name: Ensure mcp-doctor directory exists
+  file:
+    path: "/home/{{ user }}/.local/share/mcp-doctor"
+    state: directory
+    mode: "0755"
+  when: mcp_doctor_asset_name is defined
+  become: true
+  become_user: "{{ user }}"
+  environment:
+    HOME: "/home/{{ user }}"
+
 - name: Install mcp-doctor binary (skipped when already current)
   unarchive:
     src: "{{ mcp_doctor_asset.stdout | trim }}"

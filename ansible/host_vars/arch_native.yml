@@ -97,6 +97,8 @@ native_gaming_packages:
   - wine
   - winetricks
   - retroarch               # Unified emulation frontend
+  - steam-rom-manager-git   # chaotic-aur prebuilt; conflicts with the AUR
+                            # appimage — chaotic > AUR per layering doctrine
 
 # --- NATIVE AUR: CORE (server-safe) ---
 native_aur_pkgs:
@@ -132,7 +134,9 @@ native_desktop_aur_pkgs:
 # --- NATIVE AUR: GAMING (skipped on headless hosts) ---
 native_gaming_aur_pkgs:
   - protonup-qt
-  - steam-rom-manager-appimage  # Manage ROMs for Steam
+  # steam-rom-manager moved to native_gaming_packages (chaotic-aur prebuilt):
+  # the AUR appimage conflicts with the installed chaotic -git package
+  # (both provide `steam-rom-manager`), and chaotic > AUR per doctrine.
   - theclicker              # Auto clicker (Wayland + X11, uinput/evdev)
   - prismlauncher           # Minecraft launcher
   - jdk25-graalvm-bin       # GraalVM 25 — superior JIT for Minecraft (ZGC)
