@@ -142,6 +142,83 @@
         state: started
       when: not is_wsl
 
+    # ----------------------------------------------------------------
+    # trendkit: dev-trend snapshots + Telegram digest (opt-in)
+    # Runs as root like sys-check: /etc/alertmanager/telegram-token is
+    # root-only by fleet convention. Opt in per host with
+    # trendkit_enabled: true (requires the release binary to exist).
+    # ----------------------------------------------------------------
+    - name: Check trendkit release binary
+      stat:
+        path: "/home/{{ user }}/dev/src/github.com/WyattAu/trendkit/target/release/trendkit"
+      register: trendkit_bin
+      when: trendkit_enabled | default(false)
+
+    - name: Create trendkit secrets dir
+      file:
+        path: /etc/trendkit
+        state: directory
+        owner: root
+        mode: "0700"
+      when:
+        - trendkit_enabled | default(false)
+        - trendkit_bin.stat.exists | default(false)
+
+    - name: Install trendkit collect service
+      copy:
+        dest: /etc/systemd/system/trendkit-collect.service
+        content: |
+          [Unit]
+          Description=trendkit dev-trend snapshot collection + Telegram digest
+          After=network-online.target
+          Wants=network-online.target
+          [Service]
+          Type=oneshot
+          WorkingDirectory=/home/{{ user }}/dev/src/github.com/WyattAu/trendkit
+          # Optional: only upgrades GitHub Search from 10 to 30 req/min.
+          EnvironmentFile=-/etc/trendkit/trendkit.env
+          ExecStart=/home/{{ user }}/dev/src/github.com/WyattAu/trendkit/target/release/trendkit collect --source all
+          # Best-effort: digest fails soft when chat/token config is absent.
+          ExecStartPost=-/home/{{ user }}/dev/src/github.com/WyattAu/trendkit/target/release/trendkit report --personal --top 15 --markdown --telegram
+          SyslogIdentifier=trendkit
+      when:
+        - trendkit_enabled | default(false)
+        - trendkit_bin.stat.exists | default(false)
+
+    - name: Install trendkit collect timer
+      copy:
+        dest: /etc/systemd/system/trendkit-collect.timer
+        content: |
+          [Unit]
+          Description=trendkit daily trend collection
+          [Timer]
+          OnCalendar=*-*-* 08:00:00
+          RandomizedDelaySec=15m
+          Persistent=true
+          [Install]
+          WantedBy=timers.target
+      when:
+        - trendkit_enabled | default(false)
+        - trendkit_bin.stat.exists | default(false)
+
+    - name: Enable trendkit collect timer
+      systemd:
+        name: trendkit-collect.timer
+        enabled: yes
+        state: started
+      when:
+        - trendkit_enabled | default(false)
+        - trendkit_bin.stat.exists | default(false)
+
+    - name: Warn when trendkit enabled but binary missing
+      debug:
+        msg: >-
+          trendkit_enabled=true but the release binary is missing — run
+          `cargo build --release` in ~/dev/src/github.com/WyattAu/trendkit
+      when:
+        - trendkit_enabled | default(false)
+        - not (trendkit_bin.stat.exists | default(false))
+
     # ================================================================
     # 4-17. ROLES
     # ================================================================

@@ -34,6 +34,30 @@ if [[ "$IS_HEADLESS" == false ]]; then
     check_service cups
 fi
 
+# trendkit daily collection — only checked once the unit is provisioned
+# (installed by ansible when trendkit_enabled: true and the binary exists)
+if [[ -f /etc/systemd/system/trendkit-collect.timer ]]; then
+    echo "trendkit:"
+    if systemctl is-enabled --quiet trendkit-collect.timer 2>/dev/null; then
+        echo "  ✓ trendkit-collect.timer enabled"
+    else
+        echo "  ✗ trendkit-collect.timer installed but not enabled"
+        ERRORS=$((ERRORS + 1))
+    fi
+    if systemctl is-active --quiet trendkit-collect.timer 2>/dev/null; then
+        echo "  ✓ trendkit-collect.timer active"
+    else
+        echo "  ✗ trendkit-collect.timer not active"
+        ERRORS=$((ERRORS + 1))
+    fi
+    if [[ -x /home/wyatt/dev/src/github.com/WyattAu/trendkit/target/release/trendkit ]]; then
+        echo "  ✓ trendkit binary"
+    else
+        echo "  ✗ trendkit binary missing (cargo build --release in ~/dev/src/github.com/WyattAu/trendkit)"
+        ERRORS=$((ERRORS + 1))
+    fi
+fi
+
 if [[ "$IS_MSI" == true ]]; then
     echo "Kernel:"
     if grep -q "mitigations=off" /proc/cmdline 2>/dev/null; then

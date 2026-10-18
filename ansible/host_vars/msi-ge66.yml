@@ -33,6 +33,10 @@ host_services:
   - msi-audio.service
   - libvirtd
 
+# --- trendkit daily collection (opt-in; requires the release binary,
+#     built in ~/dev/src/github.com/WyattAu/trendkit) ---
+trendkit_enabled: true
+
 masked_services:
   - packagekit.service
 
