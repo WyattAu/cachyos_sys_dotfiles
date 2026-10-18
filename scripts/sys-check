@@ -230,11 +230,10 @@ else
     echo "  ⚠ terraform MCP image check skipped (docker down)"
 fi
 
-# mcp-doctor (ADVISORY — does not gate): deep per-server diagnostics from
-# the WyattAu/mcp-doctor release. Cheap checks only (no --deep: that
-# spawns every server). A failure here is information about WHICH server
-# degraded, on top of the binary-presence checks above. Advisory for one
-# loop, then graduate to gating (estate rule 3).
+# mcp-doctor (GATING as of loop 4 — graduated from advisory): per-server
+# diagnostics naming WHICH server degraded. Cheap checks only (no --deep:
+# that spawns every server). Failures gate; warnings stay informational.
+# Provenance: v0.1.0 ran green across loop 4's advisory period.
 if command -v mcp-doctor >/dev/null 2>&1; then
     DOC_OUT=$(mcp-doctor --format json 2>/dev/null || true)
     DOC_FAIL=$(printf '%s' "$DOC_OUT" | python3 -c "
@@ -247,12 +246,15 @@ except Exception:
     if [[ "$DOC_FAIL" == 0 ]]; then
         echo "  ✓ mcp-doctor: no MCP failures"
     elif [[ "$DOC_FAIL" == unreadable ]]; then
-        echo "  ⚠ mcp-doctor output unreadable (advisory)"
+        echo "  ✗ mcp-doctor output unreadable"
+        ERRORS=$((ERRORS + 1))
     else
-        echo "  ⚠ mcp-doctor reports $DOC_FAIL MCP failure(s) — run: mcp-doctor (advisory)"
+        echo "  ✗ mcp-doctor reports $DOC_FAIL MCP failure(s) — run: mcp-doctor"
+        ERRORS=$((ERRORS + 1))
     fi
 else
-    echo "  ⚠ mcp-doctor not installed (WyattAu/mcp-doctor release) — advisory"
+    echo "  ✗ mcp-doctor not installed (WyattAu/mcp-doctor release)"
+    ERRORS=$((ERRORS + 1))
 fi
 
 if [[ $ERRORS -eq 0 ]]; then

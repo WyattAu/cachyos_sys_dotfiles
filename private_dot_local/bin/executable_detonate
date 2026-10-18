@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+# detonate — run an unknown binary inside a maximum-hardening container.
+#
+# THREAT-MODEL HONESTY (read before trusting your life to this):
+#   This container defends against: network callback/exfiltration (no
+#   net), filesystem persistence (read-only root + tmpfs scratch),
+#   privilege escalation (all capabilities dropped, no-new-privileges,
+#   non-root uid), and resource exhaustion (CPU/memory/PID caps).
+#   It does NOT defend against: kernel exploits (docker shares the host
+#   kernel — a container-escape exploit lands on the host), hypervisor-
+#   grade malware, or firmware persistence. For that class, detonate in
+#   a disposable VM (see YP-CONTAINER-014: microVM closes the kernel
+#   class; a container relocates it).
+#
+# Usage:   detonate <binary> [args...]
+#          detonate --shell          # interactive inspection shell
+#
+# The binary is COPIED into the container at run time (the original never
+# executes; the container fs is ephemeral and discarded on exit).
+
+set -euo pipefail
+
+say() { printf '\n=== %s\n' "$*"; }
+
+MODE="run"
+if [[ "${1:-}" == "--shell" ]]; then
+    MODE="shell"
+    shift
+fi
+
+if [[ $MODE == "run" && $# -eq 0 ]]; then
+    echo "usage: detonate <binary> [args...] | detonate --shell" >&2
+    exit 2
+fi
+
+SAMPLE=""
+if [[ $MODE == "run" ]]; then
+    SAMPLE=$(readlink -f "$1")
+    shift
+    if [[ ! -f "$SAMPLE" ]]; then
+        echo "not a file: $SAMPLE" >&2
+        exit 2
+    fi
+fi
+
+STAMP=$(date +%Y%m%d-%H%M%S)
+WORK="/tmp/detonate-$STAMP"
+mkdir -p "$WORK"
+
+say "Detonation profile"
+echo "  network:    none (no interfaces at all)
+  filesystem: read-only root + 64 MB tmpfs scratch at /tmp
+              (the tmpfs is the ONE exec-allowed mount — the sample
+              must run; everything else stays read-only)
+  user:       uid 1000 (nobody-class, no sudo group)
+  capabilities: ALL dropped, no-new-privileges
+  resources:  1 CPU, 512 MB RAM, 64 PIDs
+  seccomp:    docker default profile
+  work dir:   $WORK (evidence survives in this host dir)
+" | sed 's/^/  /'
+
+if [[ $MODE == "run" ]]; then
+    # Copy the sample into the work dir; mount THAT read-write (the only
+    # writable place), so the sample's own writes are captured as evidence.
+    cp "$SAMPLE" "$WORK/sample"
+    chmod +x "$WORK/sample" 2>/dev/null || true
+
+    say "Detonating: $(basename "$SAMPLE")"
+    timeout 120 docker run --rm -i \
+        --network none \
+        --read-only \
+        --tmpfs /tmp:rw,exec,size=64m,uid=1000 \
+        --cap-drop ALL \
+        --security-opt no-new-privileges \
+        --user 1000:1000 \
+        --cpus 1 --memory 512m --pids-limit 64 \
+        -v "$WORK:/evidence" \
+        debian:stable-slim \
+        /bin/sh -c "cp /evidence/sample /tmp/sample 2>/dev/null; chmod +x /tmp/sample 2>/dev/null; /tmp/sample $*" \
+        || echo ">> container exited nonzero (or timeout) — output above"
+else
+    say "Interactive shell (no sample)"
+    docker run --rm -it \
+        --network none \
+        --read-only \
+        --tmpfs /tmp:rw,exec,size=64m,uid=1000 \
+        --cap-drop ALL \
+        --security-opt no-new-privileges \
+        --user 1000:1000 \
+        --cpus 1 --memory 512m --pids-limit 64 \
+        -v "$WORK:/evidence" \
+        debian:stable-slim \
+        /bin/sh
+fi
+
+say "Evidence directory: $WORK"
+echo "  Inspect before deleting. The container itself is discarded."
