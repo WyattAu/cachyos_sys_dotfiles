@@ -179,7 +179,7 @@
           EnvironmentFile=-/etc/trendkit/trendkit.env
           ExecStart=/home/{{ user }}/dev/src/github.com/WyattAu/trendkit/target/release/trendkit collect --source all
           # Best-effort: digest fails soft when chat/token config is absent.
-          ExecStartPost=-/home/{{ user }}/dev/src/github.com/WyattAu/trendkit/target/release/trendkit report --personal --top 15 --markdown --integrity --topics 8 --telegram
+          ExecStartPost=-/home/{{ user }}/dev/src/github.com/WyattAu/trendkit/target/release/trendkit report --personal --top 15 --markdown --integrity --topics 8 --persistent 2 --shapes 2 --telegram
           SyslogIdentifier=trendkit
       when:
         - trendkit_enabled | default(false)
