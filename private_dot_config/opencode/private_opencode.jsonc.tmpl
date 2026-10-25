@@ -19,7 +19,7 @@
     // (bun add -g) after the flapping /home fs corrupted bunx's cache and
     // broke module resolution fleet-wide.
     "timeout": {
-      "startup": 90000
+      "startup": 180000
     },
     "servers": {
 {{- $mcp := .opencode.mcp }}
@@ -143,7 +143,8 @@
         "command": [
           "/bin/bash", "-c",
           "cd \"{{ .chezmoi.homeDir }}/dev/sandbox\" && exec reversecore-mcp"
-        ]
+        ],
+        "timeout": { "startup": 120000 }
       },
 {{- end }}
 {{- if $mcp.time }}
@@ -253,9 +254,13 @@
       // Remote OAuth: /mcps -> virustotal -> authenticate (VTAI account).
       // Files, URLs, domains, IPs, submissions — malware triage before
       // opening anything.
+      // DISABLED until /mcps -> virustotal -> authenticate is completed.
+      // Without auth it retries 666+ times per session, spamming the log
+      // and making real errors harder to find. Enable after authenticating.
       "virustotal": {
         "type": "remote",
-        "url": "https://ai.virustotal.com/mcp"
+        "url": "https://ai.virustotal.com/mcp",
+        "disabled": true
       },
 {{- end }}
 {{- if $mcp.shodan }}
@@ -289,7 +294,8 @@
       // Image pre-pulled by the ansible 'opencode' role.
       "terraform": {
         "type": "local",
-        "command": ["docker", "run", "-i", "--rm", "hashicorp/terraform-mcp-server:1.3.0"]
+        "command": ["docker", "run", "-i", "--rm", "hashicorp/terraform-mcp-server:1.3.0"],
+        "timeout": { "startup": 120000 }
       },
 {{- end }}
 {{- if $mcp.playwright }}
