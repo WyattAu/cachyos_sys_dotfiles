@@ -56,6 +56,29 @@ if [[ -f /etc/systemd/system/trendkit-collect.timer ]]; then
         echo "  ✗ trendkit binary missing (cargo build --release in ~/dev/src/github.com/WyattAu/trendkit)"
         ERRORS=$((ERRORS + 1))
     fi
+    # Digest delivery — the report step is fail-soft (ExecStartPost with
+    # "-"), so a broken digest never shows in the unit status. The
+    # binary records every attempt in digest_runs; alert when the newest
+    # attempt is missing, stale, or failed. Checked only once the table
+    # exists (0.4.1+ binary has run at least once).
+    DIGEST_DB=/home/wyatt/dev/src/github.com/WyattAu/trendkit/trendkit.db
+    if sqlite3 "$DIGEST_DB" "SELECT 1 FROM sqlite_master WHERE name='digest_runs'" 2>/dev/null | grep -q 1; then
+        read -r DIGEST_TS DIGEST_OK DIGEST_DETAIL \
+            < <(sqlite3 -separator ' ' "$DIGEST_DB" "SELECT ts, ok, COALESCE(NULLIF(detail,''),'delivered') FROM digest_runs ORDER BY run_id DESC LIMIT 1;" 2>/dev/null)
+        NOW_SECS=$(date +%s)
+        if [[ -z "$DIGEST_TS" ]]; then
+            echo "  ✗ trendkit digest: no attempts recorded yet"
+            ERRORS=$((ERRORS + 1))
+        elif (( NOW_SECS - DIGEST_TS > 172800 )); then
+            echo "  ✗ trendkit digest stale (last attempt $(( (NOW_SECS - DIGEST_TS) / 3600 ))h ago)"
+            ERRORS=$((ERRORS + 1))
+        elif [[ "$DIGEST_OK" != 1 ]]; then
+            echo "  ✗ trendkit digest failed: $DIGEST_DETAIL"
+            ERRORS=$((ERRORS + 1))
+        else
+            echo "  ✓ trendkit digest ($(( (NOW_SECS - DIGEST_TS) / 3600 ))h ago)"
+        fi
+    fi
 fi
 
 if [[ "$IS_MSI" == true ]]; then
