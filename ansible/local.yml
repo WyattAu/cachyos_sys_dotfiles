@@ -219,6 +219,69 @@
         - trendkit_enabled | default(false)
         - not (trendkit_bin.stat.exists | default(false))
 
+    # ----------------------------------------------------------------
+    # bizkit daily M&A watch — separate business scraper (EDGAR).
+    # Business signals live in bizkit.db under its own pipeline, NOT
+    # in trendkit. Opt in per host with bizkit_enabled: true (requires
+    # the release binary). Staggered 30 minutes after trendkit.
+    # ----------------------------------------------------------------
+    - name: Check bizkit release binary
+      stat:
+        path: "/home/{{ user }}/dev/src/github.com/WyattAu/bizkit/target/release/bizkit"
+      register: bizkit_bin
+      when: bizkit_enabled | default(false)
+
+    - name: Install bizkit watch service
+      copy:
+        dest: /etc/systemd/system/bizkit-collect.service
+        content: |
+          [Unit]
+          Description=bizkit EDGAR M&A watch (business trends, separate from trendkit)
+          After=network-online.target
+          Wants=network-online.target
+          [Service]
+          Type=oneshot
+          WorkingDirectory=/home/{{ user }}/dev/src/github.com/WyattAu/bizkit
+          ExecStart=/home/{{ user }}/dev/src/github.com/WyattAu/bizkit/target/release/bizkit watch --window 14 --limit 100
+          SyslogIdentifier=bizkit
+      when:
+        - bizkit_enabled | default(false)
+        - bizkit_bin.stat.exists | default(false)
+
+    - name: Install bizkit watch timer
+      copy:
+        dest: /etc/systemd/system/bizkit-collect.timer
+        content: |
+          [Unit]
+          Description=bizkit daily EDGAR M&A watch
+          [Timer]
+          OnCalendar=*-*-* 08:30:00
+          RandomizedDelaySec=10m
+          Persistent=true
+          [Install]
+          WantedBy=timers.target
+      when:
+        - bizkit_enabled | default(false)
+        - bizkit_bin.stat.exists | default(false)
+
+    - name: Enable bizkit watch timer
+      systemd:
+        name: bizkit-collect.timer
+        enabled: yes
+        state: started
+      when:
+        - bizkit_enabled | default(false)
+        - bizkit_bin.stat.exists | default(false)
+
+    - name: Warn when bizkit enabled but binary missing
+      debug:
+        msg: >-
+          bizkit_enabled=true but the release binary is missing — run
+          `cargo build --release` in ~/dev/src/github.com/WyattAu/bizkit
+      when:
+        - bizkit_enabled | default(false)
+        - not (bizkit_bin.stat.exists | default(false))
+
     # ================================================================
     # 4-17. ROLES
     # ================================================================
