@@ -325,6 +325,31 @@
     }
   },
 
+  // Cheap model for titles, summaries, and non-critical generation.
+  "small_model": "anthropic/claude-haiku-4-5",
+
+  // Additional instructions loaded into every session (after AGENTS.md).
+  "instructions": [
+    "~/.config/opencode/instructions/fleet-rules.md"
+  ],
+
+  // Subagents: personas with restricted tool access. A subagent CANNOT
+  // use a tool that is disabled here — that is a stronger guarantee than
+  // a system prompt asking it not to.
+  "agent": {
+    "auditor": {
+      "mode": "subagent",
+      "system": "You are a security auditor. Review code, infrastructure, and binaries for security issues. Report findings only — do not modify files. Every finding must include: the evidence (file path, line number, tool output), the severity (CRITICAL/HIGH/MEDIUM/LOW), and the specific fix. Do not report a finding unless you can point to the exact evidence. Do not use write, edit, or bash tools.",
+      "tools": {
+        "write": false,
+        "edit": false,
+        "bash": false,
+        "webfetch": false,
+        "globals": false
+      }
+    }
+  },
+
   // Ordered rules; last match wins. Complements the TUI's autoaccept setting.
   "permissions": [
     { "action": "shell", "resource": "sudo *", "effect": "deny" },
