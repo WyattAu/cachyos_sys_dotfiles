@@ -206,9 +206,11 @@ if [[ -f "$HOME/.config/opencode/opencode.json" ]]; then
 fi
 # Cross-agent skills parity: ~/.agents/skills is fleet-managed from
 # dot_agents/skills. Drift here means an on-machine edit never went back
-# through sys-save / the source repo.
+# through sys-save / the source repo. Tool-owned skills (installed by
+# tools that upgrade themselves, e.g. agent-reach) are excluded: their
+# lifecycle belongs to the tool, not the fleet source.
 if [[ -d "$HOME/.agents/skills" && -d "$HOME/.local/share/chezmoi/dot_agents/skills" ]]; then
-    if diff -rq "$HOME/.agents/skills" "$HOME/.local/share/chezmoi/dot_agents/skills" >/dev/null 2>&1; then
+    if diff -rq -x "agent-reach" "$HOME/.agents/skills" "$HOME/.local/share/chezmoi/dot_agents/skills" >/dev/null 2>&1; then
         echo "  ✓ ~/.agents/skills matches fleet source"
     else
         echo "  ✗ ~/.agents/skills drifted from dot_agents/skills (commit via sys-save or chezmoi apply)"
