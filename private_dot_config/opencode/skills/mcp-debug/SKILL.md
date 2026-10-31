@@ -1,6 +1,6 @@
 ---
 name: mcp-debug
-description: Debug MCP server connection failures and tool errors — root-cause from OpenCode logs, not guesses
+description: Debug MCP server connection failures and tool errors; root-cause from OpenCode logs, not guesses
 compatibility: opencode
 metadata:
   audience: agents
@@ -67,7 +67,7 @@ real root cause.
 
 ## What NOT to do
 
-- Never restart OpenCode to "clear" an MCP error — the error will
+- Never restart OpenCode to "clear" an MCP error; the error will
   reproduce because the cause is in the config or environment.
 - Never add a `timeout` increase without first confirming the root
   cause is actually a timeout, not a silent exit.

@@ -1,5 +1,5 @@
 ---
-name: RE Toolchain
+name: re-toolchain
 description: >
   Use when analyzing, disassembling, or decompiling binaries (ELF, PE,
   Mach-O, firmware, malware, crackmes, CTF reversing). Covers the
@@ -26,7 +26,7 @@ Tool names are prefixed `radare2_` and `ghidra_` (under Code Mode:
 1. **Never execute an untrusted binary.** Use static tools or ESIL
    emulation. If dynamic analysis is unavoidable, ask the user first and
    run inside a disposable container (`docker run --rm -it --network none
-   -v "$PWD":/work`) — never on the host.
+   -v "$PWD":/work`); never on the host.
 2. **Ghidra is not always running.** If `ghidra_*` tools fail with a
    connection error, the Ghidra GUI is closed or has no program open.
    Tell the user to run `ghidraRun`, open the binary in CodeBrowser, and
@@ -38,7 +38,7 @@ Tool names are prefixed `radare2_` and `ghidra_` (under Code Mode:
 ## Workflow
 
 1. **Identify**: `file`/`r2 -qc "iI" <bin>` basics, then r2mcp's binary
-   info tool — format, arch, bits, compiler, protections (PIE/RELRO/NX).
+   info tool; format, arch, bits, compiler, protections (PIE/RELRO/NX).
 2. **Triage (r2)**: strings → imports/exports → entry points → function
    list after auto-analysis. Look for crypto constants, network APIs,
    suspicious import clusters (`exec`, `ptrace`, `mmap` + `chmod +x`).
@@ -58,10 +58,10 @@ Tool names are prefixed `radare2_` and `ghidra_` (under Code Mode:
 - Backends live on PATH: `radare2`, `rizin` (pacman), `r2mcp` via
   `r2pm -r r2mcp`, `ghidra-mcp` (uv tool, v2 CLI from the GhidraMCP
   release wheel).
-- The fleet r2mcp config is sandboxed to `~/dev` (`-s`, single dir —
+- The fleet r2mcp config is sandboxed to `~/dev` (`-s`, single dir -
   repeated `-s` flags replace rather than add, and colon lists break
   opening entirely). If a caller points at a binary elsewhere, say so
-  and ask them to copy it into `~/dev/sandbox` — do not suggest
+  and ask them to copy it into `~/dev/sandbox`; do not suggest
   removing the sandbox. The dangerous `run_*` tools are disabled and
   sandbox mode blocks the exec/socket grains; treat both as permanent.
 - The Ghidra extension sits in

@@ -1,5 +1,5 @@
 ---
-name: Fleet Admin
+name: fleet-admin
 description: >
   Use when managing this machine fleet or the dotfiles repo: sys-sync /
   sys-check / sys-save workflows, Ansible host_vars layering, chezmoi
@@ -20,20 +20,20 @@ chezmoi (user-space configs) + Ansible (system provisioning).
 | `msi-ge66` | MSI GE66 Raider laptop | common → arch_native → cachyos → host |
 | `wsl-dev` | WSL2 (Arch) | common → host |
 
-`cachyos-x8664` may appear as a generic CachyOS name — treat like a
+`cachyos-x8664` may appear as a generic CachyOS name; treat like a
 native host. WSL excludes KDE/desktop roles via `.chezmoiignore.tmpl`.
 
 ## Workflows
 
-- `sys-sync` — canonical full sync: snapper snapshot → `chezmoi update`
+- `sys-sync`; canonical full sync: snapper snapshot → `chezmoi update`
   → `ansible-playbook local.yml` (become) → `chezmoi apply --force` →
   KDE reload → smoke tests. `--dry-run` = `--check` + `chezmoi diff`.
-- `sys-check` — hourly systemd timer + post-sync. Exit code = number of
+- `sys-check`; hourly systemd timer + post-sync. Exit code = number of
   failed checks; Telegram alert on failure (token in
   `/etc/alertmanager/telegram-token`, never in the repo).
-- `sys-save` — capture dotfile changes, commit, push.
+- `sys-save`; capture dotfile changes, commit, push.
 - Quirk: scripts run **directly from the chezmoi source dir**
-  (`~/.local/share/chezmoi/scripts/`) — `scripts/` files are not
+  (`~/.local/share/chezmoi/scripts/`); `scripts/` files are not
   templated, so never put `{{ }}` in them.
 
 ## Ansible
@@ -54,9 +54,9 @@ native host. WSL excludes KDE/desktop roles via `.chezmoiignore.tmpl`.
 
 | Thing | Where |
 |-------|-------|
-| TrueNAS | `192.168.1.3` — central monitoring + infra stacks (`truenas/`) |
-| Headscale | `https://headscale.wyattau.com` — authkey at `/etc/tailscale/headscale-authkey` or Vault `secret/vpn/tailscale`; enrollment timer retries until a key appears |
-| Forgejo (git) | `ssh.wyattau.com` — origin for this repo |
+| TrueNAS | `192.168.1.3`; central monitoring + infra stacks (`truenas/`) |
+| Headscale | `https://headscale.wyattau.com`; authkey at `/etc/tailscale/headscale-authkey` or Vault `secret/vpn/tailscale`; enrollment timer retries until a key appears |
+| Forgejo (git) | `ssh.wyattau.com`; origin for this repo |
 | OCIS (ownCloud) | `https://ocis.wyattau.com`, sync root `~/ownCloud` |
 | Vault | auto-unseal timer; scripts `vault-init.sh` (once), `vault-store.sh`, `vault-unseal.sh`, `vault-backup.sh` |
 | Backups | snapper (pre-sys-sync + timeline) + `/mnt/truebackup` mount + pika-backup |
@@ -66,7 +66,7 @@ native host. WSL excludes KDE/desktop roles via `.chezmoiignore.tmpl`.
 
 1. Never commit secrets. Tokens/keys live in Vault or root-owned files
    under `/etc` (telegram token, headscale authkey). If a change needs
-   a secret, wire it through Vault or a 0600 file — never into YAML.
+   a secret, wire it through Vault or a 0600 file; never into YAML.
 2. Package changes go in `host_vars` lists with a comment; AUR only
    when nothing official exists (`extra` > chaotic > AUR).
 3. ProtonVPN killswitch stays on; don't weaken firewalld beyond the

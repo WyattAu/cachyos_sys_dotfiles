@@ -11,7 +11,7 @@ metadata:
 
 Run gitleaks (secret detection) and trivy (CVE scanning) against repos
 and Docker images, then triage the findings. These are native binaries
-installed fleet-wide via pacman — no MCP server needed, just shell.
+installed fleet-wide via pacman; no MCP server needed, just shell.
 
 ## Workflow
 
@@ -22,10 +22,10 @@ gitleaks detect --source <repo> --report-format json --report-path /tmp/leaks.js
 ```
 
 Triage each finding:
-- **Real secret** — rotate immediately (the leak is already in git
+- **Real secret**; rotate immediately (the leak is already in git
   history; deleting the file does not help)
-- **False positive** — add to `.gitleaksignore` with the commit SHA
-- **Test fixture / placeholder** — safe to ignore; add
+- **False positive**; add to `.gitleaksignore` with the commit SHA
+- **Test fixture / placeholder**; safe to ignore; add
   `gitleaks:allow` inline comment
 
 ### Container scanning (trivy)
@@ -36,17 +36,17 @@ trivy fs --severity HIGH,CRITICAL <path>
 ```
 
 Triage:
-- **Fix available** — bump the base image or dependency
-- **No fix available** — assess exposure: is the vulnerable code path
+- **Fix available**; bump the base image or dependency
+- **No fix available**; assess exposure: is the vulnerable code path
   reachable? Document the risk acceptance
-- **Base image CVE** — check if a newer tag exists; if not, note it
+- **Base image CVE**; check if a newer tag exists; if not, note it
 
 ## Decision rules
 
 - A secret in git history requires rotation, not deletion. Deleting the
   file from HEAD does not remove it from previous commits.
 - gitleaks findings in test fixtures or documentation examples are
-  false positives — allowlist them, do not rotate.
+  false positives; allowlist them, do not rotate.
 - trivy findings in a stdio-only container (no published ports) with
   network CVEs have no reachable attack surface. Document the exposure
   analysis.

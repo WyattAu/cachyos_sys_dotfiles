@@ -1,6 +1,6 @@
 ---
 name: db-migration
-description: Database migration safety — pre-flight checks, rollback planning, data-loss detection
+description: Database migration safety; pre-flight checks, rollback planning, data-loss detection
 compatibility: opencode
 metadata:
   audience: agents
@@ -16,17 +16,17 @@ it actually does to the schema.
 
 ## Workflow
 
-1. **Read the migration** — understand what DDL/DML it executes
-2. **Data loss check** — does it DROP a table, COLUMN, or CONSTRAINT?
+1. **Read the migration**; understand what DDL/DML it executes
+2. **Data loss check**; does it DROP a table, COLUMN, or CONSTRAINT?
    Does it TRUNCATE? Does it change a column type (implicit cast may
    lose data)?
-3. **Locking check** — does it take an exclusive lock? (ALTER TABLE ADD
+3. **Locking check**; does it take an exclusive lock? (ALTER TABLE ADD
    COLUMN without a default in Postgres < 11 = full table scan + lock)
-4. **Rollback plan** — is there a down migration? Has it been tested?
+4. **Rollback plan**; is there a down migration? Has it been tested?
    Can it be run without data loss?
-5. **Order of operations** — deploy code FIRST, then migration, then
+5. **Order of operations**; deploy code FIRST, then migration, then
    new code? Or migration + code atomically? The wrong order = downtime
-6. **Dependencies** — does anything else (views, triggers, app code)
+6. **Dependencies**; does anything else (views, triggers, app code)
    depend on the schema being changed?
 
 ## Red flags
@@ -47,9 +47,9 @@ recommendation with the specific risk for each flagged item.
 
 ## What NOT to do
 
-- Never approve a migration you haven't read line by line — comment
+- Never approve a migration you haven't read line by line; comment
   lines can hide destructive DDL.
 - Never approve a migration for production without testing it on a
   staging environment with production-like data volume.
-- Never assume the ORM's migration generator produces safe DDL —
+- Never assume the ORM's migration generator produces safe DDL -
   it optimizes for the framework, not for zero-downtime deploys.

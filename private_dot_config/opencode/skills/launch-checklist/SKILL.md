@@ -1,6 +1,6 @@
 ---
 name: launch-checklist
-description: Product launch readiness — technical, marketing, and operational gates before shipping
+description: Product launch readiness; technical, marketing, and operational gates before shipping
 compatibility: opencode
 metadata:
   audience: agents
@@ -12,7 +12,7 @@ metadata:
 
 Run the pre-launch checklist across three layers: technical readiness,
 marketing collateral, and operational stability. Each gate must pass
-before the next is checked — a product that works but has no docs is
+before the next is checked; a product that works but has no docs is
 not ready, and neither is a product with great docs that crashes.
 
 ## Gates (in order)
@@ -22,7 +22,7 @@ not ready, and neither is a product with great docs that crashes.
 - [ ] No known HIGH/CRITICAL CVEs (trivy scan)
 - [ ] CHANGELOG updated
 - [ ] Version bumped (semver; check for breaking changes)
-- [ ] Secrets scanned (gitleaks — no keys in the repo)
+- [ ] Secrets scanned (gitleaks; no keys in the repo)
 - [ ] README reflects the current feature set
 
 ### Gate 2: Documentation
@@ -38,7 +38,7 @@ not ready, and neither is a product with great docs that crashes.
 - [ ] Rollback: can you revert to the previous version safely?
 
 ### Gate 4: Marketing
-- [ ] Launch announcement drafted (HN, Reddit, Twitter — different tones)
+- [ ] Launch announcement drafted (HN, Reddit, Twitter; different tones)
 - [ ] Demo GIF or screenshot that shows the value in <10 seconds
 - [ ] Comparison with the nearest alternative (honest, not defensive)
 - [ ] License confirmed (MIT / Apache-2.0 / etc)
@@ -47,5 +47,5 @@ not ready, and neither is a product with great docs that crashes.
 
 - Never launch on a Friday (no one is around to handle issues).
 - Never launch without testing the INSTALL command on a clean machine.
-- Never launch with a known security issue "because it's minor" —
+- Never launch with a known security issue "because it's minor" -
   it will be the first thing someone finds.
