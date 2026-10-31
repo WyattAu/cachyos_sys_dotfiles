@@ -16,11 +16,22 @@ that cost real debugging time — follow them.
    from the source dir (`~/.local/share/chezmoi/scripts/`) and symlinked
    into `~/.local/bin`. `{{ }}` in them is literal text (this silently
    broke the Telegram alert once). No chezmoi data is available there.
-3. **`~/.config/opencode/opencode.jsonc` must parse as JSONC.** A
-   `run_onchange` verifier parses it on every `chezmoi apply`, and CI
-   renders + parses it hermetically (root `flake.nix` →
-   `nix build .#checks.x86_64-linux.opencode-config -L`). Run that nix
-   check locally before pushing config changes.
+3. **`~/.config/opencode/opencode.jsonc` must parse as JSONC, and it is the
+   ONLY global opencode config.** A `run_onchange` verifier parses it on
+   every `chezmoi apply`, and CI renders + parses it hermetically (root
+   `flake.nix` → `nix build .#checks.x86_64-linux.opencode-config -L`).
+   Run that nix check locally before pushing config changes. The file is
+   native OpenCode V2 shape (`mcp.servers`, `disabled`, per-server
+   `timeout {catalog, execution}`, `providers`/`settings`,
+   `agents`/`permissions`). A stray hand-rolled `opencode.json` beside it
+   is fleet-forbidden (`.json` vs `.jsonc` merge precedence is
+   undocumented); `sys-check` flags it. V1-only shapes stay supported by
+   upstream but must not be reintroduced here (known: flat `mcp` maps,
+   `enabled`, `startup` timeouts, agent `mode`/`tools`, compaction
+   `prune`). Cross-agent skills live in `dot_agents/skills` →
+   `~/.agents/skills`; per-machine binaries that a server needs are gated
+   OFF in that host's `~/.config/chezmoi/chezmoi.toml`
+   `[data.opencode.mcp]`, never by editing the template.
 4. **Test flags against the real binary, not the docs.** Examples of
    docs-vs-reality gaps already hit: r2mcp `-s` takes ONE dir (colon
    lists and repeated flags break opening); GhidraMCP v2 ships a nested

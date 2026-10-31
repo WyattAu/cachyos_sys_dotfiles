@@ -58,9 +58,14 @@ kde_font_size = 10
 [opencode.mcp]
 context7 = true
 github = true
+github_remote = false              # copilot-remote + PAT key file; host fallback for machines without github-mcp-server
+langrouter = true                  # free-tier default provider + small_model (set false to fall back to haiku)
 fetch = true
 sequential_thinking = true
 git = true
+duckduckgo = true                  # uvx, zero-config web search
+gh_grep = true                     # grep.app remote literal-code search
+aileron = true                     # estate software; needs ~/dev/src/github.com/WyattAu/aileron checkout
 dbhub = false                     # DBs are project-specific — enable per project (SQLite/PG/MySQL/Oracle…)
 redis = false                     # official Redis MCP (53 tools) — enable per project; --url at your Redis
 playwright = true

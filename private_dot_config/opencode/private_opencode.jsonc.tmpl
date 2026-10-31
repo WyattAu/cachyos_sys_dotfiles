@@ -2,32 +2,80 @@
   "$schema": "https://opencode.ai/config.json",
   // Managed by chezmoi — edit the source repo, not this file.
   //
-  // Servers are gated by .chezmoidata/defaults.toml [opencode.mcp] flags;
-  // disable per host in ~/.config/chezmoi/chezmoi.toml under [data.opencode.mcp].
+  // Shape: native OpenCode V2 (mcp.servers, disabled, timeout {catalog,
+  // execution}, providers/settings, agents/permissions). V1-only files must
+  // NOT coexist: ~/.config/opencode/opencode.json is fleet-forbidden
+  // (sys-check flags it) because .json/.jsonc merge precedence is
+  // undocumented and V1 nested shapes normalize differently.
   //
-  // Model/provider auth is deliberately NOT set here: run `opencode auth login`
-  // per machine and pick the default model in the TUI. Add a "model" field here
-  // only if you want one pinned fleet-wide.
+  // Servers are gated by .chezmoidata/defaults.toml [opencode.mcp] flags;
+  // disable per host in ~/.config/chezmoi/chezmoi.toml under
+  // [data.opencode.mcp]. A host may only ENABLE what the ansible 'opencode'
+  // role (or an explicit install) provides; gating OFF is the per-host
+  // answer for machines without the binary.
+  //
+  // Provider/model auth is deliberately NOT set here: run
+  // `opencode auth login` per machine. small_model + the langrouter
+  // provider below are fleet defaults; override per host via
+  // [data.opencode.mcp].langrouter = false.
   //
   // One-time per machine after first apply:
-  //   gh auth login                       (GitHub MCP token source — see below)
+  //   gh auth login                       (local github MCP token source)
   //   Ghidra: File -> Configure -> Developer -> enable GhidraMCPPlugin
 
-  "mcp": {
-    // Cold package downloads on first launch exceed the 30s default startup.
-    // All bunx-based servers were converted to persistent global installs
-    // (bun add -g) after the flapping /home fs corrupted bunx's cache and
-    // broke module resolution fleet-wide.
-    "timeout": {
-      "startup": 180000
-    },
-    "servers": {
+  // V1 field, accepted and normalized without warning in V2.
+  "autoupdate": true,
+
 {{- $mcp := .opencode.mcp }}
+  // Cheap model for titles, summaries, and non-critical generation.
+  // V1 field name, accepted and normalized without warning in V2.
+  "small_model": "{{ if $mcp.langrouter }}langrouter/mimo-v2.5{{ else }}anthropic/claude-haiku-4-5{{ end }}",
+
+  "compaction": {
+    "auto": true,
+    // V1 "reserved" renamed to "buffer" in V2. V1 "prune" has no V2
+    // equivalent (ignored with a warning), so it is dropped, not carried.
+    "buffer": 20000
+  },
+{{- if $mcp.langrouter }}
+  // Free-tier default model for this fleet (LangRouter MiMo). V2 provider
+  // shape: package + settings. No apiKey here; auth via `opencode auth
+  // login` or the provider's own key file handling.
+  "providers": {
+    "langrouter": {
+      "package": "aisdk:@ai-sdk/openai-compatible",
+      "settings": {
+        "baseURL": "https://api.langrouter.ai/v1",
+        "timeout": 600000,
+        "chunkTimeout": 60000
+      },
+      "models": {
+        "mimo-v2.5": { "name": "MiMo-V2.5" },
+        "mimo-v2.5-pro": { "name": "MiMo-V2.5 Pro" }
+      }
+    }
+  },
+{{- end }}
+
+  "mcp": {
+    "servers": {
 {{- if $mcp.context7 }}
       // ---- Docs & research ------------------------------------------
       "context7": {
         "type": "remote",
-        "url": "https://mcp.context7.com/mcp"
+        "url": "https://mcp.context7.com/mcp",
+        "disabled": false,
+        "timeout": { "catalog": 15000 }
+      },
+{{- end }}
+{{- if $mcp.gh_grep }}
+      // ---- Code search -----------------------------------------------
+      // grep.app remote: literal-code search across public GitHub. No auth.
+      "gh_grep": {
+        "type": "remote",
+        "url": "https://mcp.grep.app",
+        "disabled": false,
+        "timeout": { "catalog": 15000 }
       },
 {{- end }}
 {{- if $mcp.github }}
@@ -45,48 +93,109 @@
         "command": [
           "/bin/bash", "-c",
           "export GITHUB_PERSONAL_ACCESS_TOKEN=\"$(gh auth token 2>/dev/null)\"; [ -n \"$GITHUB_PERSONAL_ACCESS_TOKEN\" ] || { echo 'github-mcp: no gh token — run: gh auth login' >&2; exit 1; }; exec github-mcp-server stdio --toolsets repos,issues,pull_requests,actions,code_security"
-        ]
+        ],
+        "disabled": false,
+        "timeout": { "catalog": 15000, "execution": 30000 }
+      },
+{{- end }}
+{{- if and $mcp.github_remote (not $mcp.github) }}
+      // ---- GitHub (remote fallback) -----------------------------------
+      // api.githubcopilot.com with a PAT from the 0600 key file. Renders
+      // ONLY when github = false above: this is the fallback for hosts
+      // without the github-mcp-server binary, and both blocks emit the
+      // same "github" key, so they must never render together. Create the
+      // key file with:
+      //   mkdir -p ~/.config/opencode/secrets
+      //   printf 'ghp_...' > ~/.config/opencode/secrets/github-pat
+      //   chmod 600 ~/.config/opencode/secrets/github-pat
+      // {file:...} is expanded by OpenCode at load; the secret never
+      // enters this repository.
+      "github": {
+        "type": "remote",
+        "url": "https://api.githubcopilot.com/mcp/",
+        "headers": {
+          "Authorization": "Bearer {file:{{ .chezmoi.homeDir }}/.config/opencode/secrets/github-pat}"
+        },
+        "disabled": false,
+        "timeout": { "catalog": 15000 }
       },
 {{- end }}
 {{- if $mcp.fetch }}
       // ---- Web & reasoning -------------------------------------------
       "fetch": {
         "type": "local",
-        "command": ["uvx", "mcp-server-fetch"]
+        "command": ["uvx", "mcp-server-fetch"],
+        "disabled": false,
+        // uvx may download on first catalog; give it room.
+        "timeout": { "catalog": 60000, "execution": 30000 }
       },
 {{- end }}
 {{- if $mcp.sequential_thinking }}
       "sequential-thinking": {
         "type": "local",
-        "command": ["mcp-server-sequential-thinking"]
+        "command": [
+          "/bin/bash", "-c",
+          "P=$(command -v mcp-server-sequential-thinking || true); [ -n \"$P\" ] || P=\"$HOME/.npm-global/bin/mcp-server-sequential-thinking\"; exec \"$P\""
+        ],
+        "disabled": false,
+        "timeout": { "catalog": 60000, "execution": 30000 }
       },
 {{- end }}
 {{- if $mcp.memory }}
-      // Persistent cross-session memory (knowledge graph JSON below).
+      // Persistent cross-session memory (knowledge graph JSON).
+      // Node server: PATH-probe first (bun global installs on some hosts),
+      // then the npm-global absolute path (hosts where systemd spawns
+      // opencode with a minimal PATH).
       "memory": {
         "type": "local",
-        "command": ["mcp-server-memory"],
+        "command": [
+          "/bin/bash", "-c",
+          "P=$(command -v mcp-server-memory || true); [ -n \"$P\" ] || P=\"$HOME/.npm-global/bin/mcp-server-memory\"; exec \"$P\""
+        ],
+        "disabled": false,
+        "timeout": { "catalog": 60000, "execution": 30000 },
         "environment": {
-          "MEMORY_FILE_PATH": "{{ .chezmoi.homeDir }}/.local/share/opencode/memory.json"
+          "MEMORY_FILE_PATH": "{{ .chezmoi.homeDir }}/.local/share/opencode/memory/memory.json"
         }
+      },
+{{- end }}
+{{- if $mcp.duckduckgo }}
+      // ---- Web search --------------------------------------------------
+      "duckduckgo": {
+        "type": "local",
+        "command": ["uvx", "duckduckgo-mcp-server"],
+        "disabled": false,
+        "timeout": { "catalog": 60000, "execution": 30000 }
+      },
+{{- end }}
+{{- if $mcp.aileron }}
+      // ---- Estate software: aileron -----------------------------------
+      // WyattAu/aileron (keyboard-driven web environment, Servo). MCP
+      // bridge ships in the repo; requires the estate checkout at ghq
+      // root ~/dev/src/github.com/WyattAu/aileron.
+      "aileron": {
+        "type": "local",
+        "cwd": "{{ .chezmoi.homeDir }}/dev/src/github.com/WyattAu/aileron",
+        "command": ["{{ .chezmoi.homeDir }}/dev/src/github.com/WyattAu/aileron/scripts/aileron-mcp"],
+        "disabled": false,
+        "timeout": { "catalog": 60000, "execution": 60000 }
       },
 {{- end }}
 {{- if $mcp.git }}
       // ---- Dev workflow ----------------------------------------------
       "git": {
         "type": "local",
-        "command": ["uvx", "mcp-server-git"]
+        "command": ["uvx", "mcp-server-git"],
+        "disabled": false,
+        "timeout": { "catalog": 60000, "execution": 30000 }
       },
 {{- end }}
 {{- if $mcp.dbhub }}
       // Disabled globally: DBs are project-specific. In a project's
       // opencode.jsonc, redefine "dbhub" (same shape) with your DSN —
       // project config replaces this object wholesale.
-      // DBHub (bytebase; the official MCP-registry database example):
-      // SQLite/Postgres/MySQL/MariaDB/SQL Server/Oracle behind TWO tools
-      // (execute_sql, search_objects) at ~1.4k tokens — 13x lighter than
-      // per-database alternatives. Read-only mode + row limits + query
-      // timeouts are built in; flip read-only off per project if needed.
+      // DBHub (bytebase): SQLite/Postgres/MySQL/MariaDB/SQL Server/Oracle
+      // behind TWO tools (execute_sql, search_objects) at ~1.4k tokens.
       "dbhub": {
         "type": "local",
         "command": [
@@ -100,30 +209,27 @@
 {{- if $mcp.filesystem }}
       // ---- Filesystem -------------------------------------------------
       // Sandboxed to ~/dev (same root as the r2mcp sandbox): every
-      // read/write tool refuses paths outside it. Persistent global installs
-      // first launch (the 'opencode' role prewarms it).
-      // NOTE: in code mode (tools.* routed through the execute runtime)
-      // filesystem.* can be a workspace-rooted shim instead of this
-      // server — a "path outside allowed directories" error naming the
-      // project root means the shim, not a broken sandbox root here.
+      // read/write tool refuses paths outside it.
       "filesystem": {
         "type": "local",
         "command": [
-          "mcp-server-filesystem",
-          "{{ .chezmoi.homeDir }}/dev"
-        ]
+          "/bin/bash", "-c",
+          "P=$(command -v mcp-server-filesystem || true); [ -n \"$P\" ] || P=\"$HOME/.npm-global/bin/mcp-server-filesystem\"; exec \"$P\" \"$HOME/dev\""
+        ],
+        "disabled": false,
+        "timeout": { "catalog": 60000, "execution": 30000 }
       },
 {{- end }}
 {{- if $mcp.codebase_memory }}
       // ---- Code knowledge graph --------------------------------------
       // codebase-memory-mcp (AUR: codebase-memory-mcp-bin): indexes a repo
-      // into a persistent tree-sitter graph (clawdius: ~30k nodes / 105k
-      // edges); search_graph/get_architecture replace grep/read cycles.
-      // Indexes on demand: the agent calls index_repository once per repo,
-      // the graph persists across sessions (project name = mangled path).
+      // into a persistent tree-sitter graph; search_graph/get_architecture
+      // replace grep/read cycles. Indexes on demand per repo.
       "codebase-memory": {
         "type": "local",
-        "command": ["codebase-memory-mcp"]
+        "command": ["codebase-memory-mcp"],
+        "disabled": false,
+        "timeout": { "catalog": 60000, "execution": 60000 }
       },
 {{- end }}
 {{- if $mcp.reversecore }}
@@ -136,22 +242,24 @@
       // (the 3.12 pin is load-bearing: numpy has no wheel for 3.14 and
       // the meson build fails on this GCC).
       // Runs with CWD = ~/dev/sandbox — the same sample convention as the
-      // r2mcp sandbox: drop samples there, open them by name. The agent
-      // cannot ingest arbitrary system binaries without placing them.
+      // r2mcp sandbox: drop samples there, open them by name.
       "reversecore": {
         "type": "local",
         "command": [
           "/bin/bash", "-c",
-          "cd \"{{ .chezmoi.homeDir }}/dev/sandbox\" && exec reversecore-mcp"
+          "cd \"$HOME/dev/sandbox\" && exec reversecore-mcp"
         ],
-        "timeout": { "startup": 120000 }
+        "disabled": false,
+        "timeout": { "catalog": 120000, "execution": 60000 }
       },
 {{- end }}
 {{- if $mcp.time }}
       // ---- Reference servers (modelcontextprotocol/servers) ----------
       "time": {
         "type": "local",
-        "command": ["uvx", "mcp-server-time"]
+        "command": ["uvx", "mcp-server-time"],
+        "disabled": false,
+        "timeout": { "catalog": 60000, "execution": 15000 }
       },
 {{- end }}
 {{- if $mcp.sentry }}
@@ -161,7 +269,9 @@
       // endpoint working as designed.
       "sentry": {
         "type": "remote",
-        "url": "https://mcp.sentry.dev/mcp"
+        "url": "https://mcp.sentry.dev/mcp",
+        "disabled": false,
+        "timeout": { "catalog": 15000 }
       },
 {{- end }}
 {{- if $mcp.linear }}
@@ -169,36 +279,39 @@
       // Official Linear MCP (streamable HTTP). OAuth via /mcps -> linear.
       "linear": {
         "type": "remote",
-        "url": "https://mcp.linear.app/mcp"
+        "url": "https://mcp.linear.app/mcp",
+        "disabled": false,
+        "timeout": { "catalog": 15000 }
       },
 {{- end }}
 {{- if $mcp.firecrawl }}
       // ---- Web crawl / extract ----------------------------------------
       // Official Firecrawl remote MCP (v2, OAuth). Chosen over the local
-      // local server: keyless use is blocked from this estate's egress IP
+      // server: keyless use is blocked from this estate's egress IP
       // (VPN/proxy-flagged by Firecrawl), and OAuth needs no key file.
       // Authenticate once via /mcps -> firecrawl -> authenticate.
       "firecrawl": {
         "type": "remote",
-        "url": "https://mcp.firecrawl.dev/v2/mcp-oauth"
+        "url": "https://mcp.firecrawl.dev/v2/mcp-oauth",
+        "disabled": false,
+        "timeout": { "catalog": 15000 }
       },
 {{- end }}
 {{- if $mcp.exa }}
       // ---- Neural web search ------------------------------------------
       // Complements the built-in websearch: Exa's neural ranking for
-      // "find me papers/code like X" queries. The server connects
-      // keyless, but every search 401s until a key exists.
-      // Key: ~/.config/opencode/keys/exa (0600, read at spawn —
-      //   printf 'exa-...' > ~/.config/opencode/keys/exa
-      //   chmod 600 ~/.config/opencode/keys/exa
-      // ). Key file over shell export: it works no matter how OpenCode
-      // was launched (desktop launchers skip shell rc files).
+      // "find me papers/code like X" queries. Key file over shell export:
+      // it works no matter how OpenCode was launched (desktop launchers
+      // skip shell rc files).
+      //   printf 'exa-...' > ~/.config/opencode/keys/exa && chmod 600 ...
       "exa": {
         "type": "local",
         "command": [
           "/bin/bash", "-c",
-          "test -s \"{{ .chezmoi.homeDir }}/.config/opencode/keys/exa\" && export EXA_API_KEY=\"$(cat \"{{ .chezmoi.homeDir }}/.config/opencode/keys/exa\")\"; exec exa-mcp-server"
-        ]
+          "P=$(command -v exa-mcp-server || true); [ -n \"$P\" ] || P=\"$HOME/.npm-global/bin/exa-mcp-server\"; test -s \"$HOME/.config/opencode/keys/exa\" && export EXA_API_KEY=\"$(cat \"$HOME/.config/opencode/keys/exa\")\"; exec \"$P\""
+        ],
+        "disabled": false,
+        "timeout": { "catalog": 60000, "execution": 30000 }
       },
 {{- end }}
 {{- if $mcp.redis }}
@@ -229,34 +342,34 @@
         "type": "local",
         "command": [
           "/bin/bash", "-c",
-          "test -s \"{{ .chezmoi.homeDir }}/.config/opencode/keys/forgejo\" && export FORGEJO_TOKEN=\"$(cat \"{{ .chezmoi.homeDir }}/.config/opencode/keys/forgejo\")\"; export FORGEJO_BASE_URL=\"https://git.wyattau.com\"; exec forgejo-mcp"
-        ]
+          "test -s \"$HOME/.config/opencode/keys/forgejo\" && export FORGEJO_TOKEN=\"$(cat \"$HOME/.config/opencode/keys/forgejo\")\"; export FORGEJO_BASE_URL=\"https://git.wyattau.com\"; exec forgejo-mcp"
+        ],
+        "disabled": false,
+        "timeout": { "catalog": 30000, "execution": 30000 }
       },
 {{- end }}
 {{- if $mcp.osint }}
       // ---- OSINT (12 sources, 37 tools) --------------------------------
       // badchars/osint-mcp-server: 21 tools work KEYLESS (DNS, WHOIS,
       // crt.sh certs, Wayback, BGP, GeoIP, HackerTarget); Shodan/VT/
-      // Censys/SecurityTrails tools light up per key file:
-      //   shodan  -> ~/.config/opencode/keys/shodan
-      //   virustotal -> ~/.config/opencode/keys/virustotal
-      //   (etc.) — exported at spawn by the wrapper.
+      // Censys/SecurityTrails tools light up per key file, exported at
+      // spawn by the wrapper.
       "osint": {
         "type": "local",
         "command": [
           "/bin/bash", "-c",
           "for k in shodan virustotal securitytrails censys; do f=\"$HOME/.config/opencode/keys/$k\"; if [ -s \"$f\" ]; then v=$(cat \"$f\"); export \"$(printf '%s' \"$k\" | tr '[:lower:]' '[:upper:]')_API_KEY=$v\"; fi; done; exec osint-mcp-server"
-        ]
+        ],
+        "disabled": false,
+        "timeout": { "catalog": 60000, "execution": 30000 }
       },
 {{- end }}
 {{- if $mcp.virustotal }}
       // ---- Threat intelligence (official VirusTotal) -------------------
       // Remote OAuth: /mcps -> virustotal -> authenticate (VTAI account).
-      // Files, URLs, domains, IPs, submissions — malware triage before
-      // opening anything.
-      // DISABLED until /mcps -> virustotal -> authenticate is completed.
-      // Without auth it retries 666+ times per session, spamming the log
-      // and making real errors harder to find. Enable after authenticating.
+      // DISABLED until that is completed: without auth it retries 666+
+      // times per session, spamming the log and making real errors harder
+      // to find. Enable after authenticating.
       "virustotal": {
         "type": "remote",
         "url": "https://ai.virustotal.com/mcp",
@@ -269,8 +382,9 @@
         "type": "local",
         "command": [
           "/bin/bash", "-c",
-          "test -s \"{{ .chezmoi.homeDir }}/.config/opencode/keys/shodan\" && export SHODAN_API_KEY=\"$(cat \"{{ .chezmoi.homeDir }}/.config/opencode/keys/shodan\")\"; exec mcp-shodan"
-        ]
+          "test -s \"$HOME/.config/opencode/keys/shodan\" && export SHODAN_API_KEY=\"$(cat \"$HOME/.config/opencode/keys/shodan\")\"; exec mcp-shodan"
+        ],
+        "disabled": false
       },
 {{- end }}
 {{- if $mcp.lean_lsp }}
@@ -284,25 +398,34 @@
         "type": "local",
         "command": [
           "/bin/bash", "-c",
-          "cd \"{{ .chezmoi.homeDir }}/dev/src/github.com/WyttAu/clawdius\" 2>/dev/null || cd \"{{ .chezmoi.homeDir }}/dev/src/github.com/WyattAu/clawdius\"; exec uvx lean-lsp-mcp"
-        ]
+          "cd \"$HOME/dev/src/github.com/WyattAu/clawdius\" 2>/dev/null || true; exec uvx lean-lsp-mcp"
+        ],
+        "disabled": false,
+        "timeout": { "catalog": 60000, "execution": 60000 }
       },
 {{- end }}
 {{- if $mcp.terraform }}
       // ---- Infrastructure as Code ------------------------------------
-      // HashiCorp Terraform Registry lookups (providers, modules, policies).
-      // Image pre-pulled by the ansible 'opencode' role.
+      // HashiCorp Terraform Registry lookups (providers, modules,
+      // policies). Image pre-pulled by the ansible 'opencode' role.
       "terraform": {
         "type": "local",
         "command": ["docker", "run", "-i", "--rm", "hashicorp/terraform-mcp-server:1.3.0"],
-        "timeout": { "startup": 120000 }
+        "disabled": false,
+        "timeout": { "catalog": 120000, "execution": 60000 }
       },
 {{- end }}
 {{- if $mcp.playwright }}
       // ---- Browser automation ----------------------------------------
+      // PATH-probe (role-managed installs) then npm-global fallback.
       "playwright": {
         "type": "local",
-        "command": ["node", "{{ .chezmoi.homeDir }}/.local/share/opencode/mcp-playwright/node_modules/@playwright/mcp/cli.js", "--browser", "chromium"]
+        "command": [
+          "/bin/bash", "-c",
+          "P=$(command -v playwright-mcp || true); [ -n \"$P\" ] || P=\"$HOME/.npm-global/bin/playwright-mcp\"; exec \"$P\" --browser chromium --headless"
+        ],
+        "disabled": false,
+        "timeout": { "catalog": 180000, "execution": 180000 }
       },
 {{- end }}
 {{- if $mcp.radare2 }}
@@ -316,7 +439,9 @@
         "command": [
           "r2pm", "-r", "r2mcp",
           "-s", "{{ .chezmoi.homeDir }}/dev"
-        ]
+        ],
+        "disabled": false,
+        "timeout": { "catalog": 60000, "execution": 60000 }
       },
 {{- end }}
 {{- if $mcp.ghidra }}
@@ -325,34 +450,41 @@
       //   ghidra-mcp --headless --binary <path>
       "ghidra": {
         "type": "local",
-        "command": ["ghidra-mcp"]
-      }
+        "command": ["ghidra-mcp"],
+        "disabled": false,
+        "timeout": { "catalog": 30000, "execution": 60000 }
+      },
 {{- end }}
+      // ---- Sentinel ---------------------------------------------------
+      // Permanently-disabled placeholder: absorbs the trailing comma of
+      // the last rendered block above, so any gate combination renders
+      // valid JSONC. Never enable; never remove without reworking the
+      // comma discipline of every gated block above.
+      "_sentinel": {
+        "type": "remote",
+        "url": "https://sentinel.invalid/mcp",
+        "disabled": true
+      }
     }
   },
-
-  // Cheap model for titles, summaries, and non-critical generation.
-  "small_model": "anthropic/claude-haiku-4-5",
 
   // Additional instructions loaded into every session (after AGENTS.md).
   "instructions": [
     "~/.config/opencode/instructions/fleet-rules.md"
   ],
 
-  // Subagents: personas with restricted tool access. A subagent CANNOT
-  // use a tool that is disabled here — that is a stronger guarantee than
-  // a system prompt asking it not to.
-  "agent": {
+  // Subagents: personas with restricted tool access. V2 shape: agents map
+  // + ordered permissions array (a subagent CANNOT use a denied action —
+  // a stronger guarantee than a system prompt asking it not to).
+  "agents": {
     "auditor": {
-      "mode": "subagent",
       "system": "You are a security auditor. Review code, infrastructure, and binaries for security issues. Report findings only — do not modify files. Every finding must include: the evidence (file path, line number, tool output), the severity (CRITICAL/HIGH/MEDIUM/LOW), and the specific fix. Do not report a finding unless you can point to the exact evidence. Do not use write, edit, or bash tools.",
-      "tools": {
-        "write": false,
-        "edit": false,
-        "bash": false,
-        "webfetch": false,
-        "globals": false
-      }
+      "disabled": false,
+      "permissions": [
+        { "action": "edit", "resource": "*", "effect": "deny" },
+        { "action": "shell", "resource": "*", "effect": "deny" },
+        { "action": "webfetch", "resource": "*", "effect": "deny" }
+      ]
     }
   },
 

@@ -196,6 +196,35 @@ else
     echo "  ✗ opencode.jsonc missing (run: chezmoi apply)"
     ERRORS=$((ERRORS + 1))
 fi
+# Dual-config guard: V2 reads opencode.json(c); a stray hand-rolled
+# opencode.json beside the managed .jsonc has undocumented merge
+# precedence and silently diverges the fleet. If it exists, fold its
+# content into the template, delete the file, run chezmoi apply.
+if [[ -f "$HOME/.config/opencode/opencode.json" ]]; then
+    echo "  ✗ stray opencode.json (fleet canonical is opencode.jsonc; fold + remove, then chezmoi apply)"
+    ERRORS=$((ERRORS + 1))
+fi
+# Cross-agent skills parity: ~/.agents/skills is fleet-managed from
+# dot_agents/skills. Drift here means an on-machine edit never went back
+# through sys-save / the source repo.
+if [[ -d "$HOME/.agents/skills" && -d "$HOME/.local/share/chezmoi/dot_agents/skills" ]]; then
+    if diff -rq "$HOME/.agents/skills" "$HOME/.local/share/chezmoi/dot_agents/skills" >/dev/null 2>&1; then
+        echo "  ✓ ~/.agents/skills matches fleet source"
+    else
+        echo "  ✗ ~/.agents/skills drifted from dot_agents/skills (commit via sys-save or chezmoi apply)"
+        ERRORS=$((ERRORS + 1))
+    fi
+elif [[ -d "$HOME/.agents/skills" ]]; then
+    echo "  ✗ ~/.agents/skills not fleet-managed (dot_agents/skills missing in source)"
+    ERRORS=$((ERRORS + 1))
+fi
+# Fleet skills (~/.config/opencode/skills) ship from private_dot_config/opencode/skills.
+if [[ -d "$HOME/.config/opencode/skills" ]]; then
+    echo "  ✓ fleet skills installed ($(find "$HOME/.config/opencode/skills" -mindepth 1 -maxdepth 1 -type d | wc -l) skills)"
+else
+    echo "  ✗ fleet skills missing (run: chezmoi apply)"
+    ERRORS=$((ERRORS + 1))
+fi
 # MCP backends — ghidra-mcp may only be at ~/.local/bin (systemd PATH is minimal)
 for tool in r2pm bunx; do
     if command -v "$tool" >/dev/null 2>&1; then
