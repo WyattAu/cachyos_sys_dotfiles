@@ -225,6 +225,16 @@ else
     echo "  ✗ fleet skills missing (run: chezmoi apply)"
     ERRORS=$((ERRORS + 1))
 fi
+# Plugin regression gate: fleet-guard extraction logic against live shapes.
+# Runs from the source dir (sys-check is symlinked there); needs bun.
+if command -v bun >/dev/null 2>&1 && [[ -f "$HOME/.local/share/chezmoi/tests/plugins/fleet-guard-extract.ts" ]]; then
+    if bun run "$HOME/.local/share/chezmoi/tests/plugins/fleet-guard-extract.ts" >/dev/null 2>&1; then
+        echo "  ✓ fleet-guard extraction tests pass"
+    else
+        echo "  ✗ fleet-guard extraction tests fail (plugin vs tests/plugins/fleet-guard-extract.ts drifted)"
+        ERRORS=$((ERRORS + 1))
+    fi
+fi
 # MCP backends — ghidra-mcp may only be at ~/.local/bin (systemd PATH is minimal)
 for tool in r2pm bunx; do
     if command -v "$tool" >/dev/null 2>&1; then
