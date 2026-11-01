@@ -144,7 +144,7 @@
         "type": "local",
         "command": [
           "/bin/bash", "-c",
-          "P=$(command -v mcp-server-sequential-thinking || true); [ -n \"$P\" ] || P=\"$HOME/.npm-global/bin/mcp-server-sequential-thinking\"; exec \"$P\""
+          "P=$(command -v mcp-server-sequential-thinking 2>/dev/null || true); [ -x \"$P\" ] || P=\"$HOME/.bun/bin/mcp-server-sequential-thinking\"; [ -x \"$P\" ] || P=\"$HOME/.npm-global/bin/mcp-server-sequential-thinking\"; exec \"$P\""
         ],
         "disabled": false,
         "timeout": { "catalog": 60000, "execution": 30000 }
@@ -159,7 +159,7 @@
         "type": "local",
         "command": [
           "/bin/bash", "-c",
-          "P=$(command -v mcp-server-memory || true); [ -n \"$P\" ] || P=\"$HOME/.npm-global/bin/mcp-server-memory\"; exec \"$P\""
+          "P=$(command -v mcp-server-memory 2>/dev/null || true); [ -x \"$P\" ] || P=\"$HOME/.bun/bin/mcp-server-memory\"; [ -x \"$P\" ] || P=\"$HOME/.npm-global/bin/mcp-server-memory\"; exec \"$P\""
         ],
         "disabled": false,
         "timeout": { "catalog": 60000, "execution": 30000 },
@@ -223,7 +223,7 @@
         "type": "local",
         "command": [
           "/bin/bash", "-c",
-          "P=$(command -v mcp-server-filesystem || true); [ -n \"$P\" ] || P=\"$HOME/.npm-global/bin/mcp-server-filesystem\"; exec \"$P\" \"$HOME/dev\""
+          "P=$(command -v mcp-server-filesystem 2>/dev/null || true); [ -x \"$P\" ] || P=\"$HOME/.bun/bin/mcp-server-filesystem\"; [ -x \"$P\" ] || P=\"$HOME/.npm-global/bin/mcp-server-filesystem\"; exec \"$P\" \"$HOME/dev\""
         ],
         "disabled": false,
         "timeout": { "catalog": 60000, "execution": 30000 }
@@ -317,7 +317,7 @@
         "type": "local",
         "command": [
           "/bin/bash", "-c",
-          "P=$(command -v exa-mcp-server || true); [ -n \"$P\" ] || P=\"$HOME/.npm-global/bin/exa-mcp-server\"; test -s \"$HOME/.config/opencode/keys/exa\" && export EXA_API_KEY=\"$(cat \"$HOME/.config/opencode/keys/exa\")\"; exec \"$P\""
+          "P=$(command -v exa-mcp-server || true); [ -n \"$P\" ] || P=\"$HOME/.bun/bin/exa-mcp-server\"; [ -n \"$P\" ] || P=\"$HOME/.npm-global/bin/exa-mcp-server\"; test -s \"$HOME/.config/opencode/keys/exa\" && export EXA_API_KEY=\"$(cat \"$HOME/.config/opencode/keys/exa\")\"; exec \"$P\""
         ],
         "disabled": false,
         "timeout": { "catalog": 60000, "execution": 30000 }
@@ -431,7 +431,7 @@
         "type": "local",
         "command": [
           "/bin/bash", "-c",
-          "P=$(command -v playwright-mcp || true); [ -n \"$P\" ] || P=\"$HOME/.npm-global/bin/playwright-mcp\"; exec \"$P\" --browser chromium --headless"
+          "P=$(command -v playwright-mcp 2>/dev/null || true); [ -x \"$P\" ] || P=\"$HOME/.bun/bin/playwright-mcp\"; [ -x \"$P\" ] || P=\"$HOME/.npm-global/bin/playwright-mcp\"; exec \"$P\" --browser chromium --headless"
         ],
         "disabled": false,
         "timeout": { "catalog": 180000, "execution": 180000 }
