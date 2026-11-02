@@ -21,12 +21,16 @@ host_packages:
   - python-hidapi
   - blender
 
-# --- LaTeX toolchain (uofg_physics papers; mirrors the repo's CI apt list:
-#     texlive-basic carries the engines (lualatex) and latexmk) ---
+# --- LaTeX toolchain (uofg_physics papers; mirrors the repo's CI apt list.
+#     Arch mapping: texlive-basic = engines (lualatex); texlive-binextra =
+#     latexmk + aux programs (Arch has no standalone latexmk package)) ---
   - texlive-basic
   - texlive-latexextra
+  - texlive-latexrecommended
+  - texlive-mathscience
   - texlive-fontsrecommended
   - texlive-bibtexextra
+  - texlive-binextra
 
 host_aur_pkgs:
   - envycontrol
