@@ -21,6 +21,13 @@ host_packages:
   - python-hidapi
   - blender
 
+# --- LaTeX toolchain (uofg_physics papers; mirrors the repo's CI apt list:
+#     texlive-basic carries the engines (lualatex) and latexmk) ---
+  - texlive-basic
+  - texlive-latexextra
+  - texlive-fontsrecommended
+  - texlive-bibtexextra
+
 host_aur_pkgs:
   - envycontrol
   - mcontrolcenter-git

@@ -45,6 +45,7 @@
 # "empty list" case, not an error, hence failed_when: false.
 - name: List installed r2pm packages
   command: r2pm -l
+  check_mode: false  # read-only query; must run under --check for the verify assert
   register: r2pm_list
   changed_when: false
   failed_when: false
@@ -251,6 +252,7 @@
     src: "/home/{{ user }}/.local/share/mcp-doctor/mcp-doctor"
     dest: "/home/{{ user }}/.local/bin/mcp-doctor"
     state: link
+    force: true  # replace stale real-file copies (seen on msi-ge66, Oct 2026)
   become: true
   become_user: "{{ user }}"
 
@@ -311,6 +313,7 @@
     executable: /bin/bash
   register: ghidramcp_tag
   changed_when: false
+  check_mode: false  # read-only curl; must run under --check or dry-runs fail downstream
   when: ghidramcp_plugin_url | length == 0
 
 - name: Resolve GhidraMCP plugin asset URL (expanded assets page)
@@ -323,6 +326,7 @@
     executable: /bin/bash
   register: ghidramcp_asset
   changed_when: false
+  check_mode: false  # same as above
   when: ghidramcp_plugin_url | length == 0
 
 - name: Determine whether GhidraMCP bundle must be re-downloaded
@@ -342,6 +346,11 @@
     mode: "0644"
     owner: "{{ user }}"
     group: "{{ user }}"
+  # If the asset could not be resolved (GitHub unreachable, upstream
+  # renamed), keep the existing bundle instead of bricking the sync.
+  when: >
+    ghidramcp_plugin_url | length > 0
+    or (ghidramcp_asset.stdout | default('')) | length > 0
   become: true
   become_user: "{{ user }}"
 
@@ -530,5 +539,6 @@
       Common causes: radare2/rizin/ghidra missing from the packages role,
       no network to github.com, or docker not running on this host.
     success_msg: "OpenCode toolchain verified: binary, r2mcp, GhidraMCP extension, github-mcp-server."
+  when: not ansible_check_mode  # install registers are empty under --check; real syncs self-verify
   become: true
   become_user: "{{ user }}"
