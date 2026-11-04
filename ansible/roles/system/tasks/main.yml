@@ -306,3 +306,10 @@
 
 # SECTION 10g: TAILSCALE (mesh VPN) — see tailscale.yml
 - include_tasks: tailscale.yml
+
+# SECTION 10h: LAN GATEWAY FIREWALL — single-firewall rule (firewalld
+# only; ufw disabled/masked) + NAT + a forwarding canary. Runs only on
+# hosts flagged sis_lan_gateway in host_vars. See gateway-firewall.yml
+# for the 2026-11-01 outage this prevents.
+- include_tasks: gateway-firewall.yml
+  when: sis_lan_gateway | default(false) | bool

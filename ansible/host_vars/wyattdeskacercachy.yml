@@ -19,6 +19,13 @@ host_services:
 masked_services:
   - packagekit.service      # Conflicts with pacman
 
+# --- SIS LAN gateway (this host IS 192.168.1.1) -------------------------
+# enp3s0 routes 192.168.1.0/24 to the uplinks; see
+# roles/system/tasks/gateway-firewall.yml (single-firewall rule:
+# firewalld only — ufw disabled/masked — plus masquerade + the
+# forwarding canary that would have caught the 2026-11-01 outage).
+sis_lan_gateway: true
+
 # =========================================================================
 # PERFORMANCE TUNING
 # =========================================================================

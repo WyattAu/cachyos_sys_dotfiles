@@ -1,0 +1,79 @@
+# =========================================================================
+# LAN GATEWAY FIREWALL (sis-lan gateway hosts)
+# =========================================================================
+# Hosts that route 192.168.1.0/24 to an uplink (currently:
+# wyattdeskacercachy, enp3s0 = 192.168.1.1, egress = tether/wifi).
+#
+# The ONE-firewall rule: firewalld is the estate's firewall manager
+# (KDE Connect, tailscale masquerade, and this file all use
+# ansible.posix.firewalld). ufw ALSO being active programs the same
+# kernel netfilter with a FORWARD DROP default — that combination
+# silently blackholed the whole LAN's internet on 2026-11-01 (1316
+# UFW BLOCK kernel-log entries; the Forgejo tunnel outage). One
+# manager, declared here; the other is disabled and masked.
+
+# ufw: remove from the forwarding path entirely. config files stay on
+# disk so nothing is deleted — only the second netfilter programmer
+# stops programming.
+- name: Disable ufw (single-firewall rule — firewalld is the estate manager)
+  ansible.builtin.systemd:
+    name: ufw
+    state: stopped
+    enabled: false
+  register: ufw_disable
+
+- name: Mask ufw (a reboot must not re-arm the second firewall)
+  ansible.builtin.systemd:
+    name: ufw
+    masked: true
+
+- name: Assert ufw left no forwarding policy in the kernel
+  # If ufw was active moments ago its rules may linger until flush;
+  # firewalld's reload below rebuilds the live ruleset it owns.
+  ansible.builtin.command:
+    cmd: firewall-cmd --reload
+  when: ufw_disable.changed
+  changed_when: ufw_disable.changed
+
+# --- gateway routing on firewalld -----------------------------------------
+- name: LAN interface is trusted (forwarding allowed within the zone)
+  ansible.posix.firewalld:
+    zone: trusted
+    interface: enp3s0
+    permanent: true
+    immediate: true
+    state: enabled
+
+- name: Masquerade LAN traffic out the public uplinks
+  ansible.posix.firewalld:
+    zone: public
+    masquerade: yes
+    permanent: true
+    immediate: true
+    state: enabled
+
+- name: IP forwarding persists across reboots
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_forward
+    value: "1"
+    sysctl_file: /etc/sysctl.d/90-sis-gateway.conf
+    sysctl_set: true
+    reload: true
+
+- name: Verify the gate actually forwards (canary from the LAN)
+  # The Nov 1 outage was "gateway up, forwarding dead". This check is
+  # the difference between configured and working: the TASK fails if
+  # the LAN cannot reach the internet, and ansible output names it.
+  ansible.builtin.command:
+    cmd: >-
+      timeout 8 ping -c 1 -W 3 -I enp3s0 {{ ping_probe_ip | default('1.1.1.1') }}
+  register: gateway_forward_probe
+  failed_when: false
+  changed_when: false
+
+- name: Report forwarding health
+  ansible.builtin.debug:
+    msg: >-
+      {{ 'LAN forwarding OK' if gateway_forward_probe.rc == 0
+         else 'WARNING: LAN cannot reach the internet through this
+              gateway — forwarding or masquerade is still broken' }}
