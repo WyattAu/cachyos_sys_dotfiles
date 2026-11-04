@@ -59,3 +59,14 @@ private_dot_config/user-dirs.dirs
 private_dot_config/user-dirs.locale
 private_dot_config/ktimezonedrc
 {{- end }}
+{{- /* Repo infrastructure — must never be mirrored into $HOME */}}
+
+# Playbook/script/test tree. These execute straight from the source dir
+# (AGENTS.md rule 2) and ~/.local/bin/sys-* symlink into it, so the source
+# copy is the only real one. Mirroring them to ~/ansible, ~/scripts and
+# ~/tests created a silent second copy: `sys-save` runs `chezmoi re-add`
+# over every managed file, which would copy that stale target BACK over
+# un-applied source edits (2026-11-04: nearly ate the alerting fix).
+ansible/
+scripts/
+tests/
