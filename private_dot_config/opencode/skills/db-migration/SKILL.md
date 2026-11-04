@@ -1,6 +1,7 @@
 ---
 name: db-migration
-description: Database migration safety; pre-flight checks, rollback planning, data-loss detection
+description: >
+  Database migration safety: pre-flight checks, lock and timeout behaviour, rollback plan, data-loss detection, backfill strategy. Use when adding, dropping, renaming, or retyping columns or indexes, backfilling rows, or running a migration against live data.
 compatibility: opencode
 metadata:
   audience: agents

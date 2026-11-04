@@ -1,6 +1,7 @@
 ---
 name: estate-review
-description: WyattAu estate portfolio review; repo health, activity, publishing status, and cross-repo dependency health
+description: >
+  Portfolio review of the WyattAu estate: repo health, activity, publishing status, cross-repo dependency health. Use when auditing repos, deciding what to archive or publish, or reporting estate status.
 compatibility: opencode
 metadata:
   audience: agents

@@ -1,6 +1,7 @@
 ---
 name: api-review
-description: API design review; REST/GraphQL endpoint consistency, auth, versioning, error shapes
+description: >
+  API and interface review: REST/GraphQL consistency, auth, versioning, pagination, idempotency, error shapes. Use when reviewing or designing an endpoint, an OpenAPI/protobuf schema, or when the user asks whether an API is consistent, versioned, or safe to change.
 compatibility: opencode
 metadata:
   audience: agents

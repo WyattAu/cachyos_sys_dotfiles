@@ -1,6 +1,7 @@
 ---
 name: re-triage
-description: Binary triage workflow using reversecore MCP; static analysis, capability detection, IOC extraction, and containment decisions
+description: >
+  Binary triage with reversecore MCP: static analysis, capability detection, IOC extraction, containment decision. Use when handed an unknown binary, firmware, or sample and you must judge what it does and whether it is safe to run.
 compatibility: opencode
 metadata:
   audience: agents

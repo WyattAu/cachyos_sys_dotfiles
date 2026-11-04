@@ -1,6 +1,7 @@
 ---
 name: secret-scan
-description: Scan repos and Docker images for leaked secrets and CVEs using gitleaks and trivy
+description: >
+  Secret and vulnerability scanning of repos and container images with gitleaks and trivy. Use before publishing, after a suspicious commit, or when auditing a new dependency or image for leaked credentials and CVEs.
 compatibility: opencode
 metadata:
   audience: agents

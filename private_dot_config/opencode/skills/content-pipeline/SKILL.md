@@ -1,6 +1,7 @@
 ---
 name: content-pipeline
-description: Technical content generation; blog posts, docs, HN/Reddit announcements, and changelog entries
+description: >
+  Technical content generation: blog posts, docs, HN/Reddit announcements, changelog entries. Use when writing a launch post, release notes, a README announcement, or turning an engineering change into external-facing copy.
 compatibility: opencode
 metadata:
   audience: agents

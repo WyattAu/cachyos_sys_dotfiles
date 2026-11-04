@@ -15,6 +15,22 @@ Prefer MCP tools over guessing:
 - **playwright**: general browser automation/screenshots. The **aileron** tools are for the Aileron browser specifically; if aileron tools error with "connection refused", the Aileron browser is not running — say so instead of retrying.
 - **time**: any "today", deadline, or timezone computation; never guess dates.
 
+## Context discipline (always on)
+
+- Locate before read: `grep -n` the symbol, then read ±40 lines. Whole-file
+  reads only for files new to the task and under ~400 lines.
+- Cap every command that can be large: `| head -40`, `| tail -20`, `rg -c`,
+  `--jq`, `wc -l`. Filter first, widen once if needed.
+- Delegate noise (broad searches, huge logs, multi-repo sweeps) to a
+  subagent; require ≤15 lines plus `file:line` pointers, never a transcript.
+- Durable state goes to a plan ledger (task | status | evidence | next),
+  re-read first after compaction or restart.
+- Answers are deltas: verdict first, changed lines + 2 context lines, no
+  re-pasting. Tables for enumerable facts, prose for causal chains.
+- Measure before claiming: `context_report.py` (session token/tool cost),
+  `skill_audit.py` (skill load cost). Skills: estate-context-economy,
+  estate-rigor-loop, estate-plan-ledger, estate-orchestrate.
+
 ## Session hygiene
 
 - Context is finite: paginate, cap output lengths, and avoid dumping large tool results.

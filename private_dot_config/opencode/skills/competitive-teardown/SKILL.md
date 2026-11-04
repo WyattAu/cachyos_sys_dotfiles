@@ -1,6 +1,7 @@
 ---
 name: competitive-teardown
-description: Structured competitor analysis; positioning, feature gaps, pricing, and the "why would anyone switch" question
+description: >
+  Structured competitor analysis: positioning, feature gaps, pricing, traction, and the why-would-anyone-switch test. Use when evaluating a competitor, writing a positioning brief, pricing against alternatives, or when the user says teardown, competitive analysis, or how do we compare.
 compatibility: opencode
 metadata:
   audience: agents

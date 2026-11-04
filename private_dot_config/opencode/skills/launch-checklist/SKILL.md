@@ -1,6 +1,7 @@
 ---
 name: launch-checklist
-description: Product launch readiness; technical, marketing, and operational gates before shipping
+description: >
+  Product launch readiness: technical, marketing, and operational gates before shipping. Use when preparing a release, deciding go/no-go, or checking that docs, monitoring, rollback, and comms are ready.
 compatibility: opencode
 metadata:
   audience: agents

@@ -1,6 +1,7 @@
 ---
 name: mcp-debug
-description: Debug MCP server connection failures and tool errors; root-cause from OpenCode logs, not guesses
+description: >
+  Debug MCP server connection failures and tool errors by reading OpenCode logs and isolating transport, server, or tool faults. Use when an MCP server is missing, a tool call errors or times out, or the tool catalog changes mid-session.
 compatibility: opencode
 metadata:
   audience: agents

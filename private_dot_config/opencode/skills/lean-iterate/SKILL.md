@@ -1,6 +1,7 @@
 ---
 name: lean-iterate
-description: Lean 4 proof iteration using lean-lsp; goal states, tactic testing, mathlib search, and the verification ladder
+description: >
+  Lean 4 proof iteration via lean-lsp: goal states, tactic testing, mathlib search, and the verification ladder. Use when a proof fails, a tactic stalls, or a Lean module must compile without sorry.
 compatibility: opencode
 metadata:
   audience: agents
