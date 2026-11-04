@@ -23,9 +23,9 @@
     # 2. Install keyring + mirrorlist from direct download
     if ! pacman -Q chaotic-keyring >/dev/null 2>&1; then
       TMPDIR=$(mktemp -d)
-      curl -fsSL -o "$TMPDIR/chaotic-keyring.pkg.tar.zst" \
+      curl -fsSL --retry 3 --retry-delay 5 -o "$TMPDIR/chaotic-keyring.pkg.tar.zst" \
         https://builds.garudalinux.org/repos/chaotic-aur/chaotic-keyring.pkg.tar.zst
-      curl -fsSL -o "$TMPDIR/chaotic-mirrorlist.pkg.tar.zst" \
+      curl -fsSL --retry 3 --retry-delay 5 -o "$TMPDIR/chaotic-mirrorlist.pkg.tar.zst" \
         https://builds.garudalinux.org/repos/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst
       pacman -U --noconfirm "$TMPDIR/chaotic-keyring.pkg.tar.zst" "$TMPDIR/chaotic-mirrorlist.pkg.tar.zst"
       rm -rf "$TMPDIR"
@@ -64,7 +64,15 @@
 
 - name: Sync Package Databases
   ansible.builtin.command: pacman -Sy
+  register: pacman_sync
   changed_when: false
+  # Transient DNS/VPN stalls abort the whole play — 2026-11-04: pacman -Sy
+  # could not resolve any mirror (proton0 owns the default DNS route) and
+  # the run died here, so the monitoring role never installed the alerting
+  # fix. One blip must not cost the rest of the fleet config.
+  retries: 3
+  delay: 20
+  until: pacman_sync.rc == 0
 
 - name: Update System Repos (full upgrade)
   community.general.pacman:
