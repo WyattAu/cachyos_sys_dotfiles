@@ -5,3 +5,15 @@
 [[ -f ~/.bashrc ]] && . ~/.bashrc
 
 export PATH="$HOME/.elan/bin:$PATH"
+
+# >>> juliaup >>>
+# PATH only — login shells that skip the interactive .bashrc return guard
+# still need julia. Completions live in .bashrc.
+case ":$PATH:" in
+    *:"${HOME}/.juliaup/bin":*)
+        ;;
+    *)
+        export PATH="${HOME}/.juliaup/bin"${PATH:+:${PATH}}
+        ;;
+esac
+# <<< juliaup <<<

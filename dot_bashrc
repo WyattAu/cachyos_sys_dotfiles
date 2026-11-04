@@ -9,3 +9,19 @@ alias ls='ls --color=auto'
 alias grep='grep --color=auto'
 PS1='[\u@\h \W]\$ '
 export PATH="$HOME/.local/share/pnpm:$PATH"
+
+# >>> juliaup >>>
+# juliaup init injects this block itself; it lives here so `chezmoi apply`
+# cannot strip it (2026-11-03: apply removed it and julia left PATH).
+# Keep byte-identical to juliaup's version — the case statement is
+# idempotent, so a re-run of `juliaup init` is harmless.
+case ":$PATH:" in
+    *:"${HOME}/.juliaup/bin":*)
+        ;;
+    *)
+        export PATH="${HOME}/.juliaup/bin"${PATH:+:${PATH}}
+        ;;
+esac
+# Tab completion for juliaup and julia channel selection
+[ -f "${HOME}/.julia/juliaup/completions/bash.sh" ] && source "${HOME}/.julia/juliaup/completions/bash.sh"
+# <<< juliaup <<<

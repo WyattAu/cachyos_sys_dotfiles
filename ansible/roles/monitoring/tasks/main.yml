@@ -56,6 +56,18 @@
         mode: "0640"
       when: telegram_token_stat.stat.exists
 
+    # sys-check.service runs as {{ user }}, which is NOT in the alertmanager
+    # group — without this ACL every alert dies on "cat: Permission denied"
+    # and the whole fleet goes silent (2026-11-03: 3 failed syncs, zero pages).
+    - name: Allow the sys-check user to read the telegram token
+      ansible.posix.acl:
+        path: /etc/alertmanager/telegram-token
+        entity: "{{ user }}"
+        etype: user
+        permissions: r
+        state: present
+      when: telegram_token_stat.stat.exists
+
     # TrueNAS is the always-on alert source; local alertmanager stays
     # stopped by default (same on-demand pattern as VM/node-exporter).
     # Start manually for offline testing: systemctl start alertmanager
@@ -170,6 +182,10 @@
           Type=oneshot
           User={{ user }}
           Environment=HOME=/home/{{ user }}
+          # systemd's default PATH omits ~/.local/bin, which made every
+          # hourly run report the user-level MCP binaries (mcp-doctor,
+          # reversecore-mcp, ...) as "missing" — a permanent false red.
+          Environment=PATH=/home/{{ user }}/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
           ExecStart=/home/{{ user }}/.local/bin/sys-check
         mode: "0644"
 
