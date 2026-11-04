@@ -60,10 +60,13 @@ Host truenas
 # Works from anywhere; falls back to LAN entries above when at home
 
 # CachyOS headless server (192.168.1.191)
-Host cachyos-x8664 cachyos-server
-    HostName 100.64.0.2
-    User wyatt
-    IdentityFile ~/.ssh/id_ed25519
+# DEAD 2026-11-04: 100.64.0.2 is not on the current tailnet ("no matching
+# peer"); only msi-ge66, wyattdeskacercachy, josh-laptop and wyatts-a53 are.
+# Re-enable with the real IP once the host is re-enrolled.
+# Host cachyos-x8664 cachyos-server
+#     HostName 100.64.0.2
+#     User wyatt
+#     IdentityFile ~/.ssh/id_ed25519
 
 # Acer desktop — also the sis-lan gateway (enp3s0 = 192.168.1.1).
 # Tailnet IP re-keyed 2026-11: was 100.64.0.3.
@@ -73,10 +76,12 @@ Host wyattdeskacercachy acer
     IdentityFile ~/.ssh/id_ed25519
 
 # TrueNAS over the tailnet
-Host truenas-ts
-    HostName 100.64.0.8
-    User truenas_admin
-    IdentityFile ~/.ssh/id_ed25519
+# DEAD 2026-11-04: 100.64.0.8 is not on the current tailnet ("no matching
+# peer"). The LAN entry `truenas` still works from inside 192.168.1.0/24.
+# Host truenas-ts
+#     HostName 100.64.0.8
+#     User truenas_admin
+#     IdentityFile ~/.ssh/id_ed25519
 
 # ── Cloud / Git ──
 
