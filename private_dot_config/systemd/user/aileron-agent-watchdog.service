@@ -1,0 +1,6 @@
+[Unit]
+Description=Aileron agent daemon MCP-bridge watchdog (probes 9543 handshake)
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/aileron-agent-watchdog.sh

@@ -1,0 +1,9 @@
+[Unit]
+Description=Run aileron-agent-watchdog every 2 minutes
+
+[Timer]
+OnBootSec=4min
+OnUnitActiveSec=2min
+
+[Install]
+WantedBy=timers.target
