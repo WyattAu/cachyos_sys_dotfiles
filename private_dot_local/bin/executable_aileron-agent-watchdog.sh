@@ -49,6 +49,17 @@ echo "$COUNT" > "$STATE"
 echo "$(date '+%F %T') watchdog: bridge down (consecutive check $COUNT)" >> "$LOG"
 
 if [ "$COUNT" -ge 2 ]; then
+    # Flap guard: if we already restarted within the last 10 minutes and the
+    # bridge is STILL down (e.g. port held by another process), restarting
+    # again changes nothing - log and stand off instead of looping.
+    LAST="/home/wyatt/.local/state/aileron-agent-watchdog.lastrestart"
+    NOW=$(date +%s)
+    PREV=$(cat "$LAST" 2>/dev/null || echo 0)
+    if [ $((NOW - PREV)) -lt 600 ]; then
+        echo "$(date '+%F %T') watchdog: bridge still down <10min after last restart - standing off" >> "$LOG"
+        exit 0
+    fi
+    echo "$NOW" > "$LAST"
     echo "$(date '+%F %T') watchdog: restarting $UNIT" >> "$LOG"
     rm -f "$STATE"
     systemctl --user restart "$UNIT"
