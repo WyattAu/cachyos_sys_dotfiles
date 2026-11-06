@@ -96,3 +96,33 @@ Clones and scanner output: `/home/wyatt/skills-research/`
 python3 skills-research/skill_scan.py skills-research/clones --out catalog.jsonl
 python3 ~/.config/opencode/scripts/skill_audit.py ~/.config/opencode/skills
 ```
+
+## Round 2 (2026-11-06): estate-design
+
+Sources mined in addition to the base corpus: `Leonxlnx/taste-skill`
+(109k★, anti-slop house rules + page-kind taxonomy + browser checker),
+`Nutlope/hallmark` (47k★, non-waivable floor + primary-verb anatomy),
+`alchaincyf/huashu-design` (28k★, three-directions-first workflow,
+default-aesthetic awareness), `anthropics/skills/frontend-design`
+(two-pass genericness review, slop-cluster catalogue, restraint),
+`mattpocock/skills` (deep modules), `addyosmani/agent-skills` (contract
+first, Hyrum's law).
+
+`estate-design` (930 words + references/floor.md, references/page-kinds.md,
+references/copy.md, references/architecture.md) combines:
+
+- process: subject grounding → three dealt directions → token plan →
+  genericness review → build → four-width screenshot critique;
+- the floor: ten checkable non-waivables (tokens-only colors/fonts,
+  focus-visible, reduced-motion, transform/opacity-only animation,
+  overflow-x: clip, minmax(0,1fr), hover/press layer, one-section-per-
+  screen, four-width rendering, a11y floor);
+- page-kind taxonomy (software/gaming/tech/product/service/place) with
+  primary-verb section anatomy and the effects-allowlist;
+- copy-as-design rules (user perspective, action-name continuity, direct
+  errors, no invented proof);
+- front-end architecture (tokens as the design API, deep modules, contract
+  first with state inventories, boundary validation, addition-over-
+  modification, layer boundaries).
+
+Audit: 21 skills, zero errors, zero warnings; estate-design ~1.7k tokens.
