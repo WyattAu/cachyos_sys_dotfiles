@@ -164,12 +164,13 @@
       // Node server: PATH-probe first (bun global installs on some hosts),
       // then the npm-global absolute path (hosts where systemd spawns
       // opencode with a minimal PATH).
+      // Estate memory-kit: SQLite knowledge graph (WyattAu/memory-kit).
+      // Replaces mcp-server-memory (Node), which timed out under agent
+      // load; API drop-in compatible. Data migrated 2026-11-06 (26
+      // entities, 336 observations, 1 relation) via memory-kit import.
       "memory": {
         "type": "local",
-        "command": [
-          "/bin/bash", "-c",
-          "P=$(command -v mcp-server-memory 2>/dev/null || true); [ -x \"$P\" ] || P=\"$HOME/.bun/bin/mcp-server-memory\"; [ -x \"$P\" ] || P=\"$HOME/.npm-global/bin/mcp-server-memory\"; exec \"$P\""
-        ],
+        "command": ["/home/wyatt/.local/bin/memory-kit", "serve"],
         "disabled": false,
         "timeout": { "catalog": 60000, "execution": 30000 },
         "environment": {
