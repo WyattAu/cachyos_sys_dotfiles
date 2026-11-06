@@ -106,12 +106,14 @@
       // and gh's own expiry/rotation rules apply. `exec` replaces the
       // shell so signals/stdio pass through untouched.
       // Needs: repo, workflow, read:org (gh auth refresh -s ...).
+      // Estate github-kit (WyattAu/github-kit): Rust REST server, 18
+      // tools covering the repos/issues/pull_requests/actions/code_search
+      // toolsets the official github-mcp-server was enabled for. That
+      // server's mid-session restarts churned the tool catalog; this one
+      // is a static binary. Token: gh auth token (unchanged).
       "github": {
         "type": "local",
-        "command": [
-          "/bin/bash", "-c",
-          "export GITHUB_PERSONAL_ACCESS_TOKEN=\"$(gh auth token 2>/dev/null)\"; [ -n \"$GITHUB_PERSONAL_ACCESS_TOKEN\" ] || { echo 'github-mcp: no gh token — run: gh auth login' >&2; exit 1; }; exec github-mcp-server stdio --toolsets repos,issues,pull_requests,actions,code_security"
-        ],
+        "command": ["/home/wyatt/.local/bin/github-kit", "serve"],
         "disabled": false,
         "timeout": { "catalog": 15000, "execution": 30000 }
       },
