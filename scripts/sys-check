@@ -115,6 +115,23 @@ else
     ERRORS=$((ERRORS + 1))
 fi
 
+echo "Ansible controller:"
+if command -v ansible-playbook &>/dev/null; then
+    echo "  ✓ ansible-playbook"
+    # Catches the 2026-11-04 mid-upgrade tear, where the in-playbook upgrade
+    # replaced ansible-core while the play was running and the lazily-loaded
+    # action plugins then imported mismatched files (OrderedSet ImportError).
+    if python3 -c "from ansible.plugins.action.unarchive import ActionModule" &>/dev/null; then
+        echo "  ✓ ansible-core modules self-consistent"
+    else
+        echo "  ✗ ansible-core broken (mid-upgrade tear) — sudo pacman -Syu ansible-core"
+        ERRORS=$((ERRORS + 1))
+    fi
+else
+    echo "  ✗ ansible-playbook missing (pacman: ansible-core)"
+    ERRORS=$((ERRORS + 1))
+fi
+
 echo "Chezmoi:"
 if command -v chezmoi &>/dev/null; then
     echo "  ✓ installed"

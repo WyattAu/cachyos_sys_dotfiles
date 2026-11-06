@@ -78,6 +78,13 @@
   community.general.pacman:
     update_cache: yes
     upgrade: yes
+    # Never upgrade the controller stack out from under the running play:
+    # 2026-11-04 the in-run upgrade replaced ansible-core 2.21.5 with 2.22.0
+    # mid-play and the lazily-loaded unarchive action plugin then imported
+    # the new urls.py against the old collections.py — the whole run died
+    # with "cannot import name 'OrderedSet'". These upgrade via
+    # arch-update.timer instead, which runs outside any playbook.
+    extra_args: "--ignore ansible-core,ansible,python"
   # AUDIT-KEEP: repo transitions declare replaces/conflicts (e.g.
   # python-proton-vpn-api-core replacing python-proton-vpn-local-agent);
   # the module's --noconfirm answers the default N to conflict prompts
@@ -88,7 +95,8 @@
 - name: Resolve package conflicts and complete upgrade (repo transitions)
   # Only runs when the module-based upgrade failed. `yes |` accepts the
   # conflict prompts; if the upgrade still fails, the play fails here.
-  ansible.builtin.shell: set -o pipefail; yes | pacman -Syu
+  # Same ignore as above — see the note there.
+  ansible.builtin.shell: set -o pipefail; yes | pacman -Syu --ignore ansible-core,ansible,python
   when: sysupgrade is failed
   changed_when: true
 
