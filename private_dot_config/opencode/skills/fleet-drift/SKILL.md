@@ -1,7 +1,12 @@
+# Fleet Drift
+
 ---
 name: fleet-drift
 description: >
-  Configuration drift detection across the WyattAu fleet: compare chezmoi-managed files with actual system state, flag hand-edits and missing applies. Use after manual changes, before sys-save, or when a host behaves differently from its config.
+  Configuration drift detection across the WyattAu fleet: compare chezmoi-
+  managed files with actual system state, flag hand-edits and missing applies.
+  Use after manual changes, before sys-save, or when a host behaves
+  differently from its config.
 compatibility: opencode
 metadata:
   audience: agents

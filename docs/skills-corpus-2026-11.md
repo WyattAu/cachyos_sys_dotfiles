@@ -7,7 +7,7 @@ scanner over every `SKILL.md` (`skill_scan.py`, ~40 MB of markdown)
 ## Corpus
 
 | Metric | Value |
-|---|---|
+| --- | --- |
 | repositories cloned | 13 |
 | `SKILL.md` files found | 10,444 |
 | unique after content-hash dedupe | 4,539 |
@@ -50,20 +50,24 @@ Repos sampled: `anthropics/skills`, `anthropics/claude-plugins-official`,
 
 ## Adopted into the estate pack
 
-| Skill | Source pattern | Estate form |
-|---|---|---|
-| `estate-context-economy` | context-mode, caveman | budget table, locate-before-read, output caps, delegation |
-| `estate-rigor-loop` | diagnosing-bugs, superpowers, addyosmani | falsifiable claim → cheapest test → evidence block → ladder |
-| `estate-skill-forge` | skill-creator, SkillSpector | carrier table, frontmatter contract, size budget, trigger evals |
-| `estate-plan-ledger` | planning-with-files | append-only ledger, status table, bounded resume |
-| `estate-orchestrate` | dispatching-parallel-agents, cavecrew | delegation decision table, task/return contract |
-| `estate-research-first` | mcp-builder research phase, our SPEC-CORE | source tiers, one-concept queries, decision record |
+- `estate-context-economy` (context-mode, caveman): budget table,
+  locate-before-read, output caps, delegation.
+- `estate-rigor-loop` (diagnosing-bugs, superpowers, addyosmani):
+  falsifiable claim, cheapest test, evidence block, ladder.
+- `estate-skill-forge` (skill-creator, SkillSpector): carrier table,
+  frontmatter contract, size budget, trigger evals.
+- `estate-plan-ledger` (planning-with-files): append-only ledger, status
+  table, bounded resume.
+- `estate-orchestrate` (dispatching-parallel-agents, cavecrew):
+  delegation decision table, task/return contract.
+- `estate-research-first` (mcp-builder research phase, our SPEC-CORE):
+  source tiers, one-concept queries, decision record.
 
 Tooling added with the pack:
 
-- `scripts/skill_audit.py` — frontmatter, triggers, size budget, duplication,
+- `scripts/skill_audit.py`; frontmatter, triggers, size budget, duplication,
   estimated load cost. Exit 1 on errors.
-- `scripts/context_report.py` — session token totals, per-tool output bytes,
+- `scripts/context_report.py`; session token totals, per-tool output bytes,
   largest calls, cache-hit ratio (read-only over the session DB).
 - commands `/skill-audit` and `/context-report`.
 
@@ -79,8 +83,8 @@ floor).
 - **Marketing-copy descriptions.** They read well and never fire.
 - **Harness-locked hooks.** Rules stay in portable markdown; hooks are a
   separate, optional layer (OpenCode plugin) with estate fallbacks.
-- **Compression that touches payload.** Caveman's own rule — code, paths,
-  commands, numbers stay verbatim — is adopted; its voice is not imposed.
+- **Compression that touches payload.** Caveman's own rule; code, paths,
+  commands, numbers stay verbatim; is adopted; its voice is not imposed.
 
 ## Audit baseline (2026-11-04, after pack)
 

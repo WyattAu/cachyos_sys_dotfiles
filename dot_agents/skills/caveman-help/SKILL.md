@@ -1,3 +1,5 @@
+# Caveman Help
+
 ---
 name: caveman-help
 description: >
@@ -8,7 +10,8 @@ description: >
 
 # Caveman Help
 
-Display this reference card when invoked. One-shot — do NOT change mode, write flag files, or persist anything. Output in caveman style.
+Display this reference card when invoked. One-shot; do NOT change mode, write
+flag files, or persist anything. Output in caveman style.
 
 ## Modes
 
@@ -50,7 +53,8 @@ export CAVEMAN_DEFAULT_MODE=ultra
 { "defaultMode": "lite" }
 ```
 
-Set `"off"` to disable auto-activation on session start. User can still activate manually with `/caveman`.
+Set `"off"` to disable auto-activation on session start. User can still
+activate manually with `/caveman`.
 
 Resolution: env var > config file > `full`.
 

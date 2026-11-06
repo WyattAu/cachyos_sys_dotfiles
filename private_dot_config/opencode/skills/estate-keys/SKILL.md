@@ -1,7 +1,12 @@
+# Estate Keys
+
 ---
 name: estate-keys
 description: >
-  Credential handling in the WyattAu estate: key-file pattern (0600, read at spawn), no secrets in dotfiles or repos, rotation. Use when adding an API key, wiring a service credential, debugging auth failures, or when a secret may have leaked.
+  Credential handling in the WyattAu estate: key-file pattern (0600, read at
+  spawn), no secrets in dotfiles or repos, rotation. Use when adding an API
+  key, wiring a service credential, debugging auth failures, or when a secret
+  may have leaked.
 compatibility: opencode
 metadata:
   audience: agents

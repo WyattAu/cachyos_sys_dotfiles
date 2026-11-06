@@ -1,3 +1,5 @@
+# Estate Skill Forge
+
 ---
 name: estate-skill-forge
 description: |
@@ -14,7 +16,7 @@ license: Apache-2.0
 # estate-skill-forge
 
 A skill is a loaded instruction set, not documentation. It costs tokens
-every time it fires and nothing when it does not — so it must fire on the
+every time it fires and nothing when it does not; so it must fire on the
 right prompts and pay for itself in one use.
 
 ## Choose the right carrier
@@ -65,12 +67,12 @@ router with a "read this when" table.
 1. **Rules must be checkable.** "Be careful" is noise; "cap output at 40
    lines" is a rule.
 2. **Decision table over prose** for enumerable choices.
-3. **Anti-patterns section** — the mistakes the model actually makes.
+3. **Anti-patterns section**; the mistakes the model actually makes.
 4. **One canonical term** per concept; no synonyms for the same step.
 5. **No restating the system prompt.** Skills add, they do not repeat.
 6. **Examples are short and real**: command in, decisive output out.
 7. **Progressive disclosure**: SKILL.md answers "should I load more, and
-   which file?" — never dump every detail at load time.
+   which file?"; never dump every detail at load time.
 
 ## Eval before shipping
 
@@ -85,7 +87,7 @@ python3 scripts/skill_audit.py ~/.config/opencode/skills   # structure + cost
 ## Deduplication
 
 Before adding: `grep -ril "<topic>" ~/.config/opencode/skills`. Two skills
-covering one topic is a retrieval bug — merge, or give each a distinct
+covering one topic is a retrieval bug; merge, or give each a distinct
 trigger and cross-reference. Keep a router skill only when siblings exceed
 five.
 

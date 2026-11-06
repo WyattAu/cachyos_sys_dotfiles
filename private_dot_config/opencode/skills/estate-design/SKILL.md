@@ -1,3 +1,5 @@
+# Estate Design
+
 ---
 name: estate-design
 description: |
@@ -23,7 +25,7 @@ cleverness. This skill is the guardrail for both.
 
 1. **Identify the subject** before designing: what it is, who it is for, its
    one primary job. Distinctive choices grow out of the subject's world —
-   industry, materials, vernacular — never out of your default taste.
+   industry, materials, vernacular; never out of your default taste.
 2. **Deal three directions**, even when the brief names a style: three
    one-paragraph directions (mood, type stance, color stance, layout
    concept), each with one sentence on what it costs. The user picks; the
@@ -39,9 +41,9 @@ cleverness. This skill is the guardrail for both.
    differently. The known default cluster: warm cream + high-contrast serif
    + terracotta accent; near-black + single acid accent; broadsheet hairlines
    with zero radius; identical rounded cards with one shadow; tracked ALL-
-   CAPS eyebrows; middle-dot meta strings; `WORD — fragment` labels; tinted
+   CAPS eyebrows; middle-dot meta strings; `WORD; fragment` labels; tinted
    near-black standing in for black; arrows glued to links. Legitimate for
-   some briefs — a choice, never a default.
+   some briefs; a choice, never a default.
 5. **Build, then critique in a real browser**: screenshot at 1440, 1024, 768,
    390; check the floor checklist (below) at each width; remove one thing
    before finishing.
@@ -57,11 +59,11 @@ cleverness. This skill is the guardrail for both.
 5. `overflow-x: clip` on `html` and `body`; never `hidden`; never `100vw`.
 6. Image-bearing grid tracks use `minmax(0, 1fr)`; headings carry
    `overflow-wrap: break-word; min-width: 0`.
-7. Every visual renders at all four widths — no empty ground, no caption
+7. Every visual renders at all four widths; no empty ground, no caption
    under images (credits go in one footer line).
 8. One section per screen at 1440×900; equal left/right content edges.
 9. Every interactive element gets the hover/press layer (lift 2px, image
-   zoom 1.02–1.03, press state, underline draw) — via the motion layer,
+   zoom 1.02–1.03, press state, underline draw); via the motion layer,
    once, consistently.
 10. Accessibility is the floor, not a feature: contrast, focus, reduced
     motion, keyboard paths, semantics.
@@ -80,11 +82,11 @@ drive structure and effects:
 | place | cafes, shops, hotels | 12–20 real photos, no effect layer |
 
 Effects and creative moments belong to tech kinds only. A bakery gets
-photographs, flat color, and type — never shaders. Derive the page's primary
+photographs, flat color, and type; never shaders. Derive the page's primary
 verb (try, buy, book, visit, hire, sign up, join) and let it order the
 sections.
 
-## Typography, color, motion — the decided defaults
+## Typography, color, motion; the decided defaults
 
 - One or two type families, clearly distinct roles; set a deliberate type
   scale; headings are type treatments, not neutral delivery.
@@ -93,7 +95,7 @@ sections.
   sequence.
 - One orchestrated moment per page (a load sequence or one reveal); motion
   that *answers a user action* is always welcome; per-card fade-up entrances
-  are the generic default — don't.
+  are the generic default; don't.
 - Spend boldness in one place: one memorable element, everything else quiet.
 
 ## Copy is design content
@@ -102,7 +104,7 @@ Write from the user's perspective ("notifications", not "webhook config");
 active voice; CTAs say what happens ("Save changes", not "Submit"); an
 action keeps its name through the whole flow (Publish → Published); errors
 explain what happened and how to fix it without apologizing; empty states
-invite action. No invented metrics, testimonials, or customer counts — ever.
+invite action. No invented metrics, testimonials, or customer counts; ever.
 
 ## Front-end architecture (the parts users never see)
 
@@ -110,7 +112,7 @@ invite action. No invented metrics, testimonials, or customer counts — ever.
   imports raw values. Changing the theme is a token-file change.
 - **Deep modules, shallow interfaces** (Ousterhout): a component hides its
   complexity behind a small prop/contract surface; a component that requires
-  knowing its internals to use is shallow — redesign it.
+  knowing its internals to use is shallow; redesign it.
 - **Contract first**: define the component's props/events/slots (its API)
   before styling it; consistent error/empty/loading semantics across every
   data-bearing component; validate at boundaries (inputs, API responses),

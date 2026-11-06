@@ -1,3 +1,5 @@
+# Estate Orchestrate
+
 ---
 name: estate-orchestrate
 description: |
@@ -38,7 +40,7 @@ do it inline.
 goal:        one sentence, verifiable
 inputs:      exact paths/commands, no "the repo"
 constraints: what must not change (files, services, credentials)
-return:      <format> — ≤15 lines, file:line pointers, no transcripts
+return:      <format>; ≤15 lines, file:line pointers, no transcripts
 stop:        when the goal is met or the budget is spent
 ```
 

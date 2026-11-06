@@ -1,6 +1,10 @@
+# Ship
+
 ---
 name: ship
-description: Commit and push changes using atomic commits. Use when user asks to "ship", "commit and push", or requests committing and pushing changes. Don't use for creating pull requests or reviewing changes before committing.
+description: Commit and push changes using atomic commits. Use when user asks
+to "ship", "commit and push", or requests committing and pushing changes.
+Don't use for creating pull requests or reviewing changes before committing.
 ---
 
 # Ship Changes
@@ -19,10 +23,12 @@ description: Commit and push changes using atomic commits. Use when user asks to
    - If `package.json` exists, check for `lint` and `test` scripts
    - Run available checks in parallel: `npm run lint`, `npm test`
    - If no package.json, skip quality checks
-4. If checks fail: report errors, STOP — do not commit or push
-5. Group changed files by logical concern using [atomic-commits grouping rules](../atomic-commits/SKILL.md#grouping-rules)
+4. If checks fail: report errors, STOP; do not commit or push
+5. Group changed files by logical concern using [atomic-commits grouping
+  rules](../atomic-commits/SKILL.md#grouping-rules)
 6. For each group: stage specific files by name, commit with HEREDOC format
-7. If all changes form one logical unit, stage files by name (never `git add -A` or `git add .`)
+7. If all changes form one logical unit, stage files by name (never `git add
+  -A` or `git add .`)
 8. Push: `git push` (current branch)
 9. Run `git status` after to verify
 
@@ -41,5 +47,7 @@ description: Commit and push changes using atomic commits. Use when user asks to
 ## Error Handling
 
 - If lint or tests fail → report all errors, stop; do not commit or push
-- If `git push` is rejected (non-fast-forward) → run `git pull --rebase` then retry push once
-- If pre-commit hook fails → fix reported issues, re-stage, create a NEW commit (never `--amend`)
+- If `git push` is rejected (non-fast-forward) → run `git pull --rebase` then
+  retry push once
+- If pre-commit hook fails → fix reported issues, re-stage, create a NEW
+  commit (never `--amend`)

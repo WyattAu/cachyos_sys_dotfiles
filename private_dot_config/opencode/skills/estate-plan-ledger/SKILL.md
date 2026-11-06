@@ -1,3 +1,5 @@
+# Estate Plan Ledger
+
 ---
 name: estate-plan-ledger
 description: |
@@ -30,14 +32,14 @@ updated: <ISO date>  rev: <n>
 ## State
 | # | Task | Status | Evidence | Next |
 |---|------|--------|----------|------|
-| 1 | extract crate core | done | `git log -1` abc123 | — |
+| 1 | extract crate core | done | `git log -1` abc123 |; |
 | 2 | no-headed build | active | /tmp/build.log | fix cfg sites |
 
 ## Next action
 <one sentence, executable now>
 
 ## Blocked
-- <gate>: <external dependency> — <what unblocks it>
+- <gate>: <external dependency>; <what unblocks it>
 
 ## Log
 - <date> <what changed> <artifact>

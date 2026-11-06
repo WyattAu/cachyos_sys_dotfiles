@@ -1,3 +1,5 @@
+# Estate Context Economy
+
 ---
 name: estate-context-economy
 description: |
@@ -50,7 +52,7 @@ remaining context. If it would, narrow it first.
    facts, prose for causal chains.
 7. **Compact deliberately.** Before long work, write the state table
    (task | status | evidence | next). After compaction or a restart, read
-   that table first — not the transcript.
+   that table first; not the transcript.
 
 ## Decision table
 

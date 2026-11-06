@@ -1,3 +1,5 @@
+# Estate Research First
+
 ---
 name: estate-research-first
 description: |
@@ -29,7 +31,7 @@ from memory: the API you remember may be two majors behind.
 
 ## Retrieval protocol
 
-1. **One concept per query.** "How to configure X in vN" — not "X, Y, Z
+1. **One concept per query.** "How to configure X in vN"; not "X, Y, Z
    and best practices".
 2. **Resolve the source first** (library ID, RFC number, repo path), then
    query the specific concept.
@@ -45,7 +47,7 @@ from memory: the API you remember may be two majors behind.
 ```
 decision:  <what we will do>
 because:   <tier-1 source or measurement>
-rejected:  <alternative> — <why>
+rejected:  <alternative>; <why>
 revisit:   <trigger: new version, benchmark, failure>
 ```
 
