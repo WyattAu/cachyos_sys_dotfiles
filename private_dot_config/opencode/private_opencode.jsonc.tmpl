@@ -69,6 +69,15 @@
         "disabled": false
       },
 {{- if $mcp.context7 }}
+      // ---- Estate mcp-sentinel -----------------------------------------
+      // Supply-chain integrity gate as MCP: scan configs for IoC, pin
+      // tool-list hashes, verify drift, audit chain. Binary: ~/.local/bin
+      // (built from WyattAu/mcp-sentinel). Chezmoi data flag: [opencode.mcp].sentinel
+      "sentinel": {
+        "type": "local",
+        "command": ["/home/wyatt/.local/bin/mcp-sentinel", "serve"],
+        "disabled": false
+      },
       // ---- Docs & research ------------------------------------------
       "context7": {
         "type": "remote",
