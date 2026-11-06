@@ -1,5 +1,3 @@
-# Competitive Teardown
-
 ---
 name: competitive-teardown
 description: >

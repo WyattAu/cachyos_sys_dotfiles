@@ -1,5 +1,3 @@
-# Estate Plan Ledger
-
 ---
 name: estate-plan-ledger
 description: |

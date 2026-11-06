@@ -1,5 +1,3 @@
-# Estate Orchestrate
-
 ---
 name: estate-orchestrate
 description: |

@@ -1,5 +1,3 @@
-# Lean Iterate
-
 ---
 name: lean-iterate
 description: >

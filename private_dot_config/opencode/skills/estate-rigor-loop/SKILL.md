@@ -1,5 +1,3 @@
-# Estate Rigor Loop
-
 ---
 name: estate-rigor-loop
 description: |

@@ -1,5 +1,3 @@
-# Re Triage
-
 ---
 name: re-triage
 description: >

@@ -1,5 +1,3 @@
-# Db Migration
-
 ---
 name: db-migration
 description: >

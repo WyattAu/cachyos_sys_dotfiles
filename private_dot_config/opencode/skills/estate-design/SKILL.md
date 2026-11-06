@@ -1,5 +1,3 @@
-# Estate Design
-
 ---
 name: estate-design
 description: |

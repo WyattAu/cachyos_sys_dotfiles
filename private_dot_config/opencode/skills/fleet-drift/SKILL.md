@@ -1,5 +1,3 @@
-# Fleet Drift
-
 ---
 name: fleet-drift
 description: >

@@ -1,5 +1,3 @@
-# Secret Scan
-
 ---
 name: secret-scan
 description: >

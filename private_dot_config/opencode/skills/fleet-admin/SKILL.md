@@ -1,5 +1,3 @@
-# Fleet Admin
-
 ---
 name: fleet-admin
 description: >

@@ -1,5 +1,3 @@
-# Estate Context Economy
-
 ---
 name: estate-context-economy
 description: |

@@ -1,5 +1,3 @@
-# Mcp Debug
-
 ---
 name: mcp-debug
 description: >

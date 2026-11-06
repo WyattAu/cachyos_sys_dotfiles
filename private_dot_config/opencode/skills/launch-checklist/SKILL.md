@@ -1,5 +1,3 @@
-# Launch Checklist
-
 ---
 name: launch-checklist
 description: >

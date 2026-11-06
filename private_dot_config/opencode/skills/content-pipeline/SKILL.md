@@ -1,5 +1,3 @@
-# Content Pipeline
-
 ---
 name: content-pipeline
 description: >

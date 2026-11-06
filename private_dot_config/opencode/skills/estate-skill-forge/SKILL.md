@@ -1,5 +1,3 @@
-# Estate Skill Forge
-
 ---
 name: estate-skill-forge
 description: |

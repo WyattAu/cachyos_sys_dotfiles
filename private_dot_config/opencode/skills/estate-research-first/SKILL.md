@@ -1,5 +1,3 @@
-# Estate Research First
-
 ---
 name: estate-research-first
 description: |
