@@ -93,6 +93,15 @@
       },
 {{- end }}
 {{- if $mcp.time_kit }}
+      // ---- Estate fetch-kit --------------------------------------------
+      // Estate fetch server (WyattAu/fetch-kit), mcp-kit-core native.
+      // HTML-to-text + paging. Registered alongside mcp-server-fetch;
+      // swap after parity window.
+      "fetch-kit": {
+        "type": "local",
+        "command": ["/home/wyatt/.local/bin/fetch-kit", "serve"],
+        "disabled": false
+      },
       // ---- Estate time-kit ---------------------------------------------
       // Estate time server (WyattAu/time-kit), mcp-kit-core native.
       "time-kit": {
