@@ -93,6 +93,15 @@
       },
 {{- end }}
 {{- if $mcp.time_kit }}
+      // ---- Estate git-kit ----------------------------------------------
+      // Estate git server (WyattAu/git-kit), mcp-kit-core native: bounded
+      // git CLI, 14 tools. Registered alongside mcp-server-git; swap after
+      // parity window.
+      "git-kit": {
+        "type": "local",
+        "command": ["/home/wyatt/.local/bin/git-kit", "serve"],
+        "disabled": false
+      },
       // ---- Estate fetch-kit --------------------------------------------
       // Estate fetch server (WyattAu/fetch-kit), mcp-kit-core native.
       // HTML-to-text + paging. Registered alongside mcp-server-fetch;
