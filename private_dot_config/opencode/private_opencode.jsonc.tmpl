@@ -69,16 +69,30 @@
         "disabled": false
       },
 {{- if $mcp.context7 }}
+      // ---- Docs & research ------------------------------------------
+      "context7": {
+        "type": "remote",
+        "url": "https://mcp.context7.com/mcp",
+        "disabled": false,
+        "timeout": { "catalog": 15000 }
+      },
+{{- end }}
+{{- if $mcp.filesystem_kit }}
       // ---- Estate filesystem-kit ---------------------------------------
       // Estate filesystem server (WyattAu/filesystem-kit): drop-in API,
       // allowed-roots guard (FILESYSTEM_KIT_ALLOWED, default
       // $HOME:/tmp/opencode). Registered alongside the third-party
       // filesystem server; swap after parity window.
+      // Gated per AGENTS rule 3: hosts without the binary must not
+      // render a server that cannot spawn (it rode context7's flag until
+      // 2026-11-07, which rendered it fleet-wide).
       "filesystem-kit": {
         "type": "local",
         "command": ["/home/wyatt/.local/bin/filesystem-kit", "serve"],
         "disabled": false
       },
+{{- end }}
+{{- if $mcp.sentinel }}
       // ---- Estate mcp-sentinel -----------------------------------------
       // Supply-chain integrity gate as MCP: scan configs for IoC, pin
       // tool-list hashes, verify drift, audit chain. Binary: ~/.local/bin
@@ -87,13 +101,6 @@
         "type": "local",
         "command": ["/home/wyatt/.local/bin/mcp-sentinel", "serve"],
         "disabled": false
-      },
-      // ---- Docs & research ------------------------------------------
-      "context7": {
-        "type": "remote",
-        "url": "https://mcp.context7.com/mcp",
-        "disabled": false,
-        "timeout": { "catalog": 15000 }
       },
 {{- end }}
 {{- if $mcp.gh_grep }}
@@ -121,12 +128,26 @@
       // toolsets the official github-mcp-server was enabled for. That
       // server's mid-session restarts churned the tool catalog; this one
       // is a static binary. Token: gh auth token (unchanged).
+      // Gated per AGENTS rule 3: [opencode.mcp].github_kit selects the
+      // estate server; hosts without the binary keep github-mcp-server.
+{{- if $mcp.github_kit }}
       "github": {
         "type": "local",
         "command": ["/home/wyatt/.local/bin/github-kit", "serve"],
         "disabled": false,
         "timeout": { "catalog": 15000, "execution": 30000 }
       },
+{{- else }}
+      "github": {
+        "type": "local",
+        "command": [
+          "/bin/bash", "-c",
+          "export GITHUB_PERSONAL_ACCESS_TOKEN=\"$(gh auth token 2>/dev/null)\"; [ -n \"$GITHUB_PERSONAL_ACCESS_TOKEN\" ] || { echo 'github-mcp: no gh token — run: gh auth login' >&2; exit 1; }; exec github-mcp-server stdio --toolsets repos,issues,pull_requests,actions,code_security"
+        ],
+        "disabled": false,
+        "timeout": { "catalog": 15000, "execution": 30000 }
+      },
+{{- end }}
 {{- end }}
 {{- if and $mcp.github_remote (not $mcp.github) }}
       // ---- GitHub (remote fallback) -----------------------------------
@@ -180,6 +201,10 @@
       // Replaces mcp-server-memory (Node), which timed out under agent
       // load; API drop-in compatible. Data migrated 2026-11-06 (26
       // entities, 336 observations, 1 relation) via memory-kit import.
+      // Gated per AGENTS rule 3: [opencode.mcp].memory_kit selects the
+      // estate SQLite server; hosts without the binary keep
+      // mcp-server-memory (and its own data file).
+{{- if $mcp.memory_kit }}
       "memory": {
         "type": "local",
         "command": ["/home/wyatt/.local/bin/memory-kit", "serve"],
@@ -189,6 +214,20 @@
           "MEMORY_FILE_PATH": "{{ .chezmoi.homeDir }}/.local/share/opencode/memory/memory.json"
         }
       },
+{{- else }}
+      "memory": {
+        "type": "local",
+        "command": [
+          "/bin/bash", "-c",
+          "P=$(command -v mcp-server-memory 2>/dev/null || true); [ -x \"$P\" ] || P=\"$HOME/.bun/bin/mcp-server-memory\"; [ -x \"$P\" ] || P=\"$HOME/.npm-global/bin/mcp-server-memory\"; exec \"$P\""
+        ],
+        "disabled": false,
+        "timeout": { "catalog": 60000, "execution": 30000 },
+        "environment": {
+          "MEMORY_FILE_PATH": "{{ .chezmoi.homeDir }}/.local/share/opencode/memory/memory.json"
+        }
+      },
+{{- end }}
 {{- end }}
 {{- if $mcp.duckduckgo }}
       // ---- Web search --------------------------------------------------

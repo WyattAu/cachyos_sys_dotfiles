@@ -86,3 +86,13 @@ forgejo = true                     # self-hosted forge: git.wyattau.com repos/is
 virustotal = true                  # official VT threat intel (remote, OAuth via /mcps)
 osint = true                       # 37 OSINT tools, 21 free keyless (DNS/WHOIS/CT/Wayback/BGP)
 shodan = false                     # needs SHODAN_API_KEY — enable when a key exists
+# Estate kit servers (Rust, ~/.local/bin): fleet-default OFF because the
+# ansible 'opencode' role does not provision them yet. Hosts that build
+# them flip these to true in ~/.config/chezmoi/chezmoi.toml
+# [data.opencode.mcp]. The template falls back to the third-party
+# equivalent (filesystem, mcp-server-memory, official github-mcp-server)
+# so a false here never breaks a host.
+filesystem_kit = false             # WyattAu/filesystem-kit — drop-in for mcp-server-filesystem
+sentinel = false                   # WyattAu/mcp-sentinel — supply-chain integrity gate
+github_kit = false                 # WyattAu/github-kit — false = official github-mcp-server
+memory_kit = false                 # WyattAu/memory-kit — false = mcp-server-memory (Node)
