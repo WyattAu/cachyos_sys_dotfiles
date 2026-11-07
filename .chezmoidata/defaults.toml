@@ -96,3 +96,8 @@ filesystem_kit = false             # WyattAu/filesystem-kit — drop-in for mcp-
 sentinel = false                   # WyattAu/mcp-sentinel — supply-chain integrity gate
 github_kit = false                 # WyattAu/github-kit — false = official github-mcp-server
 memory_kit = false                 # WyattAu/memory-kit — false = mcp-server-memory (Node)
+fetch_kit = false                  # WyattAu/fetch-kit — drop-in for mcp-server-fetch
+git_kit = false                    # WyattAu/git-kit — drop-in for mcp-server-git
+duckduckgo_kit = false             # WyattAu/duckduckgo-kit — drop-in for duckduckgo-mcp-server
+sequential_thinking_kit = false    # WyattAu/sequential-thinking-kit — drop-in for the scratchpad server
+
