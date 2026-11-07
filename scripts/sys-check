@@ -108,10 +108,16 @@ else
 fi
 
 echo "SSH agent:"
-if ssh-add -l &>/dev/null; then
+# The session agent is keychain's, with a random per-session socket under
+# ~/.keychain — interactive shells get SSH_AUTH_SOCK from the profile, the
+# systemd sys-check unit does not. 2026-11-07: every hourly run reported
+# "no keys loaded" and failed on that alone. Discover the socket the way a
+# login shell would, newest first (keychain starts a fresh agent per boot).
+AGENT_SOCK="${SSH_AUTH_SOCK:-$(ls -t "$HOME"/.keychain/*.s 2>/dev/null | head -1)}"
+if [[ -n "$AGENT_SOCK" ]] && SSH_AUTH_SOCK="$AGENT_SOCK" ssh-add -l &>/dev/null; then
     echo "  ✓ keys loaded"
 else
-    echo "  ✗ no keys loaded"
+    echo "  ✗ no keys loaded (agent socket: ${AGENT_SOCK:-none found})"
     ERRORS=$((ERRORS + 1))
 fi
 

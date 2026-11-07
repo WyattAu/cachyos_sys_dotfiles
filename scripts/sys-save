@@ -14,7 +14,10 @@ echo ">> Syncing managed dotfiles..."
 # plasmashellrc: Plasma adds migration entries to [Updates]/performed=
 # kconf_updaterc: KDE updates migration timestamps
 # plasma-org.kde.plasma.desktop-appletsrc: panel layout contains UUIDs
-EXCLUDE_PATTERNS="kdeglobals plasmashellrc kconf_updaterc plasma-org"
+# plasmanotifyrc: Plasma rewrites it whenever a notification is seen/dismissed
+#   ([Applications][...] Seen= entries) — re-adding would snapshot transient
+#   notification state into the fleet source for every other host.
+EXCLUDE_PATTERNS="kdeglobals plasmashellrc kconf_updaterc plasma-org plasmanotifyrc"
 
 # Get all managed files, filter out excludes, re-add
 chezmoi managed --include=files 2>/dev/null | while read -r file; do
