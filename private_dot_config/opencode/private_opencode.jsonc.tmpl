@@ -92,15 +92,16 @@
         "disabled": false
       },
 {{- end }}
-{{- if $mcp.sentinel }}
+{{- if $mcp.time_kit }}
       // ---- Estate time-kit ---------------------------------------------
       // Estate time server (WyattAu/time-kit), mcp-kit-core native.
-      // Registered alongside mcp-server-time; swap after parity window.
       "time-kit": {
         "type": "local",
         "command": ["/home/wyatt/.local/bin/time-kit", "serve"],
         "disabled": false
       },
+{{- end }}
+{{- if $mcp.sentinel }}
       // ---- Estate mcp-sentinel -----------------------------------------
       // Supply-chain integrity gate as MCP: scan configs for IoC, pin
       // tool-list hashes, verify drift, audit chain. Binary: ~/.local/bin
@@ -139,14 +140,14 @@
       // Gated per AGENTS rule 3: [opencode.mcp].github_kit selects the
       // estate server; hosts without the binary keep github-mcp-server.
 {{- if $mcp.github_kit }}
-      "github": {
+      "github-kit": {
         "type": "local",
         "command": ["/home/wyatt/.local/bin/github-kit", "serve"],
         "disabled": false,
         "timeout": { "catalog": 15000, "execution": 30000 }
       },
 {{- else }}
-      "github": {
+      "github-kit": {
         "type": "local",
         "command": [
           "/bin/bash", "-c",
