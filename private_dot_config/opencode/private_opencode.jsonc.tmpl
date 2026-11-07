@@ -69,6 +69,16 @@
         "disabled": false
       },
 {{- if $mcp.context7 }}
+      // ---- Estate filesystem-kit ---------------------------------------
+      // Estate filesystem server (WyattAu/filesystem-kit): drop-in API,
+      // allowed-roots guard (FILESYSTEM_KIT_ALLOWED, default
+      // $HOME:/tmp/opencode). Registered alongside the third-party
+      // filesystem server; swap after parity window.
+      "filesystem-kit": {
+        "type": "local",
+        "command": ["/home/wyatt/.local/bin/filesystem-kit", "serve"],
+        "disabled": false
+      },
       // ---- Estate mcp-sentinel -----------------------------------------
       // Supply-chain integrity gate as MCP: scan configs for IoC, pin
       // tool-list hashes, verify drift, audit chain. Binary: ~/.local/bin
