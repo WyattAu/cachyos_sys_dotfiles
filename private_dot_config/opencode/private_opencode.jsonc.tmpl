@@ -93,6 +93,14 @@
       },
 {{- end }}
 {{- if $mcp.sentinel }}
+      // ---- Estate time-kit ---------------------------------------------
+      // Estate time server (WyattAu/time-kit), mcp-kit-core native.
+      // Registered alongside mcp-server-time; swap after parity window.
+      "time-kit": {
+        "type": "local",
+        "command": ["/home/wyatt/.local/bin/time-kit", "serve"],
+        "disabled": false
+      },
       // ---- Estate mcp-sentinel -----------------------------------------
       // Supply-chain integrity gate as MCP: scan configs for IoC, pin
       // tool-list hashes, verify drift, audit chain. Binary: ~/.local/bin
