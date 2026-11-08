@@ -137,6 +137,15 @@
       },
 {{- end }}
 {{- if $mcp.sentinel }}
+      // ---- Estate osint-kit --------------------------------------------
+      // Estate OSINT server (WyattAu/osint-kit), mcp-kit-core native.
+      // Keyless subset (14 tools) of the third-party osint server.
+      // Registered alongside; swap after parity window + keyed sources.
+      "osint-kit": {
+        "type": "local",
+        "command": ["/home/wyatt/.local/bin/osint-kit", "serve"],
+        "disabled": false
+      },
       // ---- Estate mcp-sentinel -----------------------------------------
       // Supply-chain integrity gate as MCP: scan configs for IoC, pin
       // tool-list hashes, verify drift, audit chain. Binary: ~/.local/bin
