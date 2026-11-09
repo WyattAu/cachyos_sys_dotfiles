@@ -157,6 +157,9 @@
     name:
       - heroic-games-launcher-bin
       - librewolf-bin          # repos now ship `librewolf`
+      # superseded by chaotic-aur steam-rom-manager-git (both provide
+      # `steam-rom-manager`); the old AUR appimage blocks the install
+      - steam-rom-manager-appimage
       # merged into python-proton-vpn-api-core 5.5.15+
       - python-proton-vpn-local-agent
     state: absent
