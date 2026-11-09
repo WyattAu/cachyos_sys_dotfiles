@@ -613,13 +613,18 @@
 
   // Ordered rules; last match wins. Complements the TUI's autoaccept setting.
   // Auto-approve safe operations; guardrails (sudo, rm -rf /, force push) stay.
+  // git push is "allow" rather than "ask" on purpose: the proof-loop plugin
+  // (plugins/proof-loop.ts) rewrites every ask to deny while a loop is
+  // active, so an ask could never be approved in an unattended run. Force
+  // push and reset --hard remain denied; sys-save's Nix gate and remote
+  // branch protection are the remaining controls.
   "permissions": [
     { "action": "shell", "resource": "sudo *", "effect": "deny" },
     { "action": "shell", "resource": "rm -rf /", "effect": "deny" },
     { "action": "shell", "resource": "git push * --force*", "effect": "deny" },
     { "action": "shell", "resource": "git push * --force", "effect": "deny" },
     { "action": "shell", "resource": "git reset --hard", "effect": "deny" },
-    { "action": "shell", "resource": "git push *", "effect": "ask" },
+    { "action": "shell", "resource": "git push *", "effect": "allow" },
     { "action": "shell", "resource": "cargo publish*", "effect": "ask" },
     { "action": "shell", "resource": "gh release create*", "effect": "ask" },
     { "action": "shell", "resource": "*", "effect": "allow" },

@@ -100,4 +100,5 @@ fetch_kit = false                  # WyattAu/fetch-kit — drop-in for mcp-serve
 git_kit = false                    # WyattAu/git-kit — drop-in for mcp-server-git
 duckduckgo_kit = false             # WyattAu/duckduckgo-kit — drop-in for duckduckgo-mcp-server
 sequential_thinking_kit = false    # WyattAu/sequential-thinking-kit — drop-in for the scratchpad server
+time_kit = false                   # WyattAu/time-kit — drop-in for mcp-server-time
 
