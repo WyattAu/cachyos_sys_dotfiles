@@ -1,5 +1,3 @@
-# Ship
-
 ---
 name: ship
 description: Commit and push changes using atomic commits. Use when user asks

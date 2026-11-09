@@ -1,5 +1,3 @@
-# Caveman Help
-
 ---
 name: caveman-help
 description: >

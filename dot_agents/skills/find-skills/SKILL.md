@@ -1,5 +1,3 @@
-# Find Skills
-
 ---
 name: find-skills
 description: Helps users discover and install agent skills when they ask

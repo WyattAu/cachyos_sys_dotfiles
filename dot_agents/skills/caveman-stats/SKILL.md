@@ -1,5 +1,3 @@
-# Caveman Stats
-
 ---
 name: caveman-stats
 description: >

@@ -1,5 +1,3 @@
-# Compress
-
 ---
 name: compress
 description: >

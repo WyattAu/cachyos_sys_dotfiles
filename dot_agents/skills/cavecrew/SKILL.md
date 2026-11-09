@@ -1,5 +1,3 @@
-# Cavecrew
-
 ---
 name: cavecrew
 description: >

@@ -1,5 +1,3 @@
-# Caveman Compress
-
 ---
 name: caveman-compress
 description: >

@@ -1,5 +1,3 @@
-# Caveman
-
 ---
 name: caveman
 description: >
