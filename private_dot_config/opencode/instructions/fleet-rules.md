@@ -12,6 +12,11 @@
 - clawdius proofs: use the lean-lsp MCP server (22 tools) for fast feedback;
   lake build is the final gate only.
 - mcp-doctor is the per-server diagnostic; sys-check is the hourly gate.
+- Rust build artifacts go in the shared dedup target: export
+  CARGO_TARGET_DIR="$HOME/.cache/cargo-target" (also set per-repo in
+  .cargo/config.toml). NEVER point CARGO_TARGET_DIR into /tmp or
+  /tmp/opencode — the 16G tmpfs fills and the janitor reaps
+  /tmp/opencode/*-target dirs after 1h idle.
 - wyattau-* skills are projections of the standards canons: they live at
   ~/.local/share/standards-dist (git pull there to refresh); build.sh --check
   fails when a pin is behind the canon (SC-11).

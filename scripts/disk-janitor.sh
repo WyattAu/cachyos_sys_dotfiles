@@ -81,6 +81,11 @@ echo "target-dir injected into $fixed repos"
 find /tmp/opencode -maxdepth 1 -mindepth 1 -mtime +1 -exec rm -rf {} \; 2>/dev/null
 find /tmp -maxdepth 1 -mindepth 1 -mtime +3 -exec rm -rf {} \; 2>/dev/null
 
+# tmpfs guard: agents relocate cargo targets into /tmp/opencode/*-target.
+# The tmpfs is 16G — an 11G target nearly filled it (2026-11-12). Fleet rule:
+# heavy builds never live in /tmp. Reap relocated target dirs idle >1h.
+find /tmp/opencode -maxdepth 1 -type d -name "*-target" -mmin +60 -exec rm -rf {} \; 2>/dev/null
+
 # opencode WAL guard
 wal=/home/wyatt/.local/share/opencode/opencode.db-wal
 if [ -f "$wal" ]; then
