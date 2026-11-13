@@ -86,6 +86,10 @@ find /tmp -maxdepth 1 -mindepth 1 -mtime +3 -exec rm -rf {} \; 2>/dev/null
 # heavy builds never live in /tmp. Reap relocated target dirs idle >1h.
 find /tmp/opencode -maxdepth 1 -type d -name "*-target" -mmin +60 -exec rm -rf {} \; 2>/dev/null
 
+# same guard for relocated targets in ~/.cache (zz-camp-target etc.) —
+# the sweep above only matches dirs named exactly "target"
+find /home/wyatt/.cache -maxdepth 1 -type d -name "*-target" ! -name "cargo-target" -mmin +60 -exec rm -rf {} \; 2>/dev/null
+
 # opencode WAL guard
 wal=/home/wyatt/.local/share/opencode/opencode.db-wal
 if [ -f "$wal" ]; then
