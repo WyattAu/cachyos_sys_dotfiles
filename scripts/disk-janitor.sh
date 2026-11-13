@@ -96,6 +96,16 @@ if [ -f "$wal" ]; then
   fi
 fi
 
+# 7. shared target cap: past ~100G it's mostly cold artifacts — a rebuild is
+#    cheaper than the disk it holds. Only when fully idle for 6h+.
+if [ -d "$SHARED_TARGET" ]; then
+  cap_kb=$(du -sk "$SHARED_TARGET" 2>/dev/null | cut -f1)
+  recent=$(find "$SHARED_TARGET" -type f -newermt '6 hours ago' 2>/dev/null | wc -l)
+  if [ "${cap_kb:-0}" -gt 104857600 ] && [ "$recent" -eq 0 ]; then
+    rm -rf "$SHARED_TARGET" && echo "capped shared target (was $((cap_kb/1048576))G, idle >6h)"
+  fi
+fi
+
 echo "=== after ==="
 df -h / | tail -1
 } >> "$LOG" 2>&1
