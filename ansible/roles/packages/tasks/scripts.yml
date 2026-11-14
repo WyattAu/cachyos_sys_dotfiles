@@ -43,3 +43,4 @@
     - mic-lock.sh
     - disk-janitor.sh
     - reclaim-snapshots.sh
+    - drain-zram.sh
