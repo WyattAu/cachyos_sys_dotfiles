@@ -101,4 +101,5 @@ git_kit = false                    # WyattAu/git-kit — drop-in for mcp-server-
 duckduckgo_kit = false             # WyattAu/duckduckgo-kit — drop-in for duckduckgo-mcp-server
 sequential_thinking_kit = false    # WyattAu/sequential-thinking-kit — drop-in for the scratchpad server
 time_kit = false                   # WyattAu/time-kit — drop-in for mcp-server-time
+sg_mcp = false                     # WyattAu/skygauge — satellite alt-data endpoint (binary fleet-install pending; wyatt's host overrides true)
 

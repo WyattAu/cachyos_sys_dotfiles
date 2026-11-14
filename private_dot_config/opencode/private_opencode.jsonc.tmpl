@@ -68,6 +68,18 @@
         "command": ["python3", "/home/wyatt/.local/share/standards-dist/mcp/standards_mcp.py"],
         "disabled": false
       },
+{{- if $mcp.sg_mcp }}
+      // ---- SkyGauge (WyattAu/skygauge) ----------------------------------
+      // Satellite alt-data endpoint: 16 EIA series (~26k weekly points),
+      // seasonal/spot/outlier/correlation analyses. Binary fleet-installed
+      // at ~/.local/bin/sg-mcp; series dir is the fleet default inside the
+      // binary (dev tree flaps tolerated: tools fail per-call, honestly).
+      "sg-mcp": {
+        "type": "local",
+        "command": ["/home/wyatt/.local/bin/sg-mcp"],
+        "disabled": false
+      },
+{{- end }}
 {{- if $mcp.context7 }}
       // ---- Docs & research ------------------------------------------
       "context7": {
