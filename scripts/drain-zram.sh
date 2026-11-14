@@ -28,7 +28,7 @@ SWFILE=/swapfile-drain
 echo ">> creating ${file_g}G swapfile at $SWFILE (btrfs: NOCOW + fully allocated)"
 # btrfs recipe: NOCOW attribute must be set on the EMPTY file before writing,
 # then fill with real data (truncate leaves holes the kernel rejects)
-( touch "$SWFILE" && chattr +C "$SWFILE" && chmod 600 "$SWFILE" && \
+( rm -f "$SWFILE" && touch "$SWFILE" && chattr +C "$SWFILE" && chmod 600 "$SWFILE" && \
   dd if=/dev/zero of="$SWFILE" bs=1M count=$((file_g*1024)) status=progress ) || {
   rm -f "$SWFILE"; echo "swapfile creation failed"; exit 1; }
 mkswap -L drain "$SWFILE" >/dev/null
