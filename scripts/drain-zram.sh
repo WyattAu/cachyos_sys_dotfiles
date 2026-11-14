@@ -25,9 +25,12 @@ fi
 # swapfile big enough for everything RAM cannot absorb
 file_g=$(( used_g + 4 )); [ "$file_g" -lt 8 ] && file_g=8
 SWFILE=/swapfile-drain
-echo ">> creating ${file_g}G swapfile at $SWFILE (btrfs NOCOW)"
-truncate -s "${file_g}G" "$SWFILE"
-chattr +C "$SWFILE" 2>/dev/null
+echo ">> creating ${file_g}G swapfile at $SWFILE (btrfs: NOCOW + fully allocated)"
+# btrfs recipe: NOCOW attribute must be set on the EMPTY file before writing,
+# then fill with real data (truncate leaves holes the kernel rejects)
+( touch "$SWFILE" && chattr +C "$SWFILE" && chmod 600 "$SWFILE" && \
+  dd if=/dev/zero of="$SWFILE" bs=1M count=$((file_g*1024)) status=progress ) || {
+  rm -f "$SWFILE"; echo "swapfile creation failed"; exit 1; }
 mkswap -L drain "$SWFILE" >/dev/null
 swapon -v "$SWFILE" || { rm -f "$SWFILE"; echo "could not activate swapfile"; exit 1; }
 
