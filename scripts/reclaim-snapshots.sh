@@ -39,10 +39,24 @@ sed -i \
 grep -E '^(NUMBER_LIMIT|NUMBER_LIMIT_IMPORTANT|TIMELINE_LIMIT_HOURLY|TIMELINE_LIMIT_DAILY)=' "$CFG"
 
 echo
-echo "=== pruning (this is the step that actually frees blocks) ==="
+echo "=== pruning ==="
 snapper -c root cleanup number
 snapper -c root cleanup timeline
 snapper -c root cleanup empty-pre-post
+
+# cleanup only touches snapshots tagged with a cleanup algorithm; snapshots
+# created with cleanup=none (or by other tools) survive it forever. Force:
+# delete everything except the newest 2 numbers.
+mapfile -t nums < <(snapper -c root list --columns number 2>/dev/null | grep -E '^[0-9]+$' | sort -n)
+keep=2
+if [ "${#nums[@]}" -gt "$keep" ]; then
+  del="${nums[0]}"
+  for ((i=1; i<${#nums[@]}-keep; i++)); do del="$del-${nums[$i]}"; done
+  echo "force-deleting snapshot numbers: $del"
+  snapper -c root delete --sync $del && echo "deleted."
+else
+  echo "only ${#nums[@]} snapshots - nothing to force-delete"
+fi
 echo "snapshots left: $(snapper -c root list 2>/dev/null | tail -n +3 | wc -l)"
 
 echo
