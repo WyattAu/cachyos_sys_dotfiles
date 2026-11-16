@@ -118,9 +118,24 @@
       // Estate fetch server (WyattAu/fetch-kit), mcp-kit-core native.
       // HTML-to-text + paging. Registered alongside mcp-server-fetch;
       // swap after parity window.
+      // ---- Estate fetch-kit --------------------------------------------
+      // Estate fetch server (WyattAu/fetch-kit), mcp-kit-core native.
+      // HTML-to-text + paging. Registered alongside mcp-server-fetch;
+      // swap after parity window.
       "fetch-kit": {
         "type": "local",
         "command": ["/home/wyatt/.local/bin/fetch-kit", "serve"],
+        "disabled": false
+      },
+      // ---- Estate streamformer-mcp --------------------------------------
+      // Estate deployment-toolchain server (WyattAu/streamformer-mcp),
+      // mcp-kit-core native: six tools over the streamformer four-stage
+      // pipeline (train / autocal / package / verify / evidence reports /
+      // repo status). Bounded children; shaped outputs. Local to the
+      // hosts that carry the streamformer checkout (STREAMFORMER_HOME).
+      "streamformer-mcp": {
+        "type": "local",
+        "command": ["/home/wyatt/.local/bin/streamformer-mcp"],
         "disabled": false
       },
       // ---- Estate sequential-thinking-kit -------------------------------
