@@ -1,6 +1,6 @@
 #!/bin/bash
 # Reclaim space held by btrfs/snapper snapshots on the root subvolume.
-# Run with: sudo bash /home/wyatt/.local/bin/reclaim-snapshots.sh [--dry-run]
+# Run with: sudo bash reclaim-snapshots.sh [--dry-run]
 # Safe: uses snapper's own cleanup logic, keeps the newest snapshots and any
 # snapshot marked "important". Never touches files, only snapshot metadata.
 set -u
@@ -53,7 +53,7 @@ if [ "${#nums[@]}" -gt "$keep" ]; then
   del="${nums[0]}"
   for ((i=1; i<${#nums[@]}-keep; i++)); do del="$del-${nums[$i]}"; done
   echo "force-deleting snapshot numbers: $del"
-  snapper -c root delete --sync $del && echo "deleted."
+  snapper -c root delete --sync "$del" && echo "deleted."
 else
   echo "only ${#nums[@]} snapshots - nothing to force-delete"
 fi

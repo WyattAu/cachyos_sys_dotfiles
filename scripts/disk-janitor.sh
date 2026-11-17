@@ -6,9 +6,9 @@
 # - Re-injects shared cargo target-dir into fresh clones
 # - Cleans /tmp scratch, checkpoints opencode WAL
 # Never touches source files, ~/data, models, or a dir being written to.
-LOG=/home/wyatt/.cache/janitor.log
-SHARED_TARGET=/home/wyatt/.cache/cargo-target
-ROOTS="/home/wyatt/dev/src /home/wyatt/dev/.targets /home/wyatt/builds /home/wyatt/.cargo/target"
+LOG="${JANITOR_LOG:-${XDG_CACHE_HOME:-$HOME/.cache}/janitor.log}"
+SHARED_TARGET="${JANITOR_SHARED_TARGET:-${XDG_CACHE_HOME:-$HOME/.cache}/cargo-target}"
+ROOTS="${JANITOR_ROOTS:-$HOME/dev/src $HOME/dev/.targets $HOME/builds $HOME/.cargo/target}"
 
 {
 echo "=== janitor v3 run $(date) ==="
@@ -60,11 +60,13 @@ for r in $ROOTS; do sweep "$r"; done
 while IFS= read -r nm; do
   [ "$(find "$nm" -type f -newermt '14 days ago' 2>/dev/null | wc -l)" -eq 0 ] && \
     { sz=$(du -sh "$nm" 2>/dev/null | cut -f1); rm -rf "$nm" && echo "removed stale node_modules ($sz): $nm"; }
-done < <(find /home/wyatt/dev -maxdepth 8 -type d -name node_modules -prune 2>/dev/null)
+done < <(find "$HOME/dev" -maxdepth 8 -type d -name node_modules -prune 2>/dev/null)
 
-# re-inject shared target-dir into cargo workspaces that don't have one
-fixed=0
-for cm in $(find /home/wyatt/dev/src -maxdepth 4 -name Cargo.toml 2>/dev/null); do
+# re-inject shared target-dir into cargo workspaces that don't have one.
+# Word splitting is intentional here: dev checkout trees contain no spaces,
+# and the Cargo.toml discovery is bounded to maxdepth 4.
+# shellcheck disable=SC2044
+for cm in $(find "$HOME/dev/src" -maxdepth 4 -name Cargo.toml 2>/dev/null); do
   d=$(dirname "$cm"); cfg="$d/.cargo/config.toml"
   grep -q "target-dir" "$cfg" 2>/dev/null && continue
   mkdir -p "$d/.cargo"
@@ -90,14 +92,14 @@ find /tmp/opencode -maxdepth 1 -type d -name "*-target" -mmin +60 -exec rm -rf {
 
 # same guard for relocated targets in ~/.cache (zz-camp-target etc.) —
 # the sweep above only matches dirs named exactly "target"
-find /home/wyatt/.cache -maxdepth 1 -type d -name "*-target" ! -name "cargo-target" -mmin +60 -exec rm -rf {} \; 2>/dev/null
+find "${XDG_CACHE_HOME:-$HOME/.cache}" -maxdepth 1 -type d -name "*-target" ! -name "cargo-target" -mmin +60 -exec rm -rf {} \; 2>/dev/null
 
 # opencode WAL guard
-wal=/home/wyatt/.local/share/opencode/opencode.db-wal
+wal="${XDG_DATA_HOME:-$HOME/.local/share}/opencode/opencode.db-wal"
 if [ -f "$wal" ]; then
   walsz=$(stat -c %s "$wal" 2>/dev/null || echo 0)
   if [ "$walsz" -gt 2000000000 ]; then
-    sqlite3 /home/wyatt/.local/share/opencode/opencode.db "PRAGMA busy_timeout=30000; PRAGMA wal_checkpoint(TRUNCATE);" >/dev/null 2>&1
+    sqlite3 "${XDG_DATA_HOME:-$HOME/.local/share}/opencode/opencode.db" "PRAGMA busy_timeout=30000; PRAGMA wal_checkpoint(TRUNCATE);" >/dev/null 2>&1
     echo "wal checkpointed (was $((walsz/1000000))MB)"
   fi
 fi
