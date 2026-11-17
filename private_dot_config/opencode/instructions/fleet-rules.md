@@ -13,7 +13,13 @@
   lake build is the final gate only.
 - mcp-doctor is the per-server diagnostic; sys-check is the hourly gate.
 - Rust build artifacts go in the shared dedup target: export
-  CARGO_TARGET_DIR="$HOME/.cache/cargo-target" (also set per-repo in
+- Rust build artifacts go in the shared dedup target: export
+  CARGO_TARGET_DIR="$HOME/.cache/cargo-target" in your shell. Do NOT commit
+  per-repo `.cargo/config.toml` files carrying that absolute path: CI runners
+  cannot create `/home/wyatt/.cache` and every quality job fails
+  (accessctl incident 2026-11-16). NEVER point CARGO_TARGET_DIR into /tmp or
+  /tmp/opencode — the 16G tmpfs fills and the janitor reaps
+  /tmp/opencode/*-target dirs after 1h idle.
   .cargo/config.toml). NEVER point CARGO_TARGET_DIR into /tmp or
   /tmp/opencode — the 16G tmpfs fills and the janitor reaps
   /tmp/opencode/*-target dirs after 1h idle.
