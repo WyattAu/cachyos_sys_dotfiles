@@ -23,9 +23,9 @@ if swapon --show=NAME --noheadings | grep -qx "$SWFILE"; then
 fi
 
 if [ -f "$SWFILE" ] && [ "$(stat -c %s "$SWFILE")" -eq "$((G*1024*1024*1024))" ]; then
-  echo ">> reusing existing $G"GiB" file"
+  echo ">> reusing existing ${G}GiB file"
 else
-  echo ">> creating $G"GiB" NOCOW swapfile at $SWFILE"
+  echo ">> creating ${G}GiB NOCOW swapfile at $SWFILE"
   rm -f "$SWFILE"
   ( touch "$SWFILE" && chattr +C "$SWFILE" && chmod 600 "$SWFILE" && \
     dd if=/dev/zero of="$SWFILE" bs=1M count=$((G*1024)) status=progress ) \
@@ -37,7 +37,7 @@ echo ">> activating at priority 50 (zram stays at 100 = preferred)"
 swapon -v -p 50 "$SWFILE"
 
 if ! grep -q "^$SWFILE" /etc/fstab; then
-  cp -a /etc/fstab /etc/fstab.bak.$(date +%Y%m%d%H%M%S)
+  cp -a /etc/fstab "/etc/fstab.bak.$(date +%Y%m%d%H%M%S)"
   echo "$SWFILE none swap defaults,pri=50 0 0" >> /etc/fstab
   echo ">> added to /etc/fstab (backup written)"
 fi
