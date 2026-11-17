@@ -68,12 +68,14 @@ for cm in $(find /home/wyatt/dev/src -maxdepth 4 -name Cargo.toml 2>/dev/null); 
   d=$(dirname "$cm"); cfg="$d/.cargo/config.toml"
   grep -q "target-dir" "$cfg" 2>/dev/null && continue
   mkdir -p "$d/.cargo"
-  if [ -f "$cfg" ] && grep -q "^\[build\]" "$cfg"; then
-    sed -i "s|^\[build\]|[build]\ntarget-dir = \"$SHARED_TARGET\"|" "$cfg"
-  else
-    printf '\n[build]\ntarget-dir = "%s"\n' "$SHARED_TARGET" >> "$cfg"
+  printf '[build]\ntarget-dir = "%s"\n' "$SHARED_TARGET" > "$cfg" && fixed=$((fixed+1))
+  # the absolute path is machine-specific — keep it out of git locally
+  # (.git/info/exclude is invisible to CI and survives `git add -A`)
+  repo=$(git -C "$d" rev-parse --show-toplevel 2>/dev/null)
+  if [ -n "$repo" ]; then
+    ex="$repo/.git/info/exclude"
+    grep -qxF ".cargo/config.toml" "$ex" 2>/dev/null || echo ".cargo/config.toml" >> "$ex"
   fi
-  fixed=$((fixed+1))
 done
 echo "target-dir injected into $fixed repos"
 
