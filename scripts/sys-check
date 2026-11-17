@@ -368,6 +368,21 @@ else
     ERRORS=$((ERRORS + 1))
 fi
 
+echo "LLM context (CONTEXT-CORE):"
+CONTEXT_AUDIT="$HOME/dev/src/github.com/WyattAu/context-standards/scripts/context-audit.py"
+if [[ -f "$CONTEXT_AUDIT" ]]; then
+    CA_OUT=$(python3 "$CONTEXT_AUDIT" --adoption 2>/dev/null)
+    CA_EXIT=$?
+    if [[ $CA_EXIT -ne 0 ]]; then
+        echo "  ✗ context-audit violations (exit $CA_EXIT) — run: python3 $CONTEXT_AUDIT --adoption"
+        ERRORS=$((ERRORS + 1))
+    else
+        echo "  ✓ context-audit clean"
+    fi
+else
+    echo "  SKIP context-audit (context-standards not checked out)"
+fi
+
 if [[ $ERRORS -eq 0 ]]; then
     echo ">> All checks passed."
 else
