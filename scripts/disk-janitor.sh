@@ -63,6 +63,7 @@ while IFS= read -r nm; do
 done < <(find "$HOME/dev" -maxdepth 8 -type d -name node_modules -prune 2>/dev/null)
 
 # re-inject shared target-dir into cargo workspaces that don't have one.
+fixed=0
 # Word splitting is intentional here: dev checkout trees contain no spaces,
 # and the Cargo.toml discovery is bounded to maxdepth 4.
 # shellcheck disable=SC2044
