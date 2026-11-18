@@ -34,6 +34,20 @@ if [[ "$IS_HEADLESS" == false ]]; then
     check_service cups
 fi
 
+echo "Disk janitor:"
+# Only enforced where the unit is deployed — other fleet hosts may not have
+# pulled the chezmoi state yet, and that must not page anyone.
+if [[ -f "$HOME/.config/systemd/user/disk-janitor.timer" ]]; then
+    if systemctl --user is-active --quiet disk-janitor.timer 2>/dev/null; then
+        echo "  ✓ disk-janitor.timer"
+    else
+        echo "  ✗ disk-janitor.timer (unit deployed but timer inactive)"
+        ERRORS=$((ERRORS + 1))
+    fi
+else
+    echo "  - disk-janitor.timer not deployed on this host"
+fi
+
 # trendkit daily collection — only checked once the unit is provisioned
 # (installed by ansible when trendkit_enabled: true and the binary exists)
 if [[ -f /etc/systemd/system/trendkit-collect.timer ]]; then

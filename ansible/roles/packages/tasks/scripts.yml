@@ -45,3 +45,16 @@
     - reclaim-snapshots.sh
     - drain-zram.sh
     - setup-tier2-swap.sh
+
+- name: Enable disk-janitor user timer (best effort — skipped where user systemd is unavailable)
+  ansible.builtin.systemd:
+    name: disk-janitor.timer
+    enabled: true
+    state: started
+    scope: user
+  become: true
+  become_user: "{{ user }}"
+  failed_when: false
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ ansible_user_uid | default(1000) }}"
+    HOME: "/home/{{ user }}"
