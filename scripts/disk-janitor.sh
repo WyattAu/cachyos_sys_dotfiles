@@ -115,6 +115,14 @@ if [ -d "$SHARED_TARGET" ]; then
   fi
 fi
 
+# priority hygiene: agent-spawned builds historically inherit nice -4 from
+# legacy terminal sessions and out-compete the desktop. Raise any nice<0
+# build/agent process to 0 (raising nice is unprivileged). The deliberate
+# compositor/terminal tweak (-12 kwin / -6 plasma) is left untouched.
+for p in $(ps -eo nice,pid,comm | awk '$1 < 0 && $3 ~ /^(rustc|cargo|rust-lld|python|python3|lean|node|opencode|bun|cargo-clippy)$/ {print $2}'); do
+  renice -n 0 -p "$p" >/dev/null 2>&1 && echo "reniced $(ps -o comm= -p "$p" 2>/dev/null) (pid $p) -> 0"
+done
+
 echo "=== after ==="
 df -h / | tail -1
 } >> "$LOG" 2>&1
