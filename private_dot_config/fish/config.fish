@@ -128,3 +128,8 @@ end
 
 # FORCE Fish to evaluate the bindings immediately
 fish_user_key_bindings
+
+# Run at normal priority: terminals historically inherit nice -4 from the
+# session, so every build spawned from a fish terminal out-competes the
+# desktop (renice from -4 to 0 is unprivileged — raising nice is allowed).
+renice -n 0 -p %self >/dev/null 2>&1
