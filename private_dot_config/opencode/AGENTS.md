@@ -31,6 +31,16 @@ Prefer MCP tools over guessing:
   `skill_audit.py` (skill load cost). Skills: estate-context-economy,
   estate-rigor-loop, estate-plan-ledger, estate-orchestrate.
 
+## Dogfood first (always on)
+
+- Before writing new code, check whether the WyattAu GitHub estate
+  already has it: `gh search code --owner WyattAu "<keyword>"`, the
+  local dev tree (`~/dev/src/github.com/WyattAu/`, 200+ repos), and the
+  `estate-first` skill for the full workflow. Extend estate crates
+  (one implementation, many consumers) instead of forking logic locally;
+  prefer estate MCP servers (aileron-agent, osint-kit) over new tool
+  surfaces. Say "dogfooded <crate>" in commits that consume estate code.
+
 ## Session hygiene
 
 - Context is finite: paginate, cap output lengths, and avoid dumping large tool results.
