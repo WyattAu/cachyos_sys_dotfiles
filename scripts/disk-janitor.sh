@@ -56,6 +56,18 @@ sweep() { # $1 = search root
 
 for r in $ROOTS; do sweep "$r"; done
 
+# Cargo incremental caches inside the shared target: regenerable,
+# grow unbounded (26G observed), and never match the artifact sweep
+# (they live inside cargo-target/, not a dir named `target`).
+for inc in "$SHARED_TARGET/debug/incremental" "$SHARED_TARGET/release/incremental"; do
+  [ -d "$inc" ] || continue
+  recent=$(find "$inc" -type f -newermt "$idle" 2>/dev/null | wc -l)
+  if [ "$recent" -eq 0 ]; then
+    sz=$(du -sh "$inc" 2>/dev/null | cut -f1)
+    rm -rf "$inc" && echo "removed idle incremental ($sz): $inc"
+  fi
+done
+
 # idle node_modules (>14 days untouched) - regenerable via the project's package manager
 while IFS= read -r nm; do
   [ "$(find "$nm" -type f -newermt '14 days ago' 2>/dev/null | wc -l)" -eq 0 ] && \
@@ -119,7 +131,7 @@ fi
 # legacy terminal sessions and out-compete the desktop. Raise any nice<0
 # build/agent process to 0 (raising nice is unprivileged). The deliberate
 # compositor/terminal tweak (-12 kwin / -6 plasma) is left untouched.
-for p in $(ps -eo nice,pid,comm | awk '$1 < 0 && $3 ~ /^(rustc|cargo|rust-lld|python|python3|lean|node|opencode|bun|cargo-clippy)$/ {print $2}'); do
+for p in $(ps -eo nice,pid,comm | awk '$1 < 0 && $3 ~ /^(rustc|cargo|rust-lld|python|python3|lean|node|opencode|bun|cargo-clippy|clickhouse-serv)$/ {print $2}'); do
   renice -n 0 -p "$p" >/dev/null 2>&1 && echo "reniced $(ps -o comm= -p "$p" 2>/dev/null) (pid $p) -> 0"
 done
 
