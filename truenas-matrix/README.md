@@ -161,3 +161,26 @@ docker push ghcr.io/wyattau/continuwuity:dogfood-phase1
   `UPSTREAM-ISSUE-openmetrics.md`, held for filing); rebase the fork
   regularly (currently 4 commits behind upstream, no conflicts on the
   touched surface); `complement/` test suite after every swap.
+
+## INCIDENT 2026-11-20: DM room stuck extremities (OPEN)
+
+The DM `!IEwsBK9qdYhPcm6QA668Ek9HAPIm9Mucc9LvPQltn3g` timeline tip froze
+at ~5.7h before detection. Events accepted after that (txn 200s from
+multiple sessions) detached from the tip — invisible to /sync and
+/messages on every client. Suspected trigger: concurrent sends from
+four peregrine sessions (tui, gui, listener, probe) forked the
+extremity graph; `docker restart continuwuity` did not re-wedge it
+(recomputed the same stuck state); admin surface has no extremity
+repair. NAS clock verified NTP-clean (+0.001s). Other rooms (admin)
+advance normally — room-scoped.
+
+Detection recipe (works from any client token):
+```
+FROM=$(curl -s ".../rooms/$ENC/messages?dir=b&limit=1" -H "Auth..." | jq -r .end)
+curl -s ".../messages?dir=f&from=$FROM&limit=50" -H "Auth..." | jq '.chunk | length'
+# 0 chunks with recent sends outstanding == stuck tip
+```
+
+Options: (1) leave+recreate DM as workaround, (2) upstream continuuwuity
+issue with the stuck event ids, (3) DB extremity surgery in matrix-db
+(last resort). Peregrine-side: incident row in docs/ROADMAP.md.
