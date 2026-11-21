@@ -68,6 +68,45 @@ for inc in "$SHARED_TARGET/debug/incremental" "$SHARED_TARGET/release/incrementa
   fi
 done
 
+# Out-of-tree target roots. Some loops run cargo with --target-dir pointing at
+# $HOME/dev/.targets/<name> (and ~/.cache/<name>-target). Those dirs are not
+# named `target`, so the sweep above never matches them — a 183G loop dir
+# filled the disk on 2026-11-21. Treat each top-level child as an artifact
+# root: remove it when untouched for the tiered idle window, or when it is
+# huge (>40G) and cold (>6h). Never remove a root some process still
+# references, and never touch .targets/logs.
+sweep_target_root() {
+  local d="$1" sz_kb recent idle6
+  [ -d "$d" ] || return 0
+  pgrep -f "$d/" >/dev/null 2>&1 && { echo "kept in-use: $d"; return 0; }
+  sz_kb=$(du -sk "$d" 2>/dev/null | cut -f1)
+  recent=$(find "$d" -type f -newermt "$idle" 2>/dev/null | wc -l)
+  if [ "$recent" -eq 0 ]; then
+    rm -rf "$d" && echo "removed idle target root ($((sz_kb/1024))M): $d"
+    return 0
+  fi
+  if [ "${sz_kb:-0}" -gt 41943040 ]; then
+    idle6=$(find "$d" -type f -newermt '6 hours ago' 2>/dev/null | wc -l)
+    if [ "$idle6" -eq 0 ]; then
+      rm -rf "$d" && echo "capped cold target root (was $((sz_kb/1048576))G, idle >6h): $d"
+    fi
+  fi
+}
+
+for d in "$HOME/dev/.targets"/*/; do
+  [ -d "$d" ] || continue
+  case "$(basename "$d")" in logs) continue ;; esac
+  sweep_target_root "${d%/}"
+done
+
+# same for ~/.cache/<name>-target variants (cargo-target-gui, cargo-target-196,
+# zz-camp-target, ...) — the shared cargo-target keeps its own 100G cap below
+for d in "$HOME/.cache"/*target*/; do
+  [ -d "$d" ] || continue
+  case "${d%/}" in "$SHARED_TARGET") continue ;; esac
+  sweep_target_root "${d%/}"
+done
+
 # idle node_modules (>14 days untouched) - regenerable via the project's package manager
 while IFS= read -r nm; do
   [ "$(find "$nm" -type f -newermt '14 days ago' 2>/dev/null | wc -l)" -eq 0 ] && \
