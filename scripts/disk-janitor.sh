@@ -146,6 +146,24 @@ find /tmp/opencode -maxdepth 1 -type d -name "*-target" -mmin +60 -exec rm -rf {
 # the sweep above only matches dirs named exactly "target"
 find "${XDG_CACHE_HOME:-$HOME/.cache}" -maxdepth 1 -type d -name "*-target" ! -name "cargo-target" -mmin +60 -exec rm -rf {} \; 2>/dev/null
 
+# tmpfs guard #2: big agent scratch in /tmp/opencode that isn't a build dir.
+# 14G of downloaded Sentinel-1 SAFE archives sat there 9h and took the 16G
+# tmpfs to 97% (2026-11-21) — fleet rule says heavy data never lives in /tmp.
+# Reap any /tmp/opencode child >2G with nothing written in 60min; when the
+# tmpfs itself is nearly full (<2G free), reap anything idle >5min.
+tmpfs_free_mb=$(df -BM --output=avail /tmp 2>/dev/null | tail -1 | tr -dc '0-9')
+idle_scratch_min=60
+[ "${tmpfs_free_mb:-99999}" -lt 2048 ] && idle_scratch_min=5
+for child in /tmp/opencode/*; do
+  [ -d "$child" ] || continue
+  recent=$(find "$child" -type f -mmin "-$idle_scratch_min" 2>/dev/null | wc -l)
+  [ "$recent" -eq 0 ] || continue
+  sz_kb=$(du -sk "$child" 2>/dev/null | cut -f1)
+  if [ "${sz_kb:-0}" -gt 2097152 ] || [ "$idle_scratch_min" -eq 5 ]; then
+    rm -rf "$child" && echo "reaped tmpfs scratch (${sz_kb}K, idle >${idle_scratch_min}min): $child"
+  fi
+done
+
 # opencode WAL guard
 wal="${XDG_DATA_HOME:-$HOME/.local/share}/opencode/opencode.db-wal"
 if [ -f "$wal" ]; then
