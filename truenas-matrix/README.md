@@ -132,9 +132,10 @@ the hostname.
 - **Phase 0** (this runbook): ready to execute; blocked only on NAS SSH
   access (key provisioning).
 - **Phase 1**: BUILT on branch `wyatt/dogfood-phase1` (metrics-kit
-  OpenMetrics exposition + labelled gauge mirror, commits `989478b`,
-  `4557c6a`). Not yet in any image: swapping in requires building the
-  image from that branch (below).
+  OpenMetrics exposition + labelled gauge mirror; post-rebase commits
+  `09bc084f`, `25466202`; originally cited as `989478b`/`4557c6a` —
+  branch rebased 2026-11, hashes refreshed). Not yet in any image:
+  swapping in requires building the image from that branch (below).
 - **Phase 2**: RESEARCH-NO (2026-10, with receipt): the sending-queue
   swap was investigated and declined for now; `worker-kit`/`loop-retry`
   stay un-wired. Re-open only with a concrete failure mode the stock
