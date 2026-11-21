@@ -184,3 +184,13 @@ curl -s ".../messages?dir=f&from=$FROM&limit=50" -H "Auth..." | jq '.chunk | len
 Options: (1) leave+recreate DM as workaround, (2) upstream continuuwuity
 issue with the stuck event ids, (3) DB extremity surgery in matrix-db
 (last resort). Peregrine-side: incident row in docs/ROADMAP.md.
+
+### UPDATE 2026-11-21: data intact — tip view only
+
+A client session with a PRE-FREEZE sync token (old `since`) streams all
+post-freeze events via incremental sync — nothing was lost. Only
+tip-based reads (fresh /sync bootstrap, /messages dir=b) serve the
+frozen tip. Fresh sessions see lies; old sessions see truth. Workaround
+room `!uqmTBOhb...` ("peregrine") created and verified end-to-end.
+Upstream issue still worth filing (fresh clients can't see the room's
+tail — that breaks any new device).
