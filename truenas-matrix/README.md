@@ -195,3 +195,22 @@ frozen tip. Fresh sessions see lies; old sessions see truth. Workaround
 room `!uqmTBOhb...` ("peregrine") created and verified end-to-end.
 Upstream issue still worth filing (fresh clients can't see the room's
 tail — that breaks any new device).
+
+### RESOLUTION 2026-11-22: extremity repair shipped
+
+Built `wyattau/continuwuity:extremity-fix` from `wyatt/dogfood-phase1`
+(commit 402a3a2e — adds `!admin debug list-extremities` and
+`!admin debug force-extremity-recompute <room>`). Compose now pins that
+image (was v26.9.1 stock). Repair verified live on the stuck DM:
+command scanned 78 PDUs, adopted the true leaf (the tombstone), and
+/messages immediately served the previously-hidden events (phone reply,
+probes). DM v2 + admin room regression-checked clean.
+
+Rollback if ever needed: compose image line back to the v26.9.1 tag,
+`docker compose up -d` (the extremity table is metadata; the fix only
+rewrites it from the existing event graph).
+
+Upstream: file the issue + the admin-command patch as a PR when the
+forgejo account is available — the repair command is designed as a
+generic diagnostic/repair tool (rooms_by_extremity_count's missing
+sibling).
