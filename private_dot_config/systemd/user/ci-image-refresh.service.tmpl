@@ -1,0 +1,20 @@
+[Unit]
+Description=Pre-pull Forgejo CI job images (node/rust/curl) so runner jobs never block on registry egress
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+# The Forgejo runner (hydrated-runner) executes CI jobs from these images.
+# When they are evicted (prune, parallel-stack setup), job containers fail
+# to create in seconds and whole deploy runs skip — the 2026-11-13/21
+# purity-deploy blockage class. A daily pull keeps the local cache warm;
+# pulls are no-ops when the digest already matches.
+{{ $images := list
+  "docker.io/library/node:22-bookworm"
+  "docker.io/library/rust:1.97-bookworm"
+  "docker.io/curlimages/curl:8.21.0" -}}
+{{ range $images }}
+/usr/bin/docker pull -q {{ . }}
+{{ end -}}
+echo "ci-image-refresh: {{ len $images }} images ensured"
