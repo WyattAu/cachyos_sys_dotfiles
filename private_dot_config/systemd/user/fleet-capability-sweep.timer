@@ -1,0 +1,10 @@
+[Unit]
+Description=Weekly fleet capability sweep (Mondays 07:30, after the weekend's ecosystem churn)
+
+[Timer]
+OnCalendar=Mon *-*-* 07:30:00
+RandomizedDelaySec=600
+Persistent=true
+
+[Install]
+WantedBy=timers.target

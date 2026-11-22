@@ -1,0 +1,7 @@
+[Unit]
+Description=Weekly fleet capability sweep (skills.sh + GitHub + MCP registries)
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/share/fleet/capability-sweep.sh
+TimeoutStartSec=30min

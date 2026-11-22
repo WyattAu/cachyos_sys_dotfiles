@@ -40,6 +40,12 @@ Prefer MCP tools over guessing:
   (one implementation, many consumers) instead of forking logic locally;
   prefer estate MCP servers (aileron-agent, osint-kit) over new tool
   surfaces. Say "dogfooded <crate>" in commits that consume estate code.
+- External capability discovery is not reactive: the weekly
+  fleet-capability-sweep timer writes
+  `~/.local/share/fleet/discovery/latest.md` (skills.sh + GitHub +
+  MCP registries, deduped against installed capabilities). Skim it at
+  session start when hunting for a tool; anything interesting gets the
+  penthera-style safety audit before install.
 
 ## Session hygiene
 
