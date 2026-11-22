@@ -243,14 +243,32 @@ if [[ -f "$HOME/.config/opencode/opencode.json" ]]; then
 fi
 # Cross-agent skills parity: ~/.agents/skills is fleet-managed from
 # dot_agents/skills. Drift here means an on-machine edit never went back
-# through sys-save / the source repo. Tool-owned skills (installed by
-# tools that upgrade themselves, e.g. agent-reach) are excluded: their
-# lifecycle belongs to the tool, not the fleet source.
+# through sys-save / the source repo. Tool-owned entries are ignored:
+# the ECC installer symlinks its bundle (~/.local/share/ecc-skills) into
+# this dir and agent-reach manages itself — their lifecycle belongs to
+# the tool, not the fleet source. Only real (non-symlink) live entries
+# are compared.
 if [[ -d "$HOME/.agents/skills" && -d "$HOME/.local/share/chezmoi/dot_agents/skills" ]]; then
-    if diff -rq -x "agent-reach" "$HOME/.agents/skills" "$HOME/.local/share/chezmoi/dot_agents/skills" >/dev/null 2>&1; then
+    live="$HOME/.agents/skills"
+    src="$HOME/.local/share/chezmoi/dot_agents/skills"
+    drift=""
+    for s in "$src"/*; do
+        n=$(basename "$s")
+        [[ -e "$live/$n" ]] || drift="$drift missing:$n"
+    done
+    while IFS= read -r -d '' p; do
+        rel="${p#$live/}"
+        [[ "$rel" == "agent-reach" ]] && continue
+        if [[ ! -e "$src/$rel" ]]; then
+            drift="$drift uncommitted:$rel"
+        elif ! diff -rq "$p" "$src/$rel" >/dev/null 2>&1; then
+            drift="$drift changed:$rel"
+        fi
+    done < <(find "$live" -mindepth 1 -maxdepth 1 ! -type l -print0)
+    if [[ -z "$drift" ]]; then
         echo "  ✓ ~/.agents/skills matches fleet source"
     else
-        echo "  ✗ ~/.agents/skills drifted from dot_agents/skills (commit via sys-save or chezmoi apply)"
+        echo "  ✗ ~/.agents/skills drifted from dot_agents/skills (commit via sys-save or chezmoi apply):$drift"
         ERRORS=$((ERRORS + 1))
     fi
 elif [[ -d "$HOME/.agents/skills" ]]; then
