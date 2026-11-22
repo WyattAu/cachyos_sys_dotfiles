@@ -214,3 +214,23 @@ Upstream: file the issue + the admin-command patch as a PR when the
 forgejo account is available — the repair command is designed as a
 generic diagnostic/repair tool (rooms_by_extremity_count's missing
 sibling).
+
+### Metrics wiring (2026-11-22, post-resolution)
+
+The extremity-fix image carries the prometheus exposure; enabled via
+`CONTINUWUITY_ALLOW_PROMETHEUS_METRICS: "true"` in the compose
+environment. Endpoints (NAS-local):
+- `/_continuwuity/metrics` — stock server metrics (120 lines live)
+- `/_continuwuity/metrics/openmetrics` — metrics-kit registry (empty
+  until the users-gauge updater ticks; watch it)
+
+Scrape: VictoriaMetrics runs on `backend_net` (compose network, no host
+ports) — continuwuity was attached to `backend_net` in the compose and
+the scrape job added to
+`/mnt/pool_HDD_x2/infra/stacks/stacks/monitoring/victoriametrics/scrape.yml`
+(target `continuwuity:8008`). Verified: target up, series ingested
+(`continuwuity_cache_entries{stateinfo=50}` via /api/v1/query).
+
+GOTCHA: the VM scrape.yml is a single-file bind mount — replacing the
+file (new inode) is invisible to the container until `docker restart
+monitoring-victoriametrics`. Edit in place or restart after.
