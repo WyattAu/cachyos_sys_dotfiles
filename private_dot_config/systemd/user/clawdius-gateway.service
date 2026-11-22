@@ -1,0 +1,18 @@
+[Unit]
+Description=Clawdius gateway — Telegram bot driving the fleet dev-cycle
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=%h/.local/bin/clawdius-gateway --platform telegram
+# Secrets live in the estate keys dir (0600): TELEGRAM_BOT_TOKEN from
+# @BotFather, CLAWDIUS_FLEET_ADMINS = the operator's Telegram user id.
+# OpenCode discovery is automatic (OpenCodeClient::discover).
+EnvironmentFile=%h/.config/opencode/keys/clawdius-gateway.env
+Environment=RUST_LOG=info,clawdius=debug
+Restart=on-failure
+RestartSec=5s
+OOMScoreAdjust=100
+
+[Install]
+WantedBy=default.target
