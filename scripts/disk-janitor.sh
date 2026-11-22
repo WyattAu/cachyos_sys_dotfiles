@@ -75,10 +75,36 @@ done
 # root: remove it when untouched for the tiered idle window, or when it is
 # huge (>40G) and cold (>6h). Never remove a root some process still
 # references, and never touch .targets/logs.
+prune_idle_subdir() { # $1 = subdir, $2 = optional companion dir (removed together)
+  local s="$1" extra="$2" recent sz
+  [ -d "$s" ] || return 0
+  recent=$(find "$s" -type f -newermt "$idle" 2>/dev/null | wc -l)
+  [ "$recent" -eq 0 ] || return 0
+  sz=$(du -sh "$s" 2>/dev/null | cut -f1)
+  rm -rf "$s"
+  [ -n "$extra" ] && [ -d "$extra" ] && rm -rf "$extra"
+  echo "pruned in-use root subdir ($sz): $s"
+}
+
 sweep_target_root() {
   local d="$1" sz_kb recent idle6
   [ -d "$d" ] || return 0
-  pgrep -f "$d/" >/dev/null 2>&1 && { echo "kept in-use: $d"; return 0; }
+  if pgrep -f "$d/" >/dev/null 2>&1; then
+    # A root hosting a deployed binary never goes fully idle (the running
+    # process holds it "in use") — clawdius-acp grew to 91G this way. Prune
+    # only the regenerable build-script/incremental subdirs when THEY are
+    # idle; binaries, deps and rlibs stay untouched.
+    for sub in debug/incremental release/incremental; do
+      prune_idle_subdir "$d/$sub"
+    done
+    # build-script outputs and their fingerprints go together: removing both
+    # forces cargo to re-run build.rs cleanly instead of erroring on a
+    # stale fingerprint
+    if [ -d "$d/debug/build" ] && [ -d "$d/debug/.fingerprint" ]; then
+      prune_idle_subdir "$d/debug/build" "$d/debug/.fingerprint"
+    fi
+    return 0
+  fi
   sz_kb=$(du -sk "$d" 2>/dev/null | cut -f1)
   recent=$(find "$d" -type f -newermt "$idle" 2>/dev/null | wc -l)
   if [ "$recent" -eq 0 ]; then
