@@ -10,4 +10,8 @@ Type=oneshot
 # to create in seconds and whole deploy runs skip silently — the
 # 2026-11-13→21 purity-deploy blockage class on the KP box. A daily pull
 # keeps the local cache warm; digest-matched pulls are no-ops.
-ExecStart=/bin/sh -c '/usr/bin/docker pull -q docker.io/library/node:22-bookworm && /usr/bin/docker pull -q docker.io/library/rust:1.97-bookworm && /usr/bin/docker pull -q docker.io/curlimages/curl:8.21.0 && echo "ci-image-refresh: 3 images ensured"'
+# Network prune: Forgejo jobs each leave a FORGEJO-ACTIONS-TASK-* bridge
+# behind; 23 accumulated networks exhausted Docker's default address pools
+# and every new job container failed instantly (2026-11-13→23 CI outage).
+# until=2h protects any job still running (max job timeout is 45 min).
+ExecStart=/bin/sh -c '/usr/bin/docker pull -q docker.io/library/node:22-bookworm && /usr/bin/docker pull -q docker.io/library/rust:1.97-bookworm && /usr/bin/docker pull -q docker.io/curlimages/curl:8.21.0 && /usr/bin/docker network prune -f --filter "until=2h" --filter "name=FORGEJO-ACTIONS-TASK" && echo "ci-image-refresh: 3 images ensured + job networks pruned"'
