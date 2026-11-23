@@ -361,12 +361,16 @@ else
     echo "  ✗ playwright chromium missing (bunx playwright install chromium)"
     ERRORS=$((ERRORS + 1))
 fi
-# Terraform MCP image — only fails when docker works but the image is absent
+# Terraform MCP image — only fails when docker works but the image is absent.
+# The image has vanished twice (2026-11-21/22, suspect an agent-side
+# docker prune we can't attribute) — auto-heal by re-pulling before paging.
 if docker info >/dev/null 2>&1; then
     if docker image inspect hashicorp/terraform-mcp-server:1.3.0 >/dev/null 2>&1; then
         echo "  ✓ terraform MCP image"
+    elif docker pull -q hashicorp/terraform-mcp-server:1.3.0 >/dev/null 2>&1; then
+        echo "  ✓ terraform MCP image (re-pulled — it had been removed again)"
     else
-        echo "  ✗ terraform MCP image not pulled (opencode ansible role)"
+        echo "  ✗ terraform MCP image not pulled and re-pull failed (opencode ansible role)"
         ERRORS=$((ERRORS + 1))
     fi
 else
@@ -414,6 +418,24 @@ if [[ -f "$CONTEXT_AUDIT" ]]; then
 else
     echo "  SKIP context-audit (context-standards not checked out)"
 fi
+
+echo "Lean proof fleet:"
+# Baseline pinned by engineering-standards LEAN-PKG (v4.35.0 — game-spec +
+# clawdius-spec). Scan is warn-only until the last drifted package (morph,
+# v4.27.0, active WIP) lands its bump PR; then flip the WARN branch to
+# ERRORS increments so hourly runs page again.
+LEAN_BASELINE="leanprover/lean4:v4.35.0"
+shopt -s nullglob
+for tc in "$HOME"/dev/src/github.com/WyattAu/*/lean-toolchain; do
+    pkg="$(basename "$(dirname "$tc")")"
+    got="$(<"$tc")"
+    if [[ "$got" == "$LEAN_BASELINE" ]]; then
+        echo "  ✓ $pkg"
+    else
+        echo "  ⚠ $pkg: '$got' (fleet baseline $LEAN_BASELINE — WARN-only until bump PRs land)"
+    fi
+done
+shopt -u nullglob
 
 if [[ $ERRORS -eq 0 ]]; then
     echo ">> All checks passed."
