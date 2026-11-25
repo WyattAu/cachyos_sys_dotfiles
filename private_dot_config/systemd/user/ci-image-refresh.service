@@ -14,4 +14,8 @@ Type=oneshot
 # behind; 23 accumulated networks exhausted Docker's default address pools
 # and every new job container failed instantly (2026-11-13→23 CI outage).
 # until=2h protects any job still running (max job timeout is 45 min).
-ExecStart=/bin/sh -c '/usr/bin/docker pull -q docker.io/library/node:22-bookworm && /usr/bin/docker pull -q docker.io/library/rust:1.97-bookworm && /usr/bin/docker pull -q docker.io/curlimages/curl:8.21.0 && /usr/bin/docker network prune -f --filter "until=2h" --filter "name=FORGEJO-ACTIONS-TASK" && echo "ci-image-refresh: 3 images ensured + job networks pruned"'
+# Keep-warm containers: an image with a running container cannot be
+# pruned by parallel-stack cleanups (the 2026-11-25 eviction class —
+# node/rust vanished overnight while the continuously-used curl
+# survived). Idempotent: existing containers are left running.
+ExecStart=/bin/sh -c 'for img in node:22-bookworm rust:1.97-bookworm; do docker images -q $img | grep -q . || docker pull -q docker.io/library/$img; done; for n in ci-warm-node ci-warm-rust; do img=${n#ci-warm-}; docker ps -a --format "{{.Names}}" | grep -qx $n || docker run -d --name $n --restart unless-stopped $img sleep infinity; done; /usr/bin/docker pull -q docker.io/curlimages/curl:8.21.0; /usr/bin/docker network prune -f --filter "until=2h" --filter "name=FORGEJO-ACTIONS-TASK"; /usr/bin/docker volume prune -f --filter "until=2h" --filter "label=act" ; /usr/bin/docker volume ls -q | grep FORGEJO-ACTIONS-TASK | xargs -r docker volume rm; echo "ci-image-refresh: images ensured, warm containers up, job networks + volumes pruned"'
