@@ -86,6 +86,39 @@ prune_idle_subdir() { # $1 = subdir, $2 = optional companion dir (removed togeth
   echo "pruned in-use root subdir ($sz): $s"
 }
 
+prune_cold_build_hashes() { # $1 = debug/build dir of an in-use root
+  # Hourly rebuild loops (clawdius-maint-loop, interval 3600) keep their
+  # root "in use" forever, so the whole-dir idle prunes above never fire
+  # while every rebuild piles a fresh ~0.6-3G hash dir into debug/build
+  # (86G observed across 3 roots, 2026-11-26). Only the NEWEST hash dir
+  # per package can be referenced by the current build; older hashes are
+  # dead weight (most were already husked to empty dirs). Keep newest,
+  # drop the rest. debug/.fingerprint is pair-pruned separately and its
+  # absence makes cargo re-run build.rs cleanly, not error.
+  local bb="$1" pkg h newest newest_t t recent sz
+  [ -d "$bb" ] || return 0
+  while IFS= read -r pkg; do
+    recent=$(find "$pkg" -maxdepth 3 -type f -newermt '24 hours ago' 2>/dev/null | wc -l)
+    if [ "$recent" -eq 0 ]; then
+      sz=$(du -sh "$pkg" 2>/dev/null | cut -f1)
+      rm -rf "$pkg" && echo "pruned cold build-script pkg ($sz): $pkg"
+      continue
+    fi
+    # hot pkg: keep only the newest hash child (the current build's)
+    newest=""; newest_t=0
+    while IFS= read -r h; do
+      t=$(stat -c %Y "$h" 2>/dev/null) || continue
+      [ "$t" -gt "$newest_t" ] && { newest_t=$t; newest=$h; }
+    done < <(find "$pkg" -mindepth 1 -maxdepth 1 -type d 2>/dev/null)
+    [ -n "$newest" ] || continue
+    while IFS= read -r h; do
+      [ "$h" = "$newest" ] && continue
+      sz=$(du -sh "$h" 2>/dev/null | cut -f1)
+      rm -rf "$h" && echo "pruned stale build hash ($sz): $h"
+    done < <(find "$pkg" -mindepth 1 -maxdepth 1 -type d 2>/dev/null)
+  done < <(find "$bb" -mindepth 1 -maxdepth 1 -type d 2>/dev/null)
+}
+
 sweep_target_root() {
   local d="$1" sz_kb recent idle6
   [ -d "$d" ] || return 0
@@ -103,6 +136,9 @@ sweep_target_root() {
     if [ -d "$d/debug/build" ] && [ -d "$d/debug/.fingerprint" ]; then
       prune_idle_subdir "$d/debug/build" "$d/debug/.fingerprint"
     fi
+    # per-hash cold prune (see prune_cold_build_hashes): the whole-dir
+    # prunes above never fire on a loop that rebuilds every hour
+    prune_cold_build_hashes "$d/debug/build"
     return 0
   fi
   sz_kb=$(du -sk "$d" 2>/dev/null | cut -f1)
