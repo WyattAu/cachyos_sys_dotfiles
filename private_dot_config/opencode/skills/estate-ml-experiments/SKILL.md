@@ -1,17 +1,14 @@
 ---
 name: estate-ml-experiments
 description: |
-  ML experiment discipline for the estate's training runs: naming,
-  config-first execution, seeds, baselines, champion tracking, artifact
-  paths, GPU etiquette, crash handling; plus the four validation gates
-  (instrument, data, canary, pre-registration), attribution and
-  precision-matched measurement, long-run resilience. Use when
-  launching, resuming, comparing, or reporting training runs; when a run
-  finishes or crashes; when deciding champion status; on checkpoint disk
-  pressure; when validating a measurement instrument or a training
-  dataset; after wasting a run on a preventable failure; or the user
-  says train, run, benchmark, eval, champion. Not for model
-  architecture design or dataset creation.
+  ML experiment discipline for estate training runs: naming, config-first
+  execution, seeds, baselines, champion tracking, artifact paths, GPU
+  etiquette, crash handling; the four validation gates (instrument, data,
+  canary, pre-registration); attribution, measurement. Use when
+  launching, resuming, comparing, or reporting runs; when a run finishes
+  or crashes; when deciding champion status; or the user says train, run,
+  benchmark, eval, champion. Does not: model architecture design,
+  dataset creation.
 allowed-tools: read, bash, grep
 license: Apache-2.0
 ---
